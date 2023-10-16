@@ -10,6 +10,7 @@ __all__ = [
     'msdki',
     'ball',
     'stick',
+    'zeppelin',
     'get_model_nparams']
 
 def ball_stick(grad,params):
@@ -79,6 +80,53 @@ def stick(grad, Dpar, theta, phi):
     
     S = torch.exp(-bvals * Dpar * torch.mm(g, n) ** 2)
     
+    return S
+
+
+def zeppelin(grad,params):
+    # This zeppelin model is based on the implementation shown in Tax et al. (2021; NeuroImage, doi: 10.1016/j.neuroimage.2021.117967)
+    # input:
+    # grad: acquisition parameters
+    # params: parameters estimated for signal prediction. Order: 
+    # 1. theta 
+    # 2. phi (angles of the first eigenvector with theta) 
+    # 3. Dpar (parallel diffusivity)
+    # 4. kperp (k*Dpar = Dperp or perpendicular diffusivity). k is a parameter between 0 and 1 to make sure that Dperp <= Dpar
+    # 5. T2*
+    # 6. T1
+    # 7. S0
+
+    g = grad[:,0:3] # we assume that the first three columns contain the diffusion gradient direction in Cartesian coordinates
+    bvals = grad[:,3].unsqueeze(1) # b-value assumed in the fourth position in s/mm^2
+    bvals = bvals/1000.0 # b-values in ms/um^2
+    TI = grad[:,5].unsqueeze(1) # inversion time assumed in the sixth position in ms
+    TE = grad[:,4].unsqueeze(1) # echo time assumed in the fifth position in ms
+    TR = grad[:,6].unsqueeze(1) # repetition time assumed in the seventh position in ms
+    
+    # the implementation works with TD (delay time) instead of TE, assuming a multi-echo sequence
+    TD = TE - min(TE)
+
+    # parameters
+    theta = params[:,0].unsqueeze(1)
+    phi = params[:,1].unsqueeze(1)
+    # we transform into Cartesian coordinates
+    n = sphere2cart(theta,phi)
+    Dpar = params[:,2].unsqueeze(1)
+    kperp = params[:,3].unsqueeze(1)
+    Dperp = kperp*Dpar
+    T2star = params[:,4].unsqueeze(1)
+    T1 = params[:,5].unsqueeze(1)
+    S0 = params[:,6].unsqueeze(1)
+    
+    # the implementation depends on tensor encoding. We assume linear tensor encoding
+    b_delta = 1.0
+
+    # signal representation: s = s0 * e^(-b:D) * abs(1 - 2*e^(-TI/T1) + e^(-TR/T1)) * e^(-TD/T2*)
+    # we begin obtaining -b:D, called b_D here for simplicity
+    b_D = b_delta/3.0 * bvals * (Dpar - Dperp) - bvals/3.0 * (Dperp + 2*Dpar) - bvals * b_delta * (torch.mm(g,n)**2) * (Dpar - Dperp)
+
+    S = S0 * torch.exp(b_D) * torch.abs(1.0 - 2.0 * torch.exp(-TI/T1) + torch.exp(-TR/T1)) * torch.exp(-TD/T2star)
+
     return S
 
 
