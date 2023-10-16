@@ -11,6 +11,7 @@ __all__ = [
     'ball',
     'stick',
     'zeppelin',
+    't1_smdt',
     'get_model_nparams']
 
 def ball_stick(grad,params):
@@ -104,7 +105,7 @@ def zeppelin(grad,params):
     TR = grad[:,6].unsqueeze(1) # repetition time assumed in the seventh position in ms
     
     # the implementation works with TD (delay time) instead of TE, assuming a multi-echo sequence
-    TD = TE - min(TE)
+    TD = TE - torch.min(TE)
 
     # parameters
     theta = params[:,0].unsqueeze(1)
@@ -126,6 +127,32 @@ def zeppelin(grad,params):
     b_D = b_delta/3.0 * bvals * (Dpar - Dperp) - bvals/3.0 * (Dperp + 2*Dpar) - bvals * b_delta * (torch.mm(g,n)**2) * (Dpar - Dperp)
 
     S = S0 * torch.exp(b_D) * torch.abs(1.0 - 2.0 * torch.exp(-TI/T1) + torch.exp(-TR/T1)) * torch.exp(-TD/T2star)
+
+    return S
+
+
+def t1_smdt(grad,params):
+    # T1-spherical mean diffusion tensor representation from Grussu et al. (2021; Front Phys, doi: 10.3389/fphy.2021.752208)
+    
+    g = grad[:,0:3] # we assume that the first three columns contain the diffusion gradient direction in Cartesian coordinates
+    bvals = grad[:,3].unsqueeze(1) # b-value assumed in the fourth position in s/mm^2
+    bvals[bvals==0] = 0.01 # to potentially avoid divisions by 0
+    bvals = bvals/1000.0 # b-values in ms/um^2
+    TI = grad[:,5].unsqueeze(1) # inversion time assumed in the sixth position in ms
+    TS = grad[:,4].unsqueeze(1) # saturation or preparation time assumed in the fifth position in ms
+
+    # Constant factor employed in the equation
+    sfac = 0.5 * np.sqrt(np.pi)
+
+    # parameters
+    Dpar = params[:,0].unsqueeze(1)
+    kperp = params[:,1].unsqueeze(1)
+    Dperp = kperp*Dpar
+    T1 = params[:,2].unsqueeze(1)
+    S0 = params[:,3].unsqueeze(1)
+
+    # we obtain the signal
+    S = sfac * S0 * torch.abs(1.0 - torch.exp(-TI/T1) - (torch.exp(-TS/T1)) * torch.exp(-TI/T1)) * torch.erf(torch.sqrt(bvals*(Dpar-Dperp)))/torch.sqrt(bvals*(Dpar-Dperp))
 
     return S
 
@@ -160,6 +187,10 @@ def get_model_nparams(model):
         return 2
     if model=="msdki":
         return 2
+    if model=="zeppelin":
+        return 7
+    if model=="t1_smdt":
+        return 4
 
 
 
