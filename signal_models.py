@@ -5,7 +5,6 @@ import torch.optim as optim
 import torch.utils.data as utils
 
 __all__ = [
-    'ball_stick',
     't2_adc',
     'msdki',
     'ball',
@@ -13,42 +12,6 @@ __all__ = [
     'zeppelin',
     't1_smdt',
     'get_model_nparams']
-
-def ball_stick(grad,params):
-    
-    #nparams = len(params)
-    #need to force this shape?
-    #params = torch.zeros([1,nparams])
-     
-    
-    # extract the parameters
-    f = params[:,0].unsqueeze(1)
-    Dpar = params[:, 1].unsqueeze(1)
-    D = params[:, 2].unsqueeze(1)
-    theta = params[:, 3].unsqueeze(1)
-    phi = params[:, 4].unsqueeze(1)
-
-
-    g = grad[:,0:2]
-    bvals = grad[:,3]  
-    
-    print(stick(grad, Dpar, theta,phi).size())
-    print(ball(grad, D).size())
-    
-    S = f * stick(grad, Dpar, theta,phi) + (1 - f) * ball(grad, D)
-
-    return S
-
-def t2_adc(grad,params):
-    # extract the parameters
-    T2 = params[:,0].unsqueeze(1)
-    D = params[:, 1].unsqueeze(1)   
-    
-    bvals = grad[:,3]
-    te = grad[:,4]
-    S = torch.exp(-grad[:,3]*D) * torch.exp(-(te - torch.min(te))/T2) 
-    
-    return S
 
 def msdki(grad,params):
     
@@ -64,24 +27,39 @@ def msdki(grad,params):
     return S
 
 
+class Ball(acquisition_scheme):
 
-def ball(grad, D):
-    bvals = grad[:, 3].unsqueeze(1)
+    def __init__(self, D=None):
+        self.D = D
 
-    S = torch.exp(-bvals * D)
-    return S
+    def __call__(self, acquisition_scheme):
+
+        D = params[:, 0].unsqueeze(1) # ADC
+
+        b_values = acquisition_scheme[:, 3].unsqueeze(1)
+
+        S = torch.exp(-b_values * D)
+
+        return S
 
 
-def stick(grad, Dpar, theta, phi):
+class Stick(acquisition_scheme):
+
+    def __init__(self, theta=None, phi=None, Dpar=None):
+        self.theta = theta
+        self.phi = phi
+        self.Dpar = Dpar
+
+    def __call__(self, acquisition_scheme):
     
-    g = grad[:, 0:3]
-    bvals = grad[:, 3].unsqueeze(1)
+        G = acquisition_scheme[:, 0:3]
+        b_values = grad[:, 3].unsqueeze(1)
 
-    n = sphere2cart(theta,phi)
+        n = sphere2cart(theta,phi)
     
-    S = torch.exp(-bvals * Dpar * torch.mm(g, n) ** 2)
+        S = torch.exp(-bvals * Dpar * torch.mm(G, n) ** 2)
     
-    return S
+        return S
 
 
 def zeppelin(grad,params):
