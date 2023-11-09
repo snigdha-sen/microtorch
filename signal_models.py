@@ -27,9 +27,11 @@ def msdki(grad,params):
     return S
 
 
-class Ball(acquisition_scheme):
+class Ball(grad, params):
 
-    _parameter_ranges = { 'D': (.1, 3) }
+    _parameter_ranges = [[.1, 3]]
+
+    _param_names = ['D']
 
     _n_params = 1
 
@@ -40,16 +42,18 @@ class Ball(acquisition_scheme):
 
         D = params[:, 0].unsqueeze(1) # ADC
 
-        b_values = acquisition_scheme[:, 3].unsqueeze(1)
+        b_values = grad[:, 3].unsqueeze(1)
 
         S = torch.exp(-b_values * D)
 
         return S
 
 
-class Stick(acquisition_scheme):
+class Stick(grad, params, ranges):
 
-    _parameter_ranges = { 'Dpar': (.1, 3), 'theta': (0, torch.pi), 'phi': (-torch.pi, torch.pi) }
+    _parameter_ranges = [[.1, 3], [0, torch.pi], [-torch.pi, torch.pi]]
+
+    _param_names = ['Dpar', 'theta', 'phi']
 
     _n_params = 3
 
@@ -74,7 +78,7 @@ class Stick(acquisition_scheme):
         return S
 
 
-def zeppelin(grad,params):
+class Zeppelin(grad, params):
     # This zeppelin model is based on the implementation shown in Tax et al. (2021; NeuroImage, doi: 10.1016/j.neuroimage.2021.117967)
     # input:
     # grad: acquisition parameters
@@ -86,6 +90,8 @@ def zeppelin(grad,params):
     # 5. T2*
     # 6. T1
     # 7. S0
+
+
 
     g = grad[:,0:3] # we assume that the first three columns contain the diffusion gradient direction in Cartesian coordinates
     bvals = grad[:,3].unsqueeze(1) # b-value assumed in the fourth position in s/mm^2
@@ -146,7 +152,11 @@ def t1_smdt(grad,params):
 
     return S
 
-def sphere(r):
+def Sphere(grad, params):
+
+    _parameter_ranges = { 'Dpar': (.1, 3), 'theta': (0, torch.pi), 'phi': (-torch.pi, torch.pi) }
+
+    _n_params = 3
 
     SPHERE_TRASCENDENTAL_ROOTS = np.r_[
         # 0.,
