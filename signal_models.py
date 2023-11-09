@@ -156,7 +156,7 @@ def t1_smdt(grad,params):
 
     return S
 
-def def sphere(r):
+def sphere(r):
 
     SPHERE_TRASCENDENTAL_ROOTS = np.r_[
         # 0.,
@@ -226,7 +226,7 @@ def def sphere(r):
 
     return S
 
-def def astrosticks(l):
+def astrosticks(l):
 
     bvals = np.array([1e-6, 0.090, 1e-6, 0.500, 1e-6, 1.5, 1e-6, 2, 1e-6, 3])
     lambda_par = l
