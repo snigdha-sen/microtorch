@@ -29,6 +29,10 @@ def msdki(grad,params):
 
 class Ball(acquisition_scheme):
 
+    _parameter_ranges = { 'D': (.1, 3) }
+
+    _n_params = 1
+
     def __init__(self, D=None):
         self.D = D
 
@@ -45,19 +49,27 @@ class Ball(acquisition_scheme):
 
 class Stick(acquisition_scheme):
 
-    def __init__(self, theta=None, phi=None, Dpar=None):
+    _parameter_ranges = { 'Dpar': (.1, 3), 'theta': (0, torch.pi), 'phi': (-torch.pi, torch.pi) }
+
+    _n_params = 3
+
+    def __init__(self, Dpar=None, theta=None, phi=None):
+        self.Dpar = Dpar
         self.theta = theta
         self.phi = phi
-        self.Dpar = Dpar
 
     def __call__(self, acquisition_scheme):
     
-        G = acquisition_scheme[:, 0:3]
-        b_values = grad[:, 3].unsqueeze(1)
+        g = acquisition_scheme[:, 0:3]
+        b_values = acquisition_schem[:, 3].unsqueeze(1)
 
-        n = sphere2cart(theta,phi)
+        Dpar = params[:, 0].unsqueeze(1)
+        theta = params[:, 1].unsqueeze(1)
+        phi = params[:, 2].unsqueeze(1)
+
+        n = sphere2cart(theta, phi)
     
-        S = torch.exp(-bvals * Dpar * torch.mm(G, n) ** 2)
+        S = torch.exp(-bvals * Dpar * torch.mm(g, n) ** 2)
     
         return S
 
