@@ -7,8 +7,8 @@ import torch.utils.data as utils
 __all__ = [
     't2_adc',
     'msdki',
-    'ball',
-    'stick',
+    'Ball',
+    'Stick',
     'zeppelin',
     't1_smdt',
     'get_model_nparams']
@@ -27,7 +27,7 @@ def msdki(grad,params):
     return S
 
 
-class Ball(grad, params):
+class Ball:
 
     _parameter_ranges = [[.1, 3]]
 
@@ -35,11 +35,8 @@ class Ball(grad, params):
 
     _n_params = 1
 
-    def __init__(self, D=None):
-        self.D = D
-
-    def __call__(self, acquisition_scheme):
-
+    def __call__(self, grad, params):    
+        
         D = params[:, 0].unsqueeze(1) # ADC
 
         b_values = grad[:, 3].unsqueeze(1)
@@ -49,7 +46,7 @@ class Ball(grad, params):
         return S
 
 
-class Stick(grad, params, ranges):
+class Stick:
 
     _parameter_ranges = [[.1, 3], [0, torch.pi], [-torch.pi, torch.pi]]
 
@@ -57,15 +54,9 @@ class Stick(grad, params, ranges):
 
     _n_params = 3
 
-    def __init__(self, Dpar=None, theta=None, phi=None):
-        self.Dpar = Dpar
-        self.theta = theta
-        self.phi = phi
-
-    def __call__(self, acquisition_scheme):
-    
-        g = acquisition_scheme[:, 0:3]
-        b_values = acquisition_schem[:, 3].unsqueeze(1)
+    def __call__(self, grad, params):                   
+        g = grad[:, 0:3]
+        b_values = grad[:, 3].unsqueeze(1)
 
         Dpar = params[:, 0].unsqueeze(1)
         theta = params[:, 1].unsqueeze(1)
@@ -73,58 +64,58 @@ class Stick(grad, params, ranges):
 
         n = sphere2cart(theta, phi)
     
-        S = torch.exp(-bvals * Dpar * torch.mm(g, n) ** 2)
+        S = torch.exp(-b_values * Dpar * torch.mm(g, n) ** 2)
     
         return S
 
 
-class Zeppelin(grad, params):
-    # This zeppelin model is based on the implementation shown in Tax et al. (2021; NeuroImage, doi: 10.1016/j.neuroimage.2021.117967)
-    # input:
-    # grad: acquisition parameters
-    # params: parameters estimated for signal prediction. Order: 
-    # 1. theta 
-    # 2. phi (angles of the first eigenvector with theta) 
-    # 3. Dpar (parallel diffusivity)
-    # 4. kperp (k*Dpar = Dperp or perpendicular diffusivity). k is a parameter between 0 and 1 to make sure that Dperp <= Dpar
-    # 5. T2*
-    # 6. T1
-    # 7. S0
+# class Zeppelin(grad, params):
+#     # This zeppelin model is based on the implementation shown in Tax et al. (2021; NeuroImage, doi: 10.1016/j.neuroimage.2021.117967)
+#     # input:
+#     # grad: acquisition parameters
+#     # params: parameters estimated for signal prediction. Order: 
+#     # 1. theta 
+#     # 2. phi (angles of the first eigenvector with theta) 
+#     # 3. Dpar (parallel diffusivity)
+#     # 4. kperp (k*Dpar = Dperp or perpendicular diffusivity). k is a parameter between 0 and 1 to make sure that Dperp <= Dpar
+#     # 5. T2*
+#     # 6. T1
+#     # 7. S0
 
 
 
-    g = grad[:,0:3] # we assume that the first three columns contain the diffusion gradient direction in Cartesian coordinates
-    bvals = grad[:,3].unsqueeze(1) # b-value assumed in the fourth position in s/mm^2
-    bvals = bvals/1000.0 # b-values in ms/um^2
-    TI = grad[:,5].unsqueeze(1) # inversion time assumed in the sixth position in ms
-    TE = grad[:,4].unsqueeze(1) # echo time assumed in the fifth position in ms
-    TR = grad[:,6].unsqueeze(1) # repetition time assumed in the seventh position in ms
+#     g = grad[:,0:3] # we assume that the first three columns contain the diffusion gradient direction in Cartesian coordinates
+#     bvals = grad[:,3].unsqueeze(1) # b-value assumed in the fourth position in s/mm^2
+#     bvals = bvals/1000.0 # b-values in ms/um^2
+#     TI = grad[:,5].unsqueeze(1) # inversion time assumed in the sixth position in ms
+#     TE = grad[:,4].unsqueeze(1) # echo time assumed in the fifth position in ms
+#     TR = grad[:,6].unsqueeze(1) # repetition time assumed in the seventh position in ms
     
-    # the implementation works with TD (delay time) instead of TE, assuming a multi-echo sequence
-    TD = TE - torch.min(TE)
+#     # the implementation works with TD (delay time) instead of TE, assuming a multi-echo sequence
+#     TD = TE - torch.min(TE)
 
-    # parameters
-    theta = params[:,0].unsqueeze(1)
-    phi = params[:,1].unsqueeze(1)
-    # we transform into Cartesian coordinates
-    n = sphere2cart(theta,phi)
-    Dpar = params[:,2].unsqueeze(1)
-    kperp = params[:,3].unsqueeze(1)
-    Dperp = kperp*Dpar
-    T2star = params[:,4].unsqueeze(1)
-    T1 = params[:,5].unsqueeze(1)
-    S0 = params[:,6].unsqueeze(1)
+#     # parameters
+#     theta = params[:,0].unsqueeze(1)
+#     phi = params[:,1].unsqueeze(1)
+#     # we transform into Cartesian coordinates
+#     n = sphere2cart(theta,phi)
+#     Dpar = params[:,2].unsqueeze(1)
+#     kperp = params[:,3].unsqueeze(1)
+#     Dperp = kperp*Dpar
+#     T2star = params[:,4].unsqueeze(1)
+#     T1 = params[:,5].unsqueeze(1)
+#     S0 = params[:,6].unsqueeze(1)
     
-    # the implementation depends on tensor encoding. We assume linear tensor encoding
-    b_delta = 1.0
+#     # the implementation depends on tensor encoding. We assume linear tensor encoding
+#     b_delta = 1.0
 
-    # signal representation: s = s0 * e^(-b:D) * abs(1 - 2*e^(-TI/T1) + e^(-TR/T1)) * e^(-TD/T2*)
-    # we begin obtaining -b:D, called b_D here for simplicity
-    b_D = b_delta/3.0 * bvals * (Dpar - Dperp) - bvals/3.0 * (Dperp + 2*Dpar) - bvals * b_delta * (torch.mm(g,n)**2) * (Dpar - Dperp)
+#     # signal representation: s = s0 * e^(-b:D) * abs(1 - 2*e^(-TI/T1) + e^(-TR/T1)) * e^(-TD/T2*)
+#     # we begin obtaining -b:D, called b_D here for simplicity
+#     b_D = b_delta/3.0 * bvals * (Dpar - Dperp) - bvals/3.0 * (Dperp + 2*Dpar) - bvals * b_delta * (torch.mm(g,n)**2) * (Dpar - Dperp)
 
-    S = S0 * torch.exp(b_D) * torch.abs(1.0 - 2.0 * torch.exp(-TI/T1) + torch.exp(-TR/T1)) * torch.exp(-TD/T2star)
+#     S = S0 * torch.exp(b_D) * torch.abs(1.0 - 2.0 * torch.exp(-TI/T1) + torch.exp(-TR/T1)) * torch.exp(-TD/T2star)
 
-    return S
+#     return S
 
 
 def t1_smdt(grad,params):
