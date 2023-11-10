@@ -44,4 +44,4 @@ def net_maker(grad, model, dim_hidden, num_layers, dropout_frac, activation=nn.P
                 params[:,i] = torch.clamp(params[:, i].unsqueeze(1), min = model.parameter_ranges[i,1], max =  model.parameter_ranges[i,2])
             
             return X, params
-    return Net
+    return Net(grad, model, dim_hidden, num_layers, dropout_frac, activation=nn.PReLU())
