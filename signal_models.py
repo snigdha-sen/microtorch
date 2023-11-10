@@ -39,7 +39,7 @@ class Ball:
         
         D = params[:, 0].unsqueeze(1) # ADC
 
-        b_values = grad[:, 3].unsqueeze(1)
+        b_values = grad[:, 3]
 
         S = torch.exp(-b_values * D)
 
