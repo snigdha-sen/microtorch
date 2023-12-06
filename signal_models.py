@@ -1,39 +1,28 @@
+from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as utils
 
-__all__ = [
-    't2_adc',
-    'msdki',
+__all__ = [     
     'Ball',
     'Stick',
+    'MSDKI',
     'zeppelin',
+    't2_adc',  
     't1_smdt',
     'get_model_nparams']
 
-def msdki(grad,params):
-    
-    #D = torch.clamp(params[:, 0].unsqueeze(1), min = 0.01, max = 5)
-    #K = torch.clamp(params[:, 1].unsqueeze(1), min= 0.001, max=3)
-    D = params[:, 0].unsqueeze(1)
-    K = params[:, 1].unsqueeze(1)
-    
-    bvals = grad[:,3]
-        
-    S = torch.exp(-bvals*D + (bvals**2 * D**2 * K / 6)) 
-    
-    return S
 
 
 class Ball:
+    def __init__(self):
+        self.parameter_ranges = [[.001, 3]]
+        self.param_names = ['D']
+        self.n_params = 1
+        self.spherical_mean = False
 
-    _parameter_ranges = [[.1, 3]]
-
-    _param_names = ['D']
-
-    _n_params = 1
 
     def __call__(self, grad, params):    
         
@@ -47,26 +36,48 @@ class Ball:
 
 
 class Stick:
+    def __init__(self):
+        self.parameter_ranges = [[.001, 3], [0, torch.pi], [-torch.pi, torch.pi]]
+        
+        self.param_names = ['Dpar', 'theta', 'phi']
+        self.n_params = 3
+        self.spherical_mean = False
 
-    _parameter_ranges = [[.1, 3], [0, torch.pi], [-torch.pi, torch.pi]]
-
-    _param_names = ['Dpar', 'theta', 'phi']
-
-    _n_params = 3
 
     def __call__(self, grad, params):                   
         g = grad[:, 0:3]
-        b_values = grad[:, 3].unsqueeze(1)
+        b_values = grad[:, 3]
 
         Dpar = params[:, 0].unsqueeze(1)
         theta = params[:, 1].unsqueeze(1)
         phi = params[:, 2].unsqueeze(1)
 
         n = sphere2cart(theta, phi)
-    
-        S = torch.exp(-b_values * Dpar * torch.mm(g, n) ** 2)
-    
+        
+        S = torch.exp(-b_values * Dpar * torch.mm(g, n).t() ** 2)                          
+        
+     
         return S
+
+
+class MSDKI:
+    def __init__(self):        
+        self.parameter_ranges = [[0.001, 3], [0.001, 2]]        
+        self.param_names = ['D', 'K']        
+        self.n_params = 2
+        self.spherical_mean = True
+    
+    def __call__(self, grad, params):
+        b_values = grad[:, 3] 
+        
+        D = params[:,0].unsqueeze(1)
+        K = params[:,1].unsqueeze(1)
+                
+        S = torch.exp(-b_values*D + (b_values**2 * D**2 * K / 6)) 
+
+        return S
+
+
 
 
 # class Zeppelin(grad, params):
@@ -229,11 +240,9 @@ def astrosticks(l):
 
 def sphere2cart(theta,phi):   
     n = torch.zeros(3,theta.size(0))
-    
-    sintheta = torch.sin(theta)
-    
-    n[0,:] = torch.squeeze(sintheta * torch.cos(phi))
-    n[1,:] = torch.squeeze(sintheta * torch.sin(phi))
+            
+    n[0,:] = torch.squeeze(torch.sin(theta) * torch.cos(phi))
+    n[1,:] = torch.squeeze(torch.sin(theta) * torch.sin(phi))
     n[2,:] = torch.squeeze(torch.cos(theta))   
     
     return n
@@ -248,6 +257,19 @@ def cart2sphere(xyz):
     mu[r == 0] = 0, 0
     return mu
 
+
+def msdki(grad,params):
+    
+    #D = torch.clamp(params[:, 0].unsqueeze(1), min = 0.01, max = 5)
+    #K = torch.clamp(params[:, 1].unsqueeze(1), min= 0.001, max=3)
+    D = params[:, 0].unsqueeze(1)
+    K = params[:, 1].unsqueeze(1)
+    
+    bvals = grad[:,3]
+        
+    S = torch.exp(-bvals*D + (bvals**2 * D**2 * K / 6)) 
+    
+    return S
 
 
 def get_model_nparams(model):

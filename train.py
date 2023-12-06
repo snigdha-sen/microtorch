@@ -5,11 +5,11 @@ import torch.optim as optim
 import torch.utils.data as utils
 from tqdm import tqdm
 
-def train(net, img, grad, modelfunc, lr=1e-3, batch_size=256, num_iters=10000):
+def train(net, img, grad, modelfunc, lr=1e-3, batch_size=256, num_iters=10):
 
     # create batch queues for data
     num_batches = len(img) // batch_size
-    trainloader = utils.DataLoader(torch.from_numpy(img.astype(np.float32)),
+    trainloader = utils.DataLoader(img,
                                     batch_size = batch_size, 
                                     shuffle = True,
                                     num_workers = 2,
@@ -59,5 +59,5 @@ def train(net, img, grad, modelfunc, lr=1e-3, batch_size=256, num_iters=10000):
 
     net.eval()
     with torch.no_grad():
-        X_real_pred, params = net(torch.from_numpy(img.astype(np.float32)))
+        X_real_pred, params = net(img)
     return X_real_pred, params

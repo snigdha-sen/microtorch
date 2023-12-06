@@ -26,29 +26,39 @@ class Net(nn.Module):
         #create the first layer - input layer
         self.fc_layers.extend([nn.Linear(dim_in, dim_hidden), activation])
         #get the number of signal model parameters
-        #dim_out = model.nparams
-        dim_out = 1
+        dim_out = modelfunc.n_params + modelfunc.n_frac
+        
         for i in range(num_layers-1): # num_layers fully connected hidden layers - number of nodes defined by the user as dim_hidden
             self.fc_layers.extend([nn.Linear(dim_hidden, dim_hidden), activation])
         self.encoder = nn.Sequential(*self.fc_layers, nn.Linear(dim_hidden, dim_out)) # Add the last linear layer for regression
-        self.dropout = nn.Dropout(dropout_frac)
+        
+        self.dropout_frac = dropout_frac
+        if dropout_frac > 0:
+            self.dropout = nn.Dropout(dropout_frac)
 
     def forward(self, X):        
         
-        X = self.dropout(X)
+        if self.dropout_frac > 0:
+            X = self.dropout(X)
         #params = self.encoder(X)               
         params = F.softplus(self.encoder(X))
-
+              
         #get the signal model function        
         #modelfunc = getattr(models, model)
-        #X = self.modelfunc(self.grad, params, 0.5)
-        
-        D = torch.clamp(params[:, 0].unsqueeze(1), min = 0, max =  3)
-        X = torch.exp(-self.grad[:,3]*D)
+        modelfunc = self.modelfunc
+                               
+        for i in range(modelfunc.n_params): #set min/max of non-volume fraction parameters       
+            this_param_clamped = torch.clamp(params[:, i].clone().unsqueeze(1), min = modelfunc.parameter_ranges[i,0], max =  modelfunc.parameter_ranges[i,1])  
+            params[:,i] = this_param_clamped.squeeze()
+            
+        for i in range(modelfunc.n_params, modelfunc.n_params + modelfunc.n_frac): #set min/max of volume fraction parameters  
+            this_frac_clamped = torch.clamp(params[:, i].clone().unsqueeze(1), min = 0, max =  1) #TO DO: need to change this so it makes sum(frac) = 1 
+            params[:,i] = this_frac_clamped.squeeze()
 
         
-        #for i in range(model.parameter_ranges.shape[0]):
-        #    params[:,i] = torch.clamp(params[:, i].unsqueeze(1), min = model.parameter_ranges[i,1], max =  model.parameter_ranges[i,2])
+        X = self.modelfunc(self.grad, params)
+
         
-        return X.to(torch.float32), D
+        
+        return X.to(torch.float32), params
     #return Net(grad, modelfunc, dim_hidden, num_layers, dropout_frac, activation=nn.PReLU())
