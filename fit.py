@@ -138,7 +138,7 @@ def main():
     
     #make a smaller mask for testing
     tmpmask = np.zeros_like(mask)
-    zslice = 70
+    zslice = 32
     tmpmask[:,:,zslice] = mask[:,:,zslice]
     mask=tmpmask
 
@@ -195,7 +195,7 @@ def main():
     print(np.shape(param_map))
 
 
-    fig, ax = plt.subplots(modelfunc.n_params + modelfunc.n_frac ,1 ,figsize=(5, 5 * (modelfunc.n_params + modelfunc.n_frac)))
+    fig, ax = plt.subplots(modelfunc.n_params + modelfunc.n_frac ,1 ,figsize=(5, 2 * (modelfunc.n_params + modelfunc.n_frac)))
     
     # Iterate through subplots
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):

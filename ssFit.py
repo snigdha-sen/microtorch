@@ -10,7 +10,7 @@ import nibabel as nib
 from sklearn.preprocessing import MinMaxScaler
 import pickle
 from train import train
-from model_maker import ModelMaker
+from model_maker2 import ModelMaker
 from utils.net_maker import Net
 import torch.nn as nn
 import matplotlib.pyplot as plt
@@ -63,12 +63,14 @@ TI = args.TI
 lr = args.learning_rate
 num_iters = args.num_iters
 
-
 from signal_models import Ball, Stick
+
 ball = Ball()
 stick = Stick()
-comps = ball
+sphere = Sphere()
+astrosticks = astrosticks()
 
+comps = ball
 
 def grad_maker(img, bvals, bvecs, delta, smalldel):
 
@@ -121,5 +123,5 @@ net = Net(grad_ave, modelfunc, dim_hidden=grad_ave.shape[0], num_layers=3, dropo
 signal, D = train(net, imgm_ave, grad_ave, modelfunc, lr=1e-3, batch_size=256, num_iters=10000)
 
 plt.figure()
-plt.plot(signal, bunique)
+plt.imshow(D)
 plt.show()
