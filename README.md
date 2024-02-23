@@ -1,7 +1,7 @@
 ### MicroTorch Library
 Library of PyTorch implementations of microstructural and quantitative MRI models.
 
-Cardiff University Brain Research Imaging Centre
+UCL Centre for Medical Image Computing and Cardiff University Brain Research Imaging Centre
 
 ## Dependencies (incomplete)
 PyTorch
