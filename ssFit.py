@@ -10,7 +10,7 @@ import nibabel as nib
 from sklearn.preprocessing import MinMaxScaler
 import pickle
 from train import train
-from model_maker2 import ModelMaker
+from model_maker import ModelMaker
 from utils.net_maker import Net
 import torch.nn as nn
 import matplotlib.pyplot as plt
@@ -68,7 +68,7 @@ from signal_models import Ball, Stick
 ball = Ball()
 stick = Stick()
 sphere = Sphere()
-astrosticks = astrosticks()
+astrosticks = Astrosticks()
 
 comps = ball
 

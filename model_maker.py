@@ -33,11 +33,11 @@ class ModelMaker:
 
     def __call__(self, grad, params):   
         
-        if type(comps) != tuple: 
+        if type(comps) != tuple or len(comps == 1): 
             f = 1                         
 
-        elif len(comps) == 1:
-            f = 1
+        #elif len(comps) == 1:
+            #f = 1
             
         elif len(comps) >= 2:
             k = len(comps) - 1
