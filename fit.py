@@ -175,6 +175,8 @@ def main():
     Xtrain_torch = torch.from_numpy(X_train.astype(np.float32))
     
     torch.autograd.set_detect_anomaly(True)
+
+    lossfunc = nn.MSELoss()
     
     net = Net(grad_torch, modelfunc, dim_hidden=grad_torch.shape[0], num_layers=3, dropout_frac=dropout_frac, activation=mlp_activation[act])
         
