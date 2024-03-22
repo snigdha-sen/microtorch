@@ -14,6 +14,7 @@ from model_maker import ModelMaker
 from utils.net_maker import Net
 import torch.nn as nn
 import matplotlib.pyplot as plt
+from utils import RicianLoss
 
 
 parser = argparse.ArgumentParser()
@@ -119,8 +120,9 @@ grad_ave = np.zeros((len(bunique), 4))
 grad_ave[:,3] = bunique
 grad_ave = torch.tensor(grad_ave)
 
+lossfunc = nn.MSELoss() # or RicianLoss()
 net = Net(grad_ave, modelfunc, dim_hidden=grad_ave.shape[0], num_layers=3, dropout_frac=0.5, activation=nn.PReLU())
-signal, D = train(net, imgm_ave, grad_ave, modelfunc, lr=1e-3, batch_size=256, num_iters=10000)
+signal, D = train(net, imgm_ave, grad_ave, modelfunc, lossfunc, lr=1e-3, batch_size=256, num_iters=10000)
 
 plt.figure()
 plt.imshow(D)
