@@ -180,7 +180,7 @@ def main():
     
     net = Net(grad_torch, modelfunc, dim_hidden=grad_torch.shape[0], num_layers=3, dropout_frac=dropout_frac, activation=mlp_activation[act])
         
-    signal, params = train(net, Xtrain_torch, grad_torch, modelfunc, lr=lr, batch_size=256, num_iters=1000)
+    signal, params = train(net, Xtrain_torch, grad_torch, modelfunc, lossfunc, lr=lr, batch_size=256, num_iters=1000)
         
     from utils.preprocessing import voxel2img        
     
