@@ -219,10 +219,10 @@ class t1_smdt:
 
     def __init__(self):
 
-        self.parameter_ranges = [[0.5, 3]]
-        self.param_names = ['D_par']
-        self.n_params = 1
-        self.spherical_mean = True 
+        self.parameter_ranges = [[0.5, 3], [.001, 1], [0, 100000],  [0.001,1000000]] #no idea if the ranges are solid
+        self.param_names = ['D_par', 'k', 'T1', 'S0' ]
+        self.n_params = 4
+        self.spherical_mean = False
 
 
     def __call__(self, grad, params):
