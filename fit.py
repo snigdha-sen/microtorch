@@ -18,6 +18,7 @@ def main():
     from utils.net_maker import Net
     import torch.nn as nn
     import matplotlib.pyplot as plt
+    from acquisition_scheme import acquisition_scheme_loader
                     
     parser = argparse.ArgumentParser()
     #parser.add_argument("-ld", "--logdir", help="Path to save output", default=f"/tmp/{getpass.getuser()}")
@@ -32,11 +33,12 @@ def main():
     parser.add_argument("-m", "--model", type=str, help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="verdict")
     parser.add_argument("-a", "--activation", type=str, help="Activation function to use with mlp: elu, relu, prelu or tanh.", default="prelu")
     parser.add_argument("-op", "--operation", help="Operation to perform (train+fit, train, fit).", default="train+fit")
-    parser.add_argument("-bvals", "--bvals", help="bval file in FSL format and in [s/mm2]", default="")
-    parser.add_argument("-bvecs", "--bvecs", help="bvec file in FSL format", default="")
-    parser.add_argument("-d", "--delta", help="gradient pulse separation in ms", default=24, type=float)
-    parser.add_argument("-sd", "--smalldelta", help="gradient pulse duration in ms", default=8, type=float)
-    parser.add_argument("-TE", "--TE", help="echo time in ms", default="")
+    parser.add_argument("-grad", "--grad", help="grad file in FSL format", default="")
+    # parser.add_argument("-bvals", "--bvals", help="bval file in FSL format and in [s/mm2]", default="")
+    # parser.add_argument("-bvecs", "--bvecs", help="bvec file in FSL format", default="")
+    # parser.add_argument("-d", "--delta", help="gradient pulse separation in ms", default=24, type=float)
+    # parser.add_argument("-sd", "--smalldelta", help="gradient pulse duration in ms", default=8, type=float)
+    # parser.add_argument("-TE", "--TE", help="echo time in ms", default="")
     parser.add_argument("-TR", "--TR", help="repetition time in ms", default="")
     parser.add_argument("-TI", "--TI", help="inversion time in ms", default="")
     parser.add_argument("-df","--dropout_frac", help="dropout fraction", type=float, default=0)
@@ -57,11 +59,12 @@ def main():
     # Set the inputs -- not sure we actually need this, could just refer to them as args.img etc
     imgfile = args.image
     maskfile = args.mask
-    bvals = args.bvals
-    bvecs = args.bvecs
-    delta = args.delta
-    smalldel = args.smalldelta
-    TE = args.TE
+    grad = args.grad
+    # bvals = args.bvals
+    # bvecs = args.bvecs
+    # delta = args.delta
+    # smalldel = args.smalldelta
+    # TE = args.TE
     TR = args.TR
     TI = args.TI
     lr = args.learning_rate
@@ -96,6 +99,10 @@ def main():
 
         bvals = np.loadtxt(bvals)
         bvecs = np.loadtxt(bvecs)
+
+        if np.any(bvals < 0):
+            raise ValueError("bvals contains negative values")
+        
         bvals = bvals * 1e-3 #in ms/um2
         bvecs = np.transpose(bvecs)
         gamma = 2.67e2 #ms^-1mT-1
@@ -127,8 +134,8 @@ def main():
 
     #     return imgm
 
-    grad = grad_maker(bvals, bvecs, delta, smalldel)
-
+    # grad = grad_maker(bvals, bvecs, delta, smalldel)
+    grad = acquisition_scheme_loader(grad)
     # imgm = img_masker(img, mask)
     
     #load the image and mask
