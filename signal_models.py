@@ -292,6 +292,8 @@ def get_model_nparams(model): ## lets change this
         return 4
     if model=='standardwm':
         return 10
+    if model=="verdict":
+        return 4
 
 
 ##check if matlab model and python model correspond. Take bvalues from hcp. order 2, random sample Di,De,Dp [0,3]. Di>De>Dp. fODF: use watson distribution to sample from. Simulate one voxel first
