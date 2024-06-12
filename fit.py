@@ -137,7 +137,7 @@ def main():
     
     #make a smaller mask for testing
     tmpmask = np.zeros_like(mask)
-    zslice = 32
+    zslice = 70
     tmpmask[:,:,zslice] = mask[:,:,zslice]
     mask=tmpmask
 
@@ -179,13 +179,14 @@ def main():
     
     net = Net(grad_torch, modelfunc, dim_hidden=grad_torch.shape[0], num_layers=3, dropout_frac=dropout_frac, activation=mlp_activation[act])
         
+    print(modelfunc.n_params )
+    print(modelfunc.param_names)    
+
     signal, params = train(net, Xtrain_torch, grad_torch, modelfunc, lossfunc, lr=lr, batch_size=256, num_iters=1000)
         
     from utils.preprocessing import voxel2img        
     
-    print(modelfunc.n_params)
     
-    print(np.shape(params))
     
     param_map = np.zeros((*np.shape(mask),modelfunc.n_params + modelfunc.n_frac))
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
@@ -193,16 +194,15 @@ def main():
         tmpparams[maskvox == 1] = params[:,i]
         param_map[...,i] = np.reshape(tmpparams, np.shape(mask))
 
-    print(np.shape(param_map))
 
 
-    fig, ax = plt.subplots(modelfunc.n_params + modelfunc.n_frac ,1 ,figsize=(5, 2 * (modelfunc.n_params + modelfunc.n_frac)))
+    fig, ax = plt.subplots(1, modelfunc.n_params + modelfunc.n_frac ,figsize=(5 * (modelfunc.n_params + modelfunc.n_frac), 2))
     
     # Iterate through subplots
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
         im = ax[i].imshow(param_map[:, :, zslice, i])
         cbar = plt.colorbar(im, ax=ax[i])
-        #ax[i].set_title(modelfunc.param_names[i])
+        ax[i].set_title(modelfunc.param_names[i] + ' (' + modelfunc.comp_names[modelfunc.comp_ind[i]] + ')')
     
     plt.show()
 
