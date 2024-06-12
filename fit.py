@@ -78,6 +78,8 @@ def main():
         comps = ("Ball","Stick")
     elif model == "StickBall":
         comps = ("Stick","Ball")
+    elif model == "VERDICT":
+        comps = ("Ball","Sphere","Astrosticks")
 
     #import compartment classes dynamically based on the chosen model (write a function to do this!)
     import importlib
@@ -102,8 +104,8 @@ def main():
         smalldel = load_grad(smalldel)
         
         bvals = bvals * 1e-3 #in ms/um2
-        bvecs = np.transpose(bvecs)
         
+        # bvecs = np.transpose(bvecs)
         # gamma = 2.67e2 #ms^-1mT-1
         # G = (np.sqrt(bvals/(delta-(smalldel/3))))/(gamma*smalldel) #mT/um
         
@@ -117,9 +119,9 @@ def main():
         '''
         
         if delta is not None and smalldel is not None:
-            grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel),axis=1)
+            grad = np.concatenate((bvecs,bvals,delta,smalldel),axis=1)
         else:
-            grad = np.concatenate((bvecs,bvals[:,None]),axis=1)
+            grad = np.concatenate((bvecs,bvals),axis=1)
 
         return grad
 
@@ -146,11 +148,11 @@ def main():
     img = nib.load(imgfile).get_fdata()
     mask = nib.load(maskfile).get_fdata()
     
-    #make a smaller mask for testing
-    tmpmask = np.zeros_like(mask)
-    zslice = 70
-    tmpmask[:,:,zslice] = mask[:,:,zslice]
-    mask=tmpmask
+    # #make a smaller mask for testing
+    # tmpmask = np.zeros_like(mask)
+    # zslice = 70
+    # tmpmask[:,:,zslice] = mask[:,:,zslice]
+    # mask=tmpmask
 
     #need to put a check in here to see if the data needs to be direction averaged
     if modelfunc.spherical_mean:        
