@@ -62,3 +62,9 @@ python3 fit.py -img data.nii.gz -ma mask.nii.gz -bvals bvals.txt -bvecs bvecs.tx
 *MSDKI (works but this model doesn't seem to like dropout)*
 
 python3 fit.py -img data.nii.gz -ma mask.nii.gz -bvals bvals.txt -bvecs bvecs.txt -d 24 -sd 8 -se 123 -m MSDKI -a elu -lr 0.01  
+
+*Test image*
+
+There are some test images - try this to test if you have set up the dependencies.
+
+python fit.py -img data/test_images/BallStick.nii.gz -ma data/test_images/mask.nii.gz -bvals data/grad_files/bvals -bvecs data/grad_files/bvecs -d 24 -sd 8 -se 123 -m BallStick -a relu -lr 0.0001 -ni 20
