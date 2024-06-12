@@ -1,6 +1,6 @@
 # MicroTorch: Microstructure Model Fitting with Self-Supervised Learning
 
-![logo][logo.jpeg]
+![logo](logo.jpeg)
 
 The MicroTorch software package is designed to flexibly fit diffusion MRI microstructure models, using a self-supervised deep learning approach. 
 
