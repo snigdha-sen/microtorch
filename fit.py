@@ -15,7 +15,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import importlib
 from pathlib import Path
-
+import re
             
 def main():
     parser = argparse.ArgumentParser()
@@ -46,12 +46,6 @@ def main():
     args = parser.parse_args()
     mlp_activation = {'relu': torch.nn.ReLU(),'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
 
-    # Set up torch and cuda
-    #deviceinuse = 'cuda' if torch.cuda.is_available() else 'cpu'
-    #dtype = torch.float32
-    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    #torch.set_default_tensor_type('torch.cuda.FloatTensor' if torch.cuda.is_available() else 'torch.FloatTensor')
-
     # Set random seeds
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
@@ -59,23 +53,15 @@ def main():
     # Set the inputs
     model = args.model
 
+    def model_compartments(modelname):
 
-    #need to write a big function that does this for all models 
-    if model == "MSDKI":
-        comps = ("MSDKI",)
-    elif model == "BallStick":
-        comps = ("Ball","Stick")
-    elif model == "StickBall":
-        comps = ("Stick","Ball")
-    elif model == "VERDICT":
-        comps = ("Ball","Sphere","Astrosticks")
-    elif model == "StandardWM":
-        comps = ("Standard_WM",)
+        compartment_list = re.findall('([A-Z][a-z]+)', modelname)
+
 
     #import compartment classes dynamically based on the chosen model (write a function to do this!)
     signal_models_module = importlib.import_module("signal_models")
 
-    
+    comps = model_compartments(model)
     comps_classes = () #initialise tuple
     for comp in comps:
         #get the class
