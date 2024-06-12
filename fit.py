@@ -44,7 +44,7 @@ def main():
     parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", default=1, type=float)
 
     args = parser.parse_args()
-    mlp_activation = {'relu': torch.nn.ReLU(),'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
+    mlp_activation = {'relu': torch.nn.ReLU(), 'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
 
     # Set random seeds
     torch.manual_seed(args.seed)
@@ -52,25 +52,7 @@ def main():
 
     # Set the inputs
     model = args.model
-
-    def model_compartments(modelname):
-
-        compartment_list = re.findall('([A-Z][a-z]+)', modelname)
-
-
-    #import compartment classes dynamically based on the chosen model (write a function to do this!)
-    signal_models_module = importlib.import_module("signal_models")
-
-    comps = model_compartments(model)
-    comps_classes = () #initialise tuple
-    for comp in comps:
-        #get the class
-        this_class = getattr(signal_models_module, comp) 
-        #create an instance of the class and add to the tuple
-        comps_classes += (this_class(),)
-
-    #make the model function that will be incorporated into the net
-    modelfunc = ModelMaker(comps_classes)
+    modelfunc = ModelMaker(model)
 
     # Load acquisition parameters
     if args.bvals is not None:
