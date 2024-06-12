@@ -43,7 +43,7 @@ def main():
     parser.add_argument("-df","--dropout_frac", help="dropout fraction", type=float, default=0)
 
     args = parser.parse_args()
-    mlp_activation = {'relu': torch.nn.ReLU(),'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
+    mlp_activation = {'relu': torch.nn.ReLU(), 'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
 
     # Set up torch and cuda
     #deviceinuse = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -71,36 +71,30 @@ def main():
     act = args.activation
     dropout_frac = args.dropout_frac
 
-    #need to write a big function that does this for all models 
-    if model == "MSDKI":
-        comps = ("MSDKI",)
-    elif model == "BallStick":
-        comps = ("Ball","Stick")
-    elif model == "StickBall":
-        comps = ("Stick","Ball")
-    elif model == "VERDICT":
-        comps = ("Ball","Sphere","Astrosticks")
-
-    def model_compartments(modelname):
-
-        compartment_list = re.findall('([A-Z][a-z]+)', modelname)
-
-        
-
-
-    #import compartment classes dynamically based on the chosen model (write a function to do this!)
     import importlib
     signal_models_module = importlib.import_module("signal_models")
 
-    comps = model_compartments(model)
-    comps_classes = () #initialise tuple
-    for comp in comps:
-        #get the class
-        this_class = getattr(signal_models_module, comp) #add to the tuple
-        #create an instance of the class and add to the tuple
-        comps_classes += (this_class(),)
+    def model_compartments(modelname):
+
+        comps_classes = ()
+        compartment_list = []
+        
+        if modelname == "VERDICT":
+            compartment_list = ["Ball", "Sphere", "Astrosticks"]
+        elif modelname == "SANDI":
+            compartment_list = ["Ball", "Zeppelin", "Astrosticks"]
+        elif modelname == "IVIM":
+            compartment_list = ["Ball", "Ball"]
+        else:
+            compartment_list = re.findall('([A-Z][a-z]+)', modelname)
+        for i, comp in enumerate(compartment_list):
+            this_class = getattr(signal_models_module, comp)
+            comps_classes += (this_class(),)
+
+        return comps_classes
 
     #make the model function that will be incorporated into the net
+    comps_classes = model_compartments(model)
     modelfunc = ModelMaker(comps_classes)
 
     def grad_maker(bvals, bvecs, delta, smalldel):
@@ -122,9 +116,6 @@ def main():
         grad = np.concatenate((bvecs,bvals[:,None]),axis=1)
 
         return grad
-
-
-
 
     # def img_masker(imgfile, maskfile):
 

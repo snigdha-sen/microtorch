@@ -1,17 +1,17 @@
 import numpy as np
 import torch
-import signal_models
 
 class ModelMaker:
-    #for a given model string, returns the appropriate model class
-    #the model class is a callable object that takes the gradient directions and parameters as input and returns the signal
-    #the model class also contains:
-    #self.parameter_ranges: tuple containing the ranges of the parameters for each compartment
-    #self.param_names: tuple containing the names of the parameters for each compartment
-    #self.n_params: the number of non-volume fraction parameters for each compartment
-    #self.n_frac: the number of volume fractions
-    #self.spherical_mean: boolean indicating whether the compartments are spherical mean or not spherical mean 
-    
+    """
+    for a given model string, returns the appropriate model class
+    the model class is a callable object that takes the gradient directions and parameters as input and returns the signal
+    the model class also contains:
+    self.parameter_ranges: tuple containing the ranges of the parameters for each compartment
+    self.param_names: tuple containing the names of the parameters for each compartment
+    self.n_params: the number of non-volume fraction parameters for each compartment
+    self.n_frac: the number of volume fractions
+    self.spherical_mean: boolean indicating whether the compartments are spherical mean or not spherical mean 
+    """
     
     def __init__(self,comps):
 
@@ -26,7 +26,7 @@ class ModelMaker:
         param_names = []
         comp_names = []
         n_params = 0
-        #extract the spherical mean binary from the first compartment 
+        #extract the spherical mean binary from the first compartment
         spherical_mean = comps[0].spherical_mean
 
         for comp in comps:  #loop through the compartments adding the parameter ranges, names and number of parameters for each compartment
@@ -74,34 +74,6 @@ class ModelMaker:
         #return the signal for the appropriate model
         return S
 
-    
-            
-def convert_model_string_to_compartments(model):
-    #converts the model string to a tuple of compartment strings for input to
-    if model == "MSDKI":
-        comps = ("MSDKI",)
-    elif model == "BallStick":
-        comps = ("Ball","Stick")
-    elif model == "StickBall":
-        comps = ("Stick","Ball")        
-    return comps            
-            
-
-
-def import_compartments(comps):
-    #given tuple of compartment strings import compartment classes dynamically based on the chosen model
-    import importlib
-    signal_models_module = importlib.import_module("signal_models")
-
-    comps_classes = ()
-    for comp in comps:
-        #get the class
-        this_class = getattr(signal_models_module, comp) #add to the tuple
-        #create an instance of the class and add to the tuple
-        comps_classes += (this_class(),)
-        
-    return comps_classes  
-    
     
 def get_parameter_indices(self):
     #calculate a tuple of indices of where the parameters for each compartment are in the parameter vector
