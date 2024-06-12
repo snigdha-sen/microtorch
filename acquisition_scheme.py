@@ -52,6 +52,10 @@ def acquisition_scheme_loader(filepath_acquisition_scheme):
     """
     acq_scheme = np.loadtxt(filepath_acquisition_scheme)
     bvalues = acq_scheme[:,3]
+
+    if np.any(bvalues < 0):
+        raise ValueError("bvals contains negative values")
+    
     bvecs = acq_scheme[:,0:3]
 
     try:
