@@ -54,7 +54,7 @@ def main():
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
 
-    # Set the inputs
+    # Set the inputs -- not sure we actually need this, could just refer to them as args.img etc
     imgfile = args.image
     maskfile = args.mask
     bvals = args.bvals
@@ -90,7 +90,6 @@ def main():
         comps_classes += (this_class(),)
 
     #make the model function that will be incorporated into the net
-    from model_maker import ModelMaker
     modelfunc = ModelMaker(comps_classes)
 
     def grad_maker(bvals, bvecs, delta, smalldel):
