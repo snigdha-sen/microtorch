@@ -18,6 +18,7 @@ def main():
     from utils.net_maker import Net
     import torch.nn as nn
     import matplotlib.pyplot as plt
+    import re
                     
     parser = argparse.ArgumentParser()
     #parser.add_argument("-ld", "--logdir", help="Path to save output", default=f"/tmp/{getpass.getuser()}")
@@ -80,10 +81,18 @@ def main():
     elif model == "VERDICT":
         comps = ("Ball","Sphere","Astrosticks")
 
+    def model_compartments(modelname):
+
+        compartment_list = re.findall('([A-Z][a-z]+)', modelname)
+
+        
+
+
     #import compartment classes dynamically based on the chosen model (write a function to do this!)
     import importlib
     signal_models_module = importlib.import_module("signal_models")
 
+    comps = model_compartments(model)
     comps_classes = () #initialise tuple
     for comp in comps:
         #get the class
