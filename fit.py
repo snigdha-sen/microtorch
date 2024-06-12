@@ -15,7 +15,7 @@ def main():
     #import pickle
     from train import train
     from model_maker import ModelMaker
-    from utils.net_maker import Net
+    from net_maker import Net
     from data.load_data import load_grad
     import torch.nn as nn
     import matplotlib.pyplot as plt
@@ -33,10 +33,10 @@ def main():
     parser.add_argument("-m",   "--model", type=str, help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="verdict")
     parser.add_argument("-a",   "--activation", type=str, help="Activation function to use with mlp: elu, relu, prelu or tanh.", default="prelu")
     parser.add_argument("-op",  "--operation",  help="Operation to perform (train+fit, train, fit).", default="train+fit")
-    parser.add_argument("-bvals", "--bvals",    help="bval file in FSL format and in [s/mm2]", default="")
-    parser.add_argument("-bvecs", "--bvecs",    help="bvec file in FSL format", default="")
-    parser.add_argument("-d",   "--delta",      help="txt file with gradient pulse separation (ms)", default="data/delta.txt",      type=str)
-    parser.add_argument("-sd",  "--smalldelta", help="txt file with gradient pulse duration (ms)",   default="data/smalldelta.txt", type=str)
+    parser.add_argument("-bvals", "--bvals",    help="bvals file in FSL format and in [s/mm2]",      default="data/grad_files/bvals.txt",      type=str)
+    parser.add_argument("-bvecs", "--bvecs",    help="bvecs file in FSL format",                     default="data/grad_files/bvecs.txt",      type=str)
+    parser.add_argument("-d",   "--delta",      help="txt file with gradient pulse separation (ms)", default="data/grad_files/delta.txt",      type=str)
+    parser.add_argument("-sd",  "--smalldelta", help="txt file with gradient pulse duration (ms)",   default="data/grad_files/smalldelta.txt", type=str)
     parser.add_argument("-TE",  "--TE",         help="echo time in ms", default="")
     parser.add_argument("-TR",  "--TR",         help="repetition time in ms", default="")
     parser.add_argument("-TI",  "--TI",         help="inversion time in ms", default="")
