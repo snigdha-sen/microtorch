@@ -87,7 +87,7 @@ class Sphere:
     def __call__(self, grad, params):
         b_values = grad[:, 3]
         delta = grad[:, 4]
-        Delta = grad[:,5]
+        Delta = grad[:, 5]
         radius = params[:,0].unsqueeze(1)
 
         SPHERE_TRASCENDENTAL_ROOTS = np.r_[
@@ -394,11 +394,11 @@ def analytical_sol(a,n):
     a = torch.tensor(a,dtype=torch.complex64)
 
     if n ==0:
-        analytical_sol = (torch.sqrt(torch.tensor(torch.pi)) * erf(torch.sqrt(a))) / (2 * torch.sqrt(a))
+        analytical_sol = (torch.sqrt(torch.tensor(torch.pi)) * torch.erf(torch.sqrt(a))) / (2 * torch.sqrt(a))
     if n ==2:
-        analytical_sol = (-6 * torch.sqrt(a) * torch.exp(-a) + (3 - 2 * a) * torch.sqrt(torch.tensor(torch.pi)) * erf(torch.sqrt(a))) / (8 * a*torch.sqrt(a))
+        analytical_sol = (-6 * torch.sqrt(a) * torch.exp(-a) + (3 - 2 * a) * torch.sqrt(torch.tensor(torch.pi)) * torch.erf(torch.sqrt(a))) / (8 * a*torch.sqrt(a))
     if n ==4:
-        term1 = (3 * torch.sqrt(torch.tensor(torch.pi)) * (4 * a**2 - 20 * a + 35) * erf(torch.sqrt(a))) / (64 * a**(2)*torch.sqrt(a))
+        term1 = (3 * torch.sqrt(torch.tensor(torch.pi)) * (4 * a**2 - 20 * a + 35) * torch.erf(torch.sqrt(a))) / (64 * a**(2)*torch.sqrt(a))
         term2 = (5 * (2 * a + 21) * torch.exp(-a)) / (32 * a**2)
         analytical_sol = term1 - term2
     
@@ -451,23 +451,6 @@ def cart2sph(x, y, z):
 
 from scipy.special import sph_harm,erf
     
-def erf_approx_torch(x, n_terms=10):
-    """
-    Approximate the error function using Taylor series expansion. --- does torch.erf not work??
-
-    Parameters:
-    - x (float): Input value.
-    - n_terms (int): Number of terms in the Taylor series expansion. Default is 10.
-
-    Returns:
-    - result (float): Approximation of the error function.
-
-    Does not work yet....
-    """
-    result = x
-    for n in range(1, n_terms):
-        result += (-1)**n * x**(2*n+1) / (n * (2*n + 1) * torch.tensor(torch.math.factorial(n), dtype=torch.float))
-    return 2 / torch.sqrt(torch.tensor(torch.pi)) * result
 
 
 
