@@ -16,6 +16,7 @@ def main():
     from train import train
     from model_maker import ModelMaker
     from utils.net_maker import Net
+    from data.load_data import load_grad
     import torch.nn as nn
     import matplotlib.pyplot as plt
                     
@@ -95,15 +96,17 @@ def main():
     def grad_maker(bvals, bvecs, delta, smalldel):
 
         # Load values from text files
-        bvals = np.loadtxt(bvals)
-        bvecs = np.loadtxt(bvecs)
-        delta = np.loadtxt(delta)
-        smalldel = np.loadtxt(smalldel)
+        bvals    = load_grad(bvals)
+        bvecs    = load_grad(bvecs)
+        delta    = load_grad(delta)
+        smalldel = load_grad(smalldel)
         
         bvals = bvals * 1e-3 #in ms/um2
         bvecs = np.transpose(bvecs)
-        gamma = 2.67e2 #ms^-1mT-1
-        G = (np.sqrt(bvals/(delta-(smalldel/3))))/(gamma*smalldel) #mT/um
+        
+        # gamma = 2.67e2 #ms^-1mT-1
+        # G = (np.sqrt(bvals/(delta-(smalldel/3))))/(gamma*smalldel) #mT/um
+        
         '''
         if TE:
             grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE),axis=1)
@@ -112,7 +115,11 @@ def main():
         if TE and TR and TI:
             grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE,TR,TI),axis=1)
         '''
-        grad = np.concatenate((bvecs,bvals[:,None]),axis=1)
+        
+        if delta is not None and smalldel is not None:
+            grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel),axis=1)
+        else:
+            grad = np.concatenate((bvecs,bvals[:,None]),axis=1)
 
         return grad
 
