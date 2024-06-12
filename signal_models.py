@@ -87,7 +87,7 @@ class Sphere:
     def __call__(self, grad, params):
         b_values = grad[:, 3]
         delta = grad[:, 4]
-        Delta = grad[:,5]
+        Delta = grad[:, 5]
         radius = params[:,0].unsqueeze(1)
 
         SPHERE_TRASCENDENTAL_ROOTS = np.r_[
