@@ -15,7 +15,7 @@ def main():
     #import pickle
     from train import train
     from model_maker import ModelMaker
-    from utils.net_maker import Net
+    from net_maker import Net
     import torch.nn as nn
     import matplotlib.pyplot as plt
                     
