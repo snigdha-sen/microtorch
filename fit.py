@@ -11,8 +11,8 @@ def main():
     import utils
     import numpy as np
     import nibabel as nib
-    from sklearn.preprocessing import MinMaxScaler
-    import pickle
+    #from sklearn.preprocessing import MinMaxScaler
+    #import pickle
     from train import train
     from model_maker import ModelMaker
     from utils.net_maker import Net
