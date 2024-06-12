@@ -59,7 +59,6 @@ class Stick:
      
         return S
 
-
 class MSDKI:
     def __init__(self):        
         self.parameter_ranges = [[0.001, 3], [0.001, 2]]        
