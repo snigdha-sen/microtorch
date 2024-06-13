@@ -18,7 +18,7 @@ def main():
     from net_maker import Net
     import torch.nn as nn
     import matplotlib.pyplot as plt
-    from acquisition_scheme import acquisition_scheme_loader
+    from acquisition_scheme import acquisition_scheme_loader, txt_file_loader
                     
     parser = argparse.ArgumentParser()
     #parser.add_argument("-ld", "--logdir", help="Path to save output", default=f"/tmp/{getpass.getuser()}")
@@ -33,16 +33,17 @@ def main():
     parser.add_argument("-m", "--model", type=str, help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="verdict")
     parser.add_argument("-a", "--activation", type=str, help="Activation function to use with mlp: elu, relu, prelu or tanh.", default="prelu")
     parser.add_argument("-op", "--operation", help="Operation to perform (train+fit, train, fit).", default="train+fit")
-    parser.add_argument("-grad", "--grad", help="grad file in FSL format", default="")
-    # parser.add_argument("-bvals", "--bvals", help="bval file in FSL format and in [s/mm2]", default="")
-    # parser.add_argument("-bvecs", "--bvecs", help="bvec file in FSL format", default="")
-    # parser.add_argument("-d", "--delta", help="gradient pulse separation in ms", default=24, type=float)
-    # parser.add_argument("-sd", "--smalldelta", help="gradient pulse duration in ms", default=8, type=float)
-    # parser.add_argument("-TE", "--TE", help="echo time in ms", default="")
+    parser.add_argument("-grad", "--grad", help="grad file in FSL format", default=None)
+    parser.add_argument("-bvals", "--bvals", help="bval file in FSL format and in [s/mm2]", default=None)
+    parser.add_argument("-bvecs", "--bvecs", help="bvec file in FSL format", default=None)
+    parser.add_argument("-d", "--delta", help="gradient pulse separation in ms", default=24, type=float)
+    parser.add_argument("-sd", "--smalldelta", help="gradient pulse duration in ms", default=8, type=float)
+    parser.add_argument("-TE", "--TE", help="echo time in ms", default="")
     parser.add_argument("-TR", "--TR", help="repetition time in ms", default="")
     parser.add_argument("-TI", "--TI", help="inversion time in ms", default="")
     parser.add_argument("-df","--dropout_frac", help="dropout fraction", type=float, default=0)
     parser.add_argument("-lmax", "--lmax", help="max order used for spherical harmonics", default = 2)
+    parser.add_argument("-bd", "--bdelta", help="shape of gradient pulse", default=1, type=float)
 
     args = parser.parse_args()
     mlp_activation = {'relu': torch.nn.ReLU(),'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
@@ -58,21 +59,8 @@ def main():
     torch.cuda.manual_seed_all(args.seed)
 
     # Set the inputs
-    imgfile = args.image
-    maskfile = args.mask
-    grad = args.grad
-    # bvals = args.bvals
-    # bvecs = args.bvecs
-    # delta = args.delta
-    # smalldel = args.smalldelta
-    # TE = args.TE
-    TR = args.TR
-    TI = args.TI
-    lr = args.learning_rate
-    num_iters = args.num_iters
     model = args.model
-    act = args.activation
-    dropout_frac = args.dropout_frac
+
 
     #need to write a big function that does this for all models 
     if model == "MSDKI":
@@ -99,32 +87,6 @@ def main():
     from model_maker import ModelMaker
     modelfunc = ModelMaker(comps_classes)
 
-    def grad_maker(bvals, bvecs, delta, smalldel):
-
-        bvals = np.loadtxt(bvals)
-        bvecs = np.loadtxt(bvecs)
-
-        if np.any(bvals < 0):
-            raise ValueError("bvals contains negative values")
-        
-        bvals = bvals * 1e-3 #in ms/um2
-        bvecs = np.transpose(bvecs)
-        gamma = 2.67e2 #ms^-1mT-1
-        G = (np.sqrt(bvals/(delta-(smalldel/3))))/(gamma*smalldel) #mT/um
-        '''
-        if TE:
-            grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE),axis=1)
-        if TR and TI:
-            grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE=None,TR,TI),axis=1)
-        if TE and TR and TI:
-            grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE,TR,TI),axis=1)
-        '''
-        grad = np.concatenate((bvecs,bvals[:,None]),axis=1)
-
-        return grad
-
-
-
 
     # def img_masker(imgfile, maskfile):
 
@@ -139,12 +101,16 @@ def main():
     #     return imgm
 
     # grad = grad_maker(bvals, bvecs, delta, smalldel)
-    grad = acquisition_scheme_loader(grad)
+    if args.bvals is not None:
+        grad = txt_file_loader(args.bvals, args.bvecs, args.delta, args.smalldelta, args.TE, args.bdelta)
+
+    if args.grad is not None:
+        grad = acquisition_scheme_loader(args.grad)
     # imgm = img_masker(img, mask)
     
     #load the image and mask
-    img = nib.load(imgfile).get_fdata()
-    mask = nib.load(maskfile).get_fdata()
+    img = nib.load(args.image).get_fdata()
+    mask = nib.load(args.mask).get_fdata()
 
     #make a smaller mask for testing
     # tmpmask = np.zeros_like(mask)
@@ -187,13 +153,10 @@ def main():
     torch.autograd.set_detect_anomaly(True)
 
     lossfunc = nn.MSELoss()
-    
-    net = Net(grad, modelfunc, dim_hidden=len(grad.bvalues), num_layers=3, dropout_frac=dropout_frac, activation=mlp_activation[act])
-        
-    print(modelfunc.n_params )
-    print(modelfunc.param_names)    
 
-    signal, params = train(net, Xtrain_torch, grad, modelfunc, lossfunc, lr=lr, batch_size=256, num_iters=num_iters)
+    net = Net(grad, modelfunc, dim_hidden=len(grad.bvalues[0,:]), num_layers=3, dropout_frac=args.dropout_frac, activation=mlp_activation[args.activation])
+        
+    signal, params = train(net, Xtrain_torch, grad, modelfunc, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
         
     from utils.preprocessing import voxel2img        
     

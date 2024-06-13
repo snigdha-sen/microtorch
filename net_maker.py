@@ -40,7 +40,8 @@ class Net(nn.Module):
         
         if self.dropout_frac > 0:
             X = self.dropout(X)
-        #params = self.encoder(X)               
+        #params = self.encoder(X)   
+        print("X", X.shape)            
         params = F.softplus(self.encoder(X))
               
         #get the signal model function        

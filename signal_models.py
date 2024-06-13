@@ -31,7 +31,10 @@ class Ball:
 
         b_values = grad.bvalues
 
+        print(D.shape)
+        print(b_values.shape)
         S = torch.exp(-b_values * D)
+        
 
         return S
 
@@ -46,7 +49,7 @@ class Stick:
 
 
     def __call__(self, grad, params):                   
-        g = grad.bvecs
+        bvecs = grad.bvecs
         b_values = grad.bvalues
 
         Dpar = params[:, 0].unsqueeze(1)
@@ -55,7 +58,7 @@ class Stick:
 
         n = sphere2cart(theta, phi)
         
-        S = torch.exp(-b_values * Dpar * torch.mm(g, n).t() ** 2)                          
+        S = torch.exp(-b_values * Dpar * torch.mm(bvecs, n).t() ** 2)                          
         
      
         return S
@@ -89,6 +92,7 @@ class Sphere:
         b_values = grad.bvalues
         delta = grad.delta
         Delta = grad.Delta
+     
         radius = params[:,0].unsqueeze(1)
 
         SPHERE_TRASCENDENTAL_ROOTS = np.r_[
@@ -145,6 +149,7 @@ class Astrosticks:
 
     def __call__(self, grad, params):
         b_values = grad.bvalues
+
         D_par = params[:, 0].unsqueeze(1)
         S = np.ones_like(b_values)
         S = ((np.sqrt(np.pi) * torch.erf(np.sqrt(b_values * D_par))) /
@@ -163,7 +168,7 @@ class Zeppelin:
 
 
     def __call__(self, grad, params):                   
-        g = grad.bvecs
+        b_vectors = grad.bvecs
         b_values = grad.bvalues
 
         Dpar = params[:, 0].unsqueeze(1)
@@ -174,7 +179,7 @@ class Zeppelin:
 
         n = sphere2cart(theta, phi)
 
-        S = torch.exp(1/3.0 * b_values * (Dpar - Dper) - b_values/3.0 * (Dper + 2*Dpar) - b_values * (torch.mm(g,n)**2) * (Dpar - Dper))
+        S = torch.exp(1/3.0 * b_values * (Dpar - Dper) - b_values/3.0 * (Dper + 2*Dpar) - b_values * (torch.mm(b_vectors),n)**2) * (Dpar - Dper)
              
         return S
     
@@ -202,11 +207,6 @@ class Standard_WM:
             bdelta = 1
         else:
             bdelta = grad.bdelta
-            bdelta = torch.from_numpy(bdelta)
-
-        #make tensors
-        b_values = torch.from_numpy(b_values)
-        b_vectors = torch.from_numpy(b_vectors)
         
         p00 = 1/torch.sqrt(torch.tensor(4)*torch.pi)*torch.ones_like(params[:,4].unsqueeze(1))
 
