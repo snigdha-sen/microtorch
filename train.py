@@ -35,6 +35,7 @@ def train(net, img, grad, modelfunc, lossfunc, lr=1e-3, batch_size=256, num_iter
             my_optim.zero_grad()
 
             # forward + backward + optimize
+            print(X_batch.shape)
             X_pred, pred_params = net(X_batch)
             loss = lossfunc(X_pred, X_batch)
             loss.backward()
