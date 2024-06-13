@@ -50,7 +50,7 @@ def voxel2img(X_train, maskvox, img_shape):
 
 
 def normalise(X_train,grad):
-    nvol = np.shape(grad)[0]
+    nvol = len(grad.bvalues)
     
     #normalise 
     #find the volumes to normalise by - the lowest b-value lowest TE volume
@@ -58,7 +58,7 @@ def normalise(X_train,grad):
     #normvol = np.where((grad[:,3] == min(grad[:,3])) & (grad[:,4]==min(grad[:,4])))
     
     #this just works for diffusion MRI - need to change if multiple echo times etc.
-    normvol = np.where(grad[:,3] == min(grad[:,3]))[0]
+    normvol = np.where(grad.bvalues == min(grad.bvalues))[0]
     
     if len(normvol)>1:            
         b0_mean = np.mean(X_train[:,normvol], axis=1)                
