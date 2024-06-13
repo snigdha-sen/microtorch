@@ -1,4 +1,6 @@
 import numpy as np
+from data.load_data import load_grad
+import torch
 
 class acquisitions_scheme:
 
@@ -6,47 +8,25 @@ class acquisitions_scheme:
     def __init__(self, bvalues, bvecs, 
                  gradient_strengths, delta, Delta, TE, bdelta):
         
-        self.bvalues = bvalues.astype(float)
-        self.number_of_measurements = len(self.bvalues)
-        self.bvecs = bvecs.astype(float)
+        self.bvalues = torch.from_numpy(bvalues.astype(np.float32))
+        self.number_of_measurements = torch.tensor(len(self.bvalues))
+        self.bvecs = torch.from_numpy(bvecs.astype(np.float32))
 
         self.gradient_strengths = None
         if gradient_strengths is not None:
-            self.gradient_strengths = gradient_strengths.astype(float)
+            self.gradient_strengths = torch.from_numpy(gradient_strengths.astype(np.float32))
         self.delta = None
         if delta is not None:
-            self.delta = delta.astype(float)
+            self.delta = torch.from_numpy(delta.astype(np.float32))
         self.Delta = None
         if Delta is not None:
-            self.Delta = Delta.astype(float)
+            self.Delta = torch.from_numpy(Delta.astype(np.float32))
         self.TE = None
         if TE is not None:
-            self.TE = TE.astype(float)
+            self.TE = torch.from_numpy(TE.astype(np.float32))
         self.bdelta = None
         if bdelta is not None:
-            self.bdelta = bdelta.astype(float)
-
-
-        self.spherical_mean_scheme = AcquisitionScheme(
-        self.bvalues,
-        self.gradient_strengths,
-        self.Delta,
-        self.delta,
-        self.bdelta)
-
-
-
-class AcquisitionScheme:
-    "Acquisition scheme for isotropic spherical mean models."
-
-    def __init__(self, bvalues,
-                 gradient_strengths, Deltas, deltas, bdeltas):
-        self.bvalues = bvalues
-        self.gradient_strengths = gradient_strengths
-        self.Delta = Deltas
-        self.delta = deltas
-        self.bdelta = bdeltas
-        self.number_of_measurements = len(bvalues)
+            self.bdelta = torch.from_numpy(bdelta.astype(np.float32))
 
 
 def acquisition_scheme_loader(filepath_acquisition_scheme):
@@ -176,3 +156,37 @@ def check_acquisition_scheme(
         )
 
 
+def txt_file_loader(bvals, bvecs, Delta, delta,TE,bdelta):
+
+    bvals = load_grad(bvals)
+    bvals = np.transpose(bvals)
+    bvecs = load_grad(bvecs)
+    bvecs = np.transpose(bvecs)
+    Delta = load_grad(Delta)
+    Delta = np.transpose(Delta)
+    smalldelta = load_grad(delta)
+    smalldeta = np.transpose(smalldelta)
+    TE = load_grad(TE)
+    TE = np.transpose(TE)
+    bdelta = load_grad(bdelta)
+    bdelta = np.transpose(bdelta)
+    gradient_strengths = None #for now just name this none, can be input or calcualted with deltas
+
+    if np.any(bvals < 0):
+        raise ValueError("bvals contains negative values")
+
+    if max(bvals[0,:]) >100:
+        bvals = bvals/1000
+
+    '''
+    if TE:
+        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE),axis=1)
+    if TR and TI:
+        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE=None,TR,TI),axis=1)
+    if TE and TR and TI:
+        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE,TR,TI),axis=1)
+    '''
+
+    return acquisitions_scheme(bvals, bvecs,
+                                  gradient_strengths, smalldelta, Delta, TE, bdelta
+                                    )
