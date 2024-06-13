@@ -16,7 +16,6 @@ import importlib
 
             
 def main():
-               
     parser = argparse.ArgumentParser()
     #parser.add_argument("-ld", "--logdir", help="Path to save output", default=f"/tmp/{getpass.getuser()}")
     #parser.add_argument("-lm", "--log_measures", help="Save measures for each epoch", action='store_true')
@@ -38,6 +37,8 @@ def main():
     parser.add_argument("-TR",  "--TR",         help="repetition time in ms", default="")
     parser.add_argument("-TI",  "--TI",         help="inversion time in ms", default="")
     parser.add_argument("-df",  "--dropout_frac", help="dropout fraction", type=float, default=0)
+    parser.add_argument("-lmax","--lmax",       help="max order used for spherical harmonics", default = 2)
+    parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", default=1, type=float)
 
     args = parser.parse_args()
     mlp_activation = {'relu': torch.nn.ReLU(),'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
@@ -52,21 +53,9 @@ def main():
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
 
-    # Set the inputs -- not sure we actually need this, could just refer to them as args.img etc
-    imgfile = args.image
-    maskfile = args.mask
-    bvals = args.bvals
-    bvecs = args.bvecs
-    delta = args.delta
-    smalldel = args.smalldelta
-    TE = args.TE
-    TR = args.TR
-    TI = args.TI
-    lr = args.learning_rate
-    num_iters = args.num_iters
+    # Set the inputs
     model = args.model
-    act = args.activation
-    dropout_frac = args.dropout_frac
+
 
     #need to write a big function that does this for all models 
     if model == "MSDKI":
@@ -77,6 +66,8 @@ def main():
         comps = ("Stick","Ball")
     elif model == "VERDICT":
         comps = ("Ball","Sphere","Astrosticks")
+    elif model == "StandardWM":
+        comps = ("Standard_WM",)
 
     #import compartment classes dynamically based on the chosen model (write a function to do this!)
     signal_models_module = importlib.import_module("signal_models")
@@ -89,40 +80,8 @@ def main():
         comps_classes += (this_class(),)
 
     #make the model function that will be incorporated into the net
+    from model_maker import ModelMaker
     modelfunc = ModelMaker(comps_classes)
-
-    def grad_maker(bvals, bvecs, delta, smalldel):
-
-        # Load values from text files
-        bvals    = load_grad(bvals)
-        bvecs    = load_grad(bvecs)
-        delta    = load_grad(delta)
-        smalldel = load_grad(smalldel)
-        
-        #bvals = bvals * 1e-3 #in ms/um2
-        
-        # bvecs = np.transpose(bvecs)
-        # gamma = 2.67e2 #ms^-1mT-1
-        # G = (np.sqrt(bvals/(delta-(smalldel/3))))/(gamma*smalldel) #mT/um
-        
-        '''
-        if TE:
-            grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE),axis=1)
-        if TR and TI:
-            grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE=None,TR,TI),axis=1)
-        if TE and TR and TI:
-            grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE,TR,TI),axis=1)
-        '''
-        
-        if delta is not None and smalldel is not None:
-            grad = np.concatenate((bvecs,bvals,delta,smalldel),axis=1)
-        else:
-            grad = np.concatenate((bvecs,bvals),axis=1)
-
-        return torch.tensor(grad, dtype=torch.float32)
-
-
-
 
     # def img_masker(imgfile, maskfile):
 
@@ -136,8 +95,12 @@ def main():
 
     #     return imgm
 
-    grad = grad_maker(bvals, bvecs, delta, smalldel)
+    # grad = grad_maker(bvals, bvecs, delta, smalldel)
+    if args.bvals is not None:
+        grad = txt_file_loader(args.bvals, args.bvecs, args.delta, args.smalldelta, args.TE, args.bdelta)
 
+    if args.grad is not None:
+        grad = acquisition_scheme_loader(args.grad)
     # imgm = img_masker(img, mask)
     
     #load the image and mask
@@ -180,8 +143,8 @@ def main():
     lossfunc = nn.MSELoss()
     
     net = Net(grad, modelfunc, dim_hidden=grad.shape[0], num_layers=3, dropout_frac=dropout_frac, activation=mlp_activation[act])
-        
-    signal, params = train(net, X_train, grad, modelfunc, lossfunc, lr=lr, batch_size=256, num_iters=1000)
+   
+    signal, params = train(net, Xtrain_torch, grad, modelfunc, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
     
     param_map = np.zeros((*np.shape(mask),modelfunc.n_params + modelfunc.n_frac))
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
@@ -195,7 +158,7 @@ def main():
     
     # Iterate through subplots
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
-        im = ax[i].imshow(param_map[:, :, zslice, i])
+        im = ax[i].imshow(param_map[0, :, :, i])
         cbar = plt.colorbar(im, ax=ax[i])
         ax[i].set_title(modelfunc.param_names[i] + ' (' + modelfunc.comp_names[modelfunc.comp_ind[i]] + ')')
     
