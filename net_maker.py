@@ -50,10 +50,16 @@ class Net(nn.Module):
         for i in range(modelfunc.n_params): #set min/max of non-volume fraction parameters       
             this_param_clamped = torch.clamp(params[:, i].clone().unsqueeze(1), min = modelfunc.parameter_ranges[i,0], max =  modelfunc.parameter_ranges[i,1])  
             params[:,i] = this_param_clamped.squeeze()
-            
+         
+        #set min/max of volume fraction parameters  
+        for i in range(modelfunc.n_params, modelfunc.n_params + modelfunc.n_frac):
+            # Set negative values to 0
+            params[:, i] = torch.relu(params[:, i]) 
+
+        sum_params = torch.sum(params[:, modelfunc.n_params:modelfunc.n_params + modelfunc.n_frac], dim=1, keepdim=True)
         for i in range(modelfunc.n_params, modelfunc.n_params + modelfunc.n_frac): #set min/max of volume fraction parameters  
-            this_frac_clamped = torch.clamp(params[:, i].clone().unsqueeze(1), min = 0, max =  1) #TO DO: need to change this so it makes sum(frac) = 1 
-            params[:,i] = this_frac_clamped.squeeze()
+            # Normalize to make the sum of params[:, i] equal to 1
+            params[:, modelfunc.n_params:modelfunc.n_params + modelfunc.n_frac] /= sum_params
 
         
         X = self.modelfunc(self.grad, params)
