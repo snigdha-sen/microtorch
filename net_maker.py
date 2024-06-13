@@ -21,7 +21,7 @@ class Net(nn.Module):
         #add gradient table
         self.grad = grad
         self.modelfunc = modelfunc
-        dim_in = grad.shape[0]
+        dim_in = dim_hidden
         self.fc_layers = nn.ModuleList()
         #create the first layer - input layer
         self.fc_layers.extend([nn.Linear(dim_in, dim_hidden), activation])
@@ -40,7 +40,8 @@ class Net(nn.Module):
         
         if self.dropout_frac > 0:
             X = self.dropout(X)
-        #params = self.encoder(X)               
+        #params = self.encoder(X)   
+        print("X", X.shape)            
         params = F.softplus(self.encoder(X))
               
         #get the signal model function        
