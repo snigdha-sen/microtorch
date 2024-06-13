@@ -85,8 +85,8 @@ class Sphere:
 
     def __call__(self, grad, params):
         b_values    = grad[:, 3]
-        delta       = grad[:, 4]
-        Delta       = grad[:, 5]
+        Delta       = grad[:, 4]
+        delta       = grad[:, 5]
         radius      = params[:,0].unsqueeze(1)
 
         SPHERE_TRASCENDENTAL_ROOTS = np.r_[
@@ -112,8 +112,8 @@ class Sphere:
         gradient_strength   = torch.FloatTensor([np.sqrt(b_values[i])/(gamma*delta[i]*np.sqrt(Delta[i]-delta[i]/3)) for i,_ in enumerate(b_values)]) ### Some vals are NaN!
         first_factor        = -2*(gamma*gradient_strength)**2 / 2
         
-        delta = self.delta.unsqueeze(0).unsqueeze(2)
-        Delta = self.Delta.unsqueeze(0).unsqueeze(2)
+        Delta = Delta.unsqueeze(0).unsqueeze(2)
+        delta = delta.unsqueeze(0).unsqueeze(2)
         
         summands = (alpha ** (-4) / (alpha2 * (radius.unsqueeze(2))**2 - 2) * (
                             2 * delta - (
@@ -136,16 +136,19 @@ class Sphere:
 class Astrosticks:
     def __init__(self):
         self.parameter_ranges = [[0.5, 3]]
-        self.param_names = ['D_par']
-        self.n_params = 1
+        self.param_names    = ['D_par']
+        self.n_params       = 1
         self.spherical_mean = True
 
     def __call__(self, grad, params):
         b_values = grad[:, 3]
-        D_par = params[:, 0].unsqueeze(1)
+        D_par    = params[:, 0].unsqueeze(1)
+    
+        pi_tensor = torch.tensor(torch.pi)
+       
         S = np.ones_like(b_values)
-        S = ((np.sqrt(np.pi) * torch.erf(np.sqrt(b_values * D_par))) /
-                    (2 * np.sqrt(b_values * D_par)))
+        S = ((torch.sqrt(pi_tensor) * torch.erf(torch.sqrt(b_values * D_par))) /
+                    (2 * torch.sqrt(b_values * D_par)))
 
         return S
 
