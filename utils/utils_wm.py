@@ -1,7 +1,7 @@
 import numpy as np
 import torch
-from scipy import sph_harm
-from util_function import cart2sphere,sphere2cart
+from scipy.special import sph_harm,erf
+from utils.util_function import cart2sphere,sphere2cart
 
 
     ##check if matlab model and python model correspond. Take bvalues from hcp. order 2, random sample Di,De,Dp [0,3]. Di>De>Dp. fODF: use watson distribution to sample from. Simulate one voxel first
@@ -102,11 +102,11 @@ def analytical_sol(a,n):
     a = torch.tensor(a,dtype=torch.complex64)
 
     if n ==0:
-        analytical_sol = (torch.sqrt(torch.tensor(torch.pi)) * torch.erf(torch.sqrt(a))) / (2 * torch.sqrt(a))
+        analytical_sol = (torch.sqrt(torch.tensor(torch.pi)) * erf(torch.sqrt(a))) / (2 * torch.sqrt(a))
     if n ==2:
-        analytical_sol = (-6 * torch.sqrt(a) * torch.exp(-a) + (3 - 2 * a) * torch.sqrt(torch.tensor(torch.pi)) * torch.erf(torch.sqrt(a))) / (8 * a*torch.sqrt(a))
+        analytical_sol = (-6 * torch.sqrt(a) * torch.exp(-a) + (3 - 2 * a) * torch.sqrt(torch.tensor(torch.pi)) * erf(torch.sqrt(a))) / (8 * a*torch.sqrt(a))
     if n ==4:
-        term1 = (3 * torch.sqrt(torch.tensor(torch.pi)) * (4 * a**2 - 20 * a + 35) * torch.erf(torch.sqrt(a))) / (64 * a**(2)*torch.sqrt(a))
+        term1 = (3 * torch.sqrt(torch.tensor(torch.pi)) * (4 * a**2 - 20 * a + 35) * erf(torch.sqrt(a))) / (64 * a**(2)*torch.sqrt(a))
         term2 = (5 * (2 * a + 21) * torch.exp(-a)) / (32 * a**2)
         analytical_sol = term1 - term2
     
@@ -118,7 +118,9 @@ def analytical_sol(a,n):
 
 def spherical_harmonics_directions(directions, l):
     # Extract spherical coordinates
-    phi, theta = cart2sphere(directions[:,0], directions[:,1], directions[:,2]) #theta is elevation, phi is elevation
+    mu = cart2sphere(directions) #theta is elevation, phi is elevation
+    theta = mu[...,0]
+    phi = mu[...,1]
     theta = np.pi/2-theta
 
     

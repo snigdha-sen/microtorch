@@ -42,6 +42,7 @@ def main():
     parser.add_argument("-TR", "--TR", help="repetition time in ms", default="")
     parser.add_argument("-TI", "--TI", help="inversion time in ms", default="")
     parser.add_argument("-df","--dropout_frac", help="dropout fraction", type=float, default=0)
+    parser.add_argument("-lmax", "--lmax", help="max order used for spherical harmonics", default = 2)
 
     args = parser.parse_args()
     mlp_activation = {'relu': torch.nn.ReLU(),'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
@@ -80,6 +81,8 @@ def main():
         comps = ("Ball","Stick")
     elif model == "StickBall":
         comps = ("Stick","Ball")
+    elif model == "StandardWM":
+        comps = ("Standard_WM",)
 
     #import compartment classes dynamically based on the chosen model (write a function to do this!)
     import importlib
@@ -149,8 +152,9 @@ def main():
     # tmpmask[:,:,zslice] = mask[:,:,zslice]
     # mask=tmpmask
 
-    #need to put a check in here to see if the data needs to be direction averaged
-    if modelfunc.spherical_mean:        
+    #what does this do??
+    # #need to put a check in here to see if the data needs to be direction averaged
+    if modelfunc.spherical_mean:      
         from utils.preprocessing import direction_average
         #direction average the data. img, grad now become the direction-averaged versions
         img,grad = direction_average(img,grad)
@@ -178,19 +182,18 @@ def main():
     # grad_ave = torch.tensor(grad_ave)
     
     #convert grad and data to tensor ready for training
-    grad_torch = torch.tensor(grad, dtype=torch.float32)
     Xtrain_torch = torch.from_numpy(X_train.astype(np.float32))
     
     torch.autograd.set_detect_anomaly(True)
 
     lossfunc = nn.MSELoss()
     
-    net = Net(grad_torch, modelfunc, dim_hidden=grad_torch.shape[0], num_layers=3, dropout_frac=dropout_frac, activation=mlp_activation[act])
+    net = Net(grad, modelfunc, dim_hidden=len(grad.bvalues), num_layers=3, dropout_frac=dropout_frac, activation=mlp_activation[act])
         
     print(modelfunc.n_params )
     print(modelfunc.param_names)    
 
-    signal, params = train(net, Xtrain_torch, grad_torch, modelfunc, lossfunc, lr=lr, batch_size=256, num_iters=num_iters)
+    signal, params = train(net, Xtrain_torch, grad, modelfunc, lossfunc, lr=lr, batch_size=256, num_iters=num_iters)
         
     from utils.preprocessing import voxel2img        
     
