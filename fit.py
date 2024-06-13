@@ -86,8 +86,8 @@ def main():
         return comps_classes
 
     #make the model function that will be incorporated into the net
-    comps_classes = model_compartments(model)
-    modelfunc = ModelMaker(comps_classes)
+    #comps_classes = model_compartments(model)
+    modelfunc = ModelMaker(model)
 
 
     # def img_masker(imgfile, maskfile):
