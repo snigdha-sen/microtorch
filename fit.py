@@ -11,11 +11,11 @@ def main():
     import utils
     import numpy as np
     import nibabel as nib
-    from sklearn.preprocessing import MinMaxScaler
-    import pickle
+    #from sklearn.preprocessing import MinMaxScaler
+    #import pickle
     from train import train
     from model_maker import ModelMaker
-    from utils.net_maker import Net
+    from net_maker import Net
     import torch.nn as nn
     import matplotlib.pyplot as plt
     import re
@@ -55,7 +55,7 @@ def main():
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
 
-    # Set the inputs -- not sure we actually need this, could just refer to them as args.img etc
+    # Set the inputs
     imgfile = args.image
     maskfile = args.mask
     bvals = args.bvals
@@ -136,12 +136,12 @@ def main():
     #load the image and mask
     img = nib.load(imgfile).get_fdata()
     mask = nib.load(maskfile).get_fdata()
-    
+
     #make a smaller mask for testing
-    tmpmask = np.zeros_like(mask)
-    zslice = 32
-    tmpmask[:,:,zslice] = mask[:,:,zslice]
-    mask=tmpmask
+    # tmpmask = np.zeros_like(mask)
+    # zslice = 70
+    # tmpmask[:,:,zslice] = mask[:,:,zslice]
+    # mask=tmpmask
 
     #need to put a check in here to see if the data needs to be direction averaged
     if modelfunc.spherical_mean:        
@@ -181,7 +181,10 @@ def main():
     
     net = Net(grad_torch, modelfunc, dim_hidden=grad_torch.shape[0], num_layers=3, dropout_frac=dropout_frac, activation=mlp_activation[act])
         
-    signal, params = train(net, Xtrain_torch, grad_torch, modelfunc, lossfunc, lr=lr, batch_size=256, num_iters=1000)
+    print(modelfunc.n_params )
+    print(modelfunc.param_names)    
+
+    signal, params = train(net, Xtrain_torch, grad_torch, modelfunc, lossfunc, lr=lr, batch_size=256, num_iters=num_iters)
         
     from utils.preprocessing import voxel2img        
     
@@ -202,7 +205,7 @@ def main():
     
     # Iterate through subplots
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
-        im = ax[i].imshow(param_map[:, :, zslice, i])
+        im = ax[i].imshow(param_map[0, :, :, i])
         cbar = plt.colorbar(im, ax=ax[i])
         #ax[i].set_title(modelfunc.param_names[i])
     
