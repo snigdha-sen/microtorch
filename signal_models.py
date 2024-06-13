@@ -21,7 +21,7 @@ class Ball:
         self.parameter_ranges = [[.001, 3]]
         self.param_names = ['D']
         self.n_params = 1
-        self.spherical_mean = True
+        self.spherical_mean = False
 
 
     def __call__(self, grad, params):    
@@ -107,25 +107,23 @@ class Sphere:
         alpha = alpha.unsqueeze(1)
         alpha2 = alpha2.unsqueeze(1)
         alpha2D = alpha2D.unsqueeze(1)
-
+ 
         gamma = 2.675987e2
-        gradient_strength = np.array([np.sqrt(b_values[i])/(gamma*delta[i]*np.sqrt(Delta[i]-delta[i]/3)) for i,_ in enumerate(b_values)])
-        first_factor = -2*(gamma*gradient_strength)**2 / 2
+        first_factor = -2*(gamma*self.gradient_strength)**2 / 2
+ 
+        delta = self.delta.unsqueeze(0).unsqueeze(2)
+        Delta = self.Delta.unsqueeze(0).unsqueeze(2)
         
-        summands = np.zeros((len(SPHERE_TRASCENDENTAL_ROOTS),len(b_values)))
-        for i,_ in enumerate(delta):
-            summands[:,i] = (
-                alpha ** (-4) / (alpha2 * radius ** 2 - 2) *
-                (
-                    2 * delta[i] - (
-                        2 +
-                        torch.exp(-alpha2D * (Delta[i] - delta[i])) -
-                        2 * torch.exp(-alpha2D * delta[i]) -
-                        2 * torch.exp(-alpha2D * Delta[i]) +
-                        torch.exp(-alpha2D * (Delta[i] + delta[i]))
-                    ) / (alpha2D)
+        summands = (alpha ** (-4) / (alpha2 * (radius.unsqueeze(2))**2 - 2) * (
+                            2 * delta - (
+                            2 +
+                            torch.exp(-alpha2D * (Delta - delta)) -
+                            2 * torch.exp(-alpha2D * delta) -
+                            2 * torch.exp(-alpha2D * Delta) +
+                            torch.exp(-alpha2D * (Delta + delta))
+                        ) / (alpha2D)
+                    )
                 )
-            )
         
         S = torch.exp(
             first_factor *
