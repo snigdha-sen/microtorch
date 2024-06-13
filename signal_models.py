@@ -274,19 +274,22 @@ class t1_smdt:
         S = sfac * S0 * torch.abs(1.0 - torch.exp(-TI/T1) - (torch.exp(-TS/T1)) * torch.exp(-TI/T1)) * torch.erf(torch.sqrt(b_values*(Dpar-Dperp)))/torch.sqrt(b_values*(Dpar-Dperp))
 
         return S
-   
-# class Cylinder:
+'''   
+    class Cylinder:
 
-#     def __init__(self, grad, params):
+        def __init__(self, grad, params):
 
-#         self.parameter_ranges = [[0, torch.pi], [-torch.pi, torch.pi], [.001, 3], [.001, 10]] 
-#         self.param_names = ['theta', 'phi', 'D_par', 'radius']
-#         self.n_params = 3
-#         self.spherical_mean = False
+            self.parameter_ranges = [[0, torch.pi], [-torch.pi, torch.pi], [.001, 3], [.001, 10]] 
+            self.param_names = ['theta', 'phi', 'D_par', 'radius']
+            self.n_params = 3
+            self.spherical_mean = False
 
-#     def __call__(self, grad, params):
-            
-            
+        def __call__(self, grad, params):
+
+'''
+
+
+
 
 
 
