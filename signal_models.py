@@ -19,10 +19,10 @@ __all__ = [
 
 class Ball:
     def __init__(self):
-        self.parameter_ranges = [[.001, 3]]
-        self.param_names = ['D']
-        self.n_params = 1
-        self.spherical_mean = False
+        self.parameter_ranges   = [[.001, 3]]
+        self.param_names        = ['D']
+        self.n_params           = 1
+        self.spherical_mean     = True
 
 
     def __call__(self, grad, params):    
@@ -41,11 +41,10 @@ class Ball:
 
 class Stick:
     def __init__(self):
-        self.parameter_ranges = [[.001, 3], [0, torch.pi], [-torch.pi, torch.pi]]
-        
-        self.param_names = ['Dpar', 'theta', 'phi']
-        self.n_params = 3
-        self.spherical_mean = False
+        self.parameter_ranges   = [[.001, 3], [0, torch.pi], [-torch.pi, torch.pi]]
+        self.param_names        = ['Dpar', 'theta', 'phi']
+        self.n_params           = 3
+        self.spherical_mean     = False
 
 
     def __call__(self, grad, params):                   
@@ -66,10 +65,10 @@ class Stick:
 
 class MSDKI:
     def __init__(self):        
-        self.parameter_ranges = [[0.001, 3], [0.001, 2]]        
-        self.param_names = ['D', 'K']        
-        self.n_params = 2
-        self.spherical_mean = True
+        self.parameter_ranges   = [[0.001, 3], [0.001, 2]]        
+        self.param_names        = ['D', 'K']        
+        self.n_params           = 2
+        self.spherical_mean     = True
     
     def __call__(self, grad, params):
         b_values = grad.bvalues
@@ -83,15 +82,16 @@ class MSDKI:
 
 class Sphere:
     def __init__(self):
-        self.parameter_rangers = [[0.001, 15]]
-        self.param_names = ['radius']
-        self.n_params = 1
-        self.spherical_mean = True
+        self.parameter_ranges   = [[0.001, 15]]
+        self.param_names        = ['radius']
+        self.n_params           = 1
+        self.spherical_mean     = True
 
     def __call__(self, grad, params):
+
         b_values = grad.bvalues
-        delta = grad.delta
-        Delta = grad.Delta
+        delta    = grad.delta
+        Delta    = grad.Delta
      
         radius = params[:,0].unsqueeze(1)
 
@@ -115,23 +115,22 @@ class Sphere:
         alpha2D = alpha2D.unsqueeze(1)
 
         gamma = 2.675987e2
-        gradient_strength = np.array([np.sqrt(b_values[i])/(gamma*delta[i]*np.sqrt(Delta[i]-delta[i]/3)) for i,_ in enumerate(b_values)])
-        first_factor = -2*(gamma*gradient_strength)**2 / 2
+        gradient_strength   = torch.FloatTensor([np.sqrt(b_values[i])/(gamma*delta[i]*np.sqrt(Delta[i]-delta[i]/3)) for i,_ in enumerate(b_values)]) ### Some vals are NaN!
+        first_factor        = -2*(gamma*gradient_strength)**2 / 2
         
-        summands = np.zeros((len(SPHERE_TRASCENDENTAL_ROOTS),len(b_values)))
-        for i,_ in enumerate(delta):
-            summands[:,i] = (
-                alpha ** (-4) / (alpha2 * radius ** 2 - 2) *
-                (
-                    2 * delta[i] - (
-                        2 +
-                        torch.exp(-alpha2D * (Delta[i] - delta[i])) -
-                        2 * torch.exp(-alpha2D * delta[i]) -
-                        2 * torch.exp(-alpha2D * Delta[i]) +
-                        torch.exp(-alpha2D * (Delta[i] + delta[i]))
-                    ) / (alpha2D)
+        Delta = Delta.unsqueeze(0).unsqueeze(2)
+        delta = delta.unsqueeze(0).unsqueeze(2)
+        
+        summands = (alpha ** (-4) / (alpha2 * (radius.unsqueeze(2))**2 - 2) * (
+                            2 * delta - (
+                            2 +
+                            torch.exp(-alpha2D * (Delta - delta)) -
+                            2 * torch.exp(-alpha2D * delta) -
+                            2 * torch.exp(-alpha2D * Delta) +
+                            torch.exp(-alpha2D * (Delta + delta))
+                        ) / (alpha2D)
+                    )
                 )
-            )
         
         S = torch.exp(
             first_factor *
@@ -143,17 +142,19 @@ class Sphere:
 class Astrosticks:
     def __init__(self):
         self.parameter_ranges = [[0.5, 3]]
-        self.param_names = ['D_par']
-        self.n_params = 1
+        self.param_names    = ['D_par']
+        self.n_params       = 1
         self.spherical_mean = True
 
     def __call__(self, grad, params):
         b_values = grad.bvalues
+        D_par    = params[:, 0].unsqueeze(1)
+    
+        pi_tensor = torch.tensor(torch.pi)
 
-        D_par = params[:, 0].unsqueeze(1)
         S = np.ones_like(b_values)
-        S = ((np.sqrt(np.pi) * torch.erf(np.sqrt(b_values * D_par))) /
-                    (2 * np.sqrt(b_values * D_par)))
+        S = ((torch.sqrt(pi_tensor) * torch.erf(torch.sqrt(b_values * D_par))) /
+                    (2 * torch.sqrt(b_values * D_par)))
 
         return S
 
@@ -262,8 +263,6 @@ class t1_smdt:
         S = sfac * S0 * torch.abs(1.0 - torch.exp(-TI/T1) - (torch.exp(-TS/T1)) * torch.exp(-TI/T1)) * torch.erf(torch.sqrt(b_values*(Dpar-Dperp)))/torch.sqrt(b_values*(Dpar-Dperp))
 
         return S
-
-
 
 
 
