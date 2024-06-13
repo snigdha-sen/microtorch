@@ -1,25 +1,22 @@
 from multiprocessing import freeze_support
+from utils.preprocessing import *
+import argparse
+import getpass
+import random
+import torch
+import numpy as np
+import nibabel as nib
+from train import train
+from model_maker import ModelMaker
+from net_maker import Net
+from data.load_data import load_grad
+import torch.nn as nn
+import matplotlib.pyplot as plt
+import importlib
 
             
 def main():
-    import argparse
-    import getpass
-    import os
-    import random
-    import sys
-    import torch
-    import utils
-    import numpy as np
-    import nibabel as nib
-    #from sklearn.preprocessing import MinMaxScaler
-    #import pickle
-    from train import train
-    from model_maker import ModelMaker
-    from net_maker import Net
-    from data.load_data import load_grad
-    import torch.nn as nn
-    import matplotlib.pyplot as plt
-                    
+               
     parser = argparse.ArgumentParser()
     #parser.add_argument("-ld", "--logdir", help="Path to save output", default=f"/tmp/{getpass.getuser()}")
     #parser.add_argument("-lm", "--log_measures", help="Save measures for each epoch", action='store_true')
@@ -82,7 +79,6 @@ def main():
         comps = ("Ball","Sphere","Astrosticks")
 
     #import compartment classes dynamically based on the chosen model (write a function to do this!)
-    import importlib
     signal_models_module = importlib.import_module("signal_models")
 
     comps_classes = () #initialise tuple
@@ -123,7 +119,7 @@ def main():
         else:
             grad = np.concatenate((bvecs,bvals),axis=1)
 
-        return grad
+        return torch.tensor(grad, dtype=torch.float32)
 
 
 
@@ -145,30 +141,27 @@ def main():
     # imgm = img_masker(img, mask)
     
     #load the image and mask
-    img  = nib.load(imgfile).get_fdata()
-    mask = nib.load(maskfile).get_fdata()
+    img  = torch.from_numpy(nib.load(imgfile).get_fdata().astype(np.float32))
+    mask = torch.from_numpy(nib.load(maskfile).get_fdata().astype(np.float32))
     
     #make a smaller mask for testing
-    tmpmask = np.zeros_like(mask)
+    tmpmask = torch.zeros_like(mask)
     zslice = 5
     tmpmask[:,:,zslice] = mask[:,:,zslice]
     mask=tmpmask
 
     #need to put a check in here to see if the data needs to be direction averaged
     if modelfunc.spherical_mean:        
-        from utils.preprocessing import direction_average
         #direction average the data. img, grad now become the direction-averaged versions
         img,grad = direction_average(img,grad)
         
     #convert to "voxel-form" i.e. flatten
-    from utils.preprocessing import img2voxel
     X_train, maskvox = img2voxel(img,mask)
     
     #this ensures that there wont be any NaNs
     X_train = X_train + 1e-16
         
     #normalise using the function
-    from utils.preprocessing import normalise
     X_train = normalise(X_train,grad)
 
     
@@ -182,30 +175,17 @@ def main():
     # grad_ave[:,3] = bunique
     # grad_ave = torch.tensor(grad_ave)
     
-    #convert grad and data to tensor ready for training
-    grad_torch = torch.tensor(grad, dtype=torch.float32)
-    Xtrain_torch = torch.from_numpy(X_train.astype(np.float32))
-    
-    torch.autograd.set_detect_anomaly(True)
+    torch.autograd.set_detect_anomaly(True) 
 
     lossfunc = nn.MSELoss()
     
-    net = Net(grad_torch, modelfunc, dim_hidden=grad_torch.shape[0], num_layers=3, dropout_frac=dropout_frac, activation=mlp_activation[act])
+    net = Net(grad, modelfunc, dim_hidden=grad.shape[0], num_layers=3, dropout_frac=dropout_frac, activation=mlp_activation[act])
         
-    print(modelfunc.n_params )
-    print(modelfunc.param_names)    
-
-    signal, params = train(net, Xtrain_torch, grad_torch, modelfunc, lossfunc, lr=lr, batch_size=256, num_iters=1000)
-        
-    from utils.preprocessing import voxel2img        
-    
-    
+    signal, params = train(net, X_train, grad, modelfunc, lossfunc, lr=lr, batch_size=256, num_iters=1000)
     
     param_map = np.zeros((*np.shape(mask),modelfunc.n_params + modelfunc.n_frac))
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
-        tmpparams = np.zeros_like(maskvox)
-        tmpparams[maskvox > 0] = params[:,i]
-        param_map[...,i] = np.reshape(tmpparams, np.shape(mask))
+        param_map[...,i] = voxel2img(params[:,i], maskvox, mask.shape)
         
     img     = nib.load(imgfile)
     new_img = nib.Nifti1Image(param_map, img.affine, img.header)
