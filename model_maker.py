@@ -61,14 +61,48 @@ class ModelMaker:
 
         return S
 
-    def get_parameter_indices(self):
-        # Calculate a tuple of indices of where the parameters for each compartment are in the parameter vector
-        param_ind = [list(range(self.comps[0].n_params))]
-        for i in range(1, len(self.comps)):
-            last_param_ind = param_ind[i-1][-1] + 1
-            param_ind.append(list(range(last_param_ind, last_param_ind + self.comps[i].n_params)))
+    
+            
+def convert_model_string_to_compartments(model):
+    #converts the model string to a tuple of compartment strings for input to
+    if model == "MSDKI":
+        comps = ("MSDKI",)
+    elif model == "NEXI":
+        comps = ("NEXI",)
+    elif model == "BallStick":
+        comps = ("Ball","Stick")
+    elif model == "StickBall":
+        comps = ("Stick","Ball")        
+    return comps            
+            
 
-        return tuple(param_ind)
+
+def import_compartments(comps):
+    #given tuple of compartment strings import compartment classes dynamically based on the chosen model
+    import importlib
+    signal_models_module = importlib.import_module("signal_models")
+
+    comps_classes = ()
+    for comp in comps:
+        #get the class
+        this_class = getattr(signal_models_module, comp) #add to the tuple
+        #create an instance of the class and add to the tuple
+        comps_classes += (this_class(),)
+        
+    return comps_classes  
+    
+    
+def get_parameter_indices(self):
+    #calculate a tuple of indices of where the parameters for each compartment are in the parameter vector
+    param_ind = (list(range(0,self.comps[0].n_params)) ,) #initialise tuple from the first compartment
+    for i in range(1,len(self.comps)):  
+        #get the index of the last compartment's last parameter
+        last_param_ind = 1 + param_ind[i-1][-1]
+        #add the indices of the parameters for the next compartment to the tuple
+        param_ind += (list(range(last_param_ind, last_param_ind + self.comps[i].n_params)), ) 
+        
+    return param_ind
+
 
     def get_comp_indices(self):
         # Returns the indices of the compartment that each parameter belongs to
