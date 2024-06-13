@@ -1,3 +1,4 @@
+
 import numpy as np 
 
 def direction_average(img,grad):
@@ -73,67 +74,6 @@ def normalise(X_train,grad):
     
     return X_train
 
-import torch
-
-def direction_average(img, grad):
-    # Find unique shells - all parameters except gradient directions are the same
-    unique_shells = torch.unique(grad[:, 3:], dim=0)
-
-    # Preallocate
-    da_img = torch.zeros(img.shape[0:3] + (unique_shells.shape[0],), dtype=img.dtype, device=img.device)
-    da_grad = torch.zeros((unique_shells.shape[0], grad.shape[1]), dtype=grad.dtype, device=grad.device)
-
-    for i, shell in enumerate(unique_shells):
-        # Indices of grad file for this shell          
-        shell_index = torch.all(grad[:, 3:] == shell, dim=1)
-        # Calculate the spherical mean of this shell - average along the final axis    
-        da_img[..., i] = torch.mean(img[..., shell_index], dim=img.ndim-1)
-        # Fill in this row of the direction-averaged grad file       
-        da_grad[i, 3:] = shell
-
-    return da_img, da_grad
-
-def img2voxel(img, mask):
-    nvoxtotal = torch.prod(torch.tensor(img.shape[0:3], device=img.device)).item()
-    nvol = img.shape[3]
-    # Image in voxel format
-    imgvox = img.view(nvoxtotal, nvol)
-    # Mask in voxel format
-    maskvox = mask.view(nvoxtotal)
-    # Extract the voxels in the mask
-    X_train = imgvox[maskvox == 1]
-
-    return X_train, maskvox
-
-def voxel2img(X_train, maskvox, img_shape):
-    nvoxtotal = torch.prod(torch.tensor(img_shape[0:3], device=X_train.device)).item()
-    nvol = X_train.shape[1]
-
-    # Create an empty image
-    img = torch.zeros(img_shape, dtype=X_train.dtype, device=X_train.device)
-
-    # Fill in the voxels in the mask
-    img.view(-1, nvol)[maskvox == 1] = X_train
-
-    # Reshape the image to the original shape
-    img = img.view(img_shape)
-
-    return img
-
-def normalise(X_train, grad):
-    nvol = grad.shape[0]
-
-    # Find the volumes to normalise by - the lowest b-value lowest TE volume
-    normvol = torch.where(grad[:, 3] == torch.min(grad[:, 3]))[0]
-
-    if len(normvol) > 1:            
-        b0_mean = torch.mean(X_train[:, normvol], dim=1)
-        
-        X_train = X_train / b0_mean[:, None].expand_as(X_train)
-    else:
-        X_train = X_train / X_train[:, normvol].expand_as(X_train)
-
-    return X_train
 
 
 
