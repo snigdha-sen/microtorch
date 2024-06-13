@@ -30,7 +30,7 @@ class Ball:
         
         D = params[:, 0].unsqueeze(1) # ADC
 
-        b_values = grad[:, 3]
+        b_values = grad.bvalues
 
         S = torch.exp(-b_values * D)
 
@@ -47,8 +47,8 @@ class Stick:
 
 
     def __call__(self, grad, params):                   
-        g = grad[:, 0:3]
-        b_values = grad[:, 3]
+        g = grad.bvecs
+        b_values = grad.bvalues
 
         Dpar = params[:, 0].unsqueeze(1)
         theta = params[:, 1].unsqueeze(1)
@@ -70,7 +70,7 @@ class MSDKI:
         self.spherical_mean = True
     
     def __call__(self, grad, params):
-        b_values = grad[:, 3] 
+        b_values = grad.bvalues
         
         D = params[:,0].unsqueeze(1)
         K = params[:,1].unsqueeze(1)
@@ -87,9 +87,9 @@ class Sphere:
         self.spherical_mean = True
 
     def __call__(self, grad, params):
-        b_values = grad[:, 3]
-        delta = grad[:, 4]
-        Delta = grad[:,5]
+        b_values = grad.bvalues
+        delta = grad.delta
+        Delta = grad.Delta
         radius = params[:,0].unsqueeze(1)
 
         SPHERE_TRASCENDENTAL_ROOTS = np.r_[
@@ -145,7 +145,7 @@ class Astrosticks:
         self.spherical_mean = True
 
     def __call__(self, grad, params):
-        b_values = grad[:, 3]
+        b_values = grad.bvalues
         D_par = params[:, 0].unsqueeze(1)
         S = np.ones_like(b_values)
         S = ((np.sqrt(np.pi) * torch.erf(np.sqrt(b_values * D_par))) /
@@ -164,8 +164,8 @@ class Zeppelin:
 
 
     def __call__(self, grad, params):                   
-        g = grad[:, 0:3]
-        b_values = grad[:, 3]
+        g = grad.bvecs
+        b_values = grad.bvalues
 
         Dpar = params[:, 0].unsqueeze(1)
         k = params[:, 1].unsqueeze(1)
@@ -193,10 +193,10 @@ class Standard_WM:
 
     
     def __call__(self, grad, order, params):
-        b_values = grad[:, 3] 
-        b_vectors = grad[:,0:3]
+        b_values = grad.bvalues
+        b_vectors = grad.bvecs
 
-        bdelta =grad[:,4]
+        bdelta =grad.delta
         p00 = 1/torch.sqrt(torch.tensor(4)*torch.pi)*torch.ones_like(params[:,4].unsqueeze(1))
 
         S0 = params[:,0].unsqueeze(1)
@@ -228,8 +228,8 @@ class t1_smdt:
     def __call__(self, grad, params):
         
 
-        b_vecs = grad[:,0:3] # we assume that the first three columns contain the diffusion gradient direction in Cartesian coordinates
-        b_values = grad[:,3].unsqueeze(1) # b-value assumed in the fourth position in s/mm^2
+        b_vecs = grad.bvecs # we assume that the first three columns contain the diffusion gradient direction in Cartesian coordinates
+        b_values = grad.bvalues # b-value assumed in the fourth position in s/mm^2
 
         # b_values [b_values ==0] = 0.01 # to potentially avoid divisions by 0
         b_values = b_values /1000.0 # b-values in ms/um^2
