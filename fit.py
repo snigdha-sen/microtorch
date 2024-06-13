@@ -103,7 +103,7 @@ def main():
         delta    = load_grad(delta)
         smalldel = load_grad(smalldel)
         
-        bvals = bvals * 1e-3 #in ms/um2
+        #bvals = bvals * 1e-3 #in ms/um2
         
         # bvecs = np.transpose(bvecs)
         # gamma = 2.67e2 #ms^-1mT-1
@@ -145,14 +145,14 @@ def main():
     # imgm = img_masker(img, mask)
     
     #load the image and mask
-    img = nib.load(imgfile).get_fdata()
+    img  = nib.load(imgfile).get_fdata()
     mask = nib.load(maskfile).get_fdata()
     
-    # #make a smaller mask for testing
-    # tmpmask = np.zeros_like(mask)
-    # zslice = 70
-    # tmpmask[:,:,zslice] = mask[:,:,zslice]
-    # mask=tmpmask
+    #make a smaller mask for testing
+    tmpmask = np.zeros_like(mask)
+    zslice = 5
+    tmpmask[:,:,zslice] = mask[:,:,zslice]
+    mask=tmpmask
 
     #need to put a check in here to see if the data needs to be direction averaged
     if modelfunc.spherical_mean:        
@@ -204,11 +204,13 @@ def main():
     param_map = np.zeros((*np.shape(mask),modelfunc.n_params + modelfunc.n_frac))
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
         tmpparams = np.zeros_like(maskvox)
-        tmpparams[maskvox == 1] = params[:,i]
+        tmpparams[maskvox > 0] = params[:,i]
         param_map[...,i] = np.reshape(tmpparams, np.shape(mask))
-
-
-
+        
+    img     = nib.load(imgfile)
+    new_img = nib.Nifti1Image(param_map, img.affine, img.header)
+    nib.save(new_img, './data/output/HMU_007_TN_param_maps.nii.gz')
+    
     fig, ax = plt.subplots(1, modelfunc.n_params + modelfunc.n_frac ,figsize=(5 * (modelfunc.n_params + modelfunc.n_frac), 2))
     
     # Iterate through subplots
