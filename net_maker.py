@@ -21,7 +21,7 @@ class Net(nn.Module):
         #add gradient table
         self.grad = grad
         self.modelfunc = modelfunc
-        dim_in = grad.shape[0]
+        dim_in = dim_hidden
         self.fc_layers = nn.ModuleList()
         #create the first layer - input layer
         self.fc_layers.extend([nn.Linear(dim_in, dim_hidden), activation])

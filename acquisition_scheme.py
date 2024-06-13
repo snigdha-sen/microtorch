@@ -4,7 +4,7 @@ class acquisitions_scheme:
 
 
     def __init__(self, bvalues, bvecs, 
-                 gradient_strengths, delta, Delta, TE):
+                 gradient_strengths, delta, Delta, TE, bdelta):
         
         self.bvalues = bvalues.astype(float)
         self.number_of_measurements = len(self.bvalues)
@@ -22,25 +22,30 @@ class acquisitions_scheme:
         self.TE = None
         if TE is not None:
             self.TE = TE.astype(float)
+        self.bdelta = None
+        if bdelta is not None:
+            self.bdelta = bdelta.astype(float)
 
 
-        self.spherical_mean_scheme = SphericalMeanAcquisitionScheme(
+        self.spherical_mean_scheme = AcquisitionScheme(
         self.bvalues,
         self.gradient_strengths,
         self.Delta,
-        self.delta)
+        self.delta,
+        self.bdelta)
 
 
 
-class SphericalMeanAcquisitionScheme:
+class AcquisitionScheme:
     "Acquisition scheme for isotropic spherical mean models."
 
     def __init__(self, bvalues,
-                 gradient_strengths, Deltas, deltas):
+                 gradient_strengths, Deltas, deltas, bdeltas):
         self.bvalues = bvalues
         self.gradient_strengths = gradient_strengths
         self.Delta = Deltas
         self.delta = deltas
+        self.bdelta = bdeltas
         self.number_of_measurements = len(bvalues)
 
 
@@ -53,6 +58,9 @@ def acquisition_scheme_loader(filepath_acquisition_scheme):
     acq_scheme = np.loadtxt(filepath_acquisition_scheme)
     bvalues = acq_scheme[:,3]
 
+    if max(bvalues) >100:
+        bvalues = bvalues/1000
+
     if np.any(bvalues < 0):
         raise ValueError("bvals contains negative values")
     
@@ -64,26 +72,31 @@ def acquisition_scheme_loader(filepath_acquisition_scheme):
         delta = None
 
     try:
-        gradient_strengths = acq_scheme[:,6] ##not sure yet if this is the right order in which schemes are ordered
-    except:
-        gradient_strengths = None
-
-    try:
         Delta = acq_scheme[:,5]
     except:
         Delta = None
+
+    try:
+        gradient_strengths = acq_scheme[:,6] ##not sure yet if this is the right order in which schemes are ordered
+    except:
+        gradient_strengths = None
 
 
     try:
         TE = acq_scheme[:,7]
     except:
         TE = None
+
+    try:
+        bdelta = acq_scheme[:,8]
+    except:
+        bdelta = None
     
     check_acquisition_scheme(
         bvalues, bvecs, delta, Delta, TE)
 
     return acquisitions_scheme(bvalues, bvecs,
-                                  gradient_strengths, delta, Delta, TE,
+                                  gradient_strengths, delta, Delta, TE, bdelta
                                     )
 
 
