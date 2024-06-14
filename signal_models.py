@@ -10,7 +10,8 @@ __all__ = [
     't2_adc',  
     't1_smdt',
     'get_model_nparams',
-    'StandardWM']
+    'StandardWM',
+    'NEXI',]
 
 
 class Ball:
@@ -293,5 +294,45 @@ class t1_smdt:
 
 
 
+class NEXI:
+    def __init__(self):
+        self.parameter_ranges = [[0, 1], [0, 1000], [0, 3], [0, 3], [0, 1]]
+        self.param_names = ['S0', 'tex', 'Di', 'De', 'f']
+        self.n_params = 5
+        self.spherical_mean = True
+
+    def __call__(self, grad, params):
+        bvals = grad.bvalues
+        bvals[bvals==0] = 1e-4
+        delta = grad.delta
+        Delta = grad.Delta
+
+        tds = (Delta - delta/3)* 1e3 # unit conversion to ms
+
+        bvals = bvals.unsqueeze(0)
+        tds = tds.unsqueeze(0)
+        
+        S0 = params[:, 0].unsqueeze(1)
+        tex = params[:, 1].unsqueeze(1)
+        Di = params[:, 2].unsqueeze(1)
+        De = params[:, 3].unsqueeze(1)
+        f = params[:, 4].unsqueeze(1)
+
+
+        q2 = (bvals / tds)
+        Dii = Di
+        Dee = De 
+        # r = 1 / tex
+        # r_ei = (1 - f) * r
+        # r_ie = f * r
+        Di_ = 0.5 * (Dii + Dee + 1 / (q2 * tex) - torch.sqrt((Dee - Dii + (2 * f - 1) / (q2 * tex)) ** 2
+                                                        + (4 * f * (1 - f)) / (q2 * tex) ** 2))
+        De_ = 0.5 * (Dii + Dee + 1 / (q2 * tex) + torch.sqrt((Dee - Dii + (2 * f - 1) / (q2 * tex)) ** 2
+                                                        + (4 * f * (1 - f)) / (q2 * tex) ** 2))
+        f_ = 1 / (Di_ - De_) * (f * Dii + (1 - f) * Dee - De_)
+
+        S = S0 * (f_ * torch.exp(-bvals * Di_) + (1 - f_) * torch.exp(-bvals * De_))
+
+        return S        
 
 

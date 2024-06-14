@@ -11,6 +11,7 @@ from train import train
 from model_maker import ModelMaker
 from net_maker import Net
 import torch.nn as nn
+from acquisition_scheme import txt_file_loader, acquisition_scheme_loader
 import matplotlib.pyplot as plt
 from pathlib import Path
             
@@ -19,7 +20,7 @@ def main():
     parser.add_argument("-ni",  "--num_iters",  help="Number of iterations to train for", type=int, default=2000)
     parser.add_argument("-lr",  "--learning_rate", help="Learning rate", type=float, default=3e-4)
     parser.add_argument("-se",  "--seed",       help="Random seed", type=int, default=random.randint(1, int(1e6)))
-    parser.add_argument("-f",   "--folder",     help="Folder where image & mask are stored",   default="./images")
+    parser.add_argument("-f",   "--folder",     help="Folder where image & mask are stored",   default="./data/test_images")
     parser.add_argument("-img", "--image",      help="Filename of the image to train on",      default="image.nii.gz")
     parser.add_argument("-ma",  "--mask",       help="Filename of the mask to apply to image", default="mask.nii.gz")
     parser.add_argument("-lss", "--layer_size", help="Layer sizes as list of ints", type=int,  default=256)
@@ -40,6 +41,8 @@ def main():
     parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", default=1, type=float)
 
     args = parser.parse_args()
+
+    print(args.model)
     mlp_activation = {'relu': torch.nn.ReLU(), 'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
 
     # Set random seeds
@@ -64,12 +67,16 @@ def main():
     # OPTIONAL: make a smaller mask for testing
     tmpmask  = torch.zeros_like(mask)
     zslice   = 5
+    #make a smaller mask for testing
+    tmpmask = torch.zeros_like(mask)
+    zslice = 0
     tmpmask[:,:,zslice] = mask[:,:,zslice]
     mask     = tmpmask
 
     #need to put a check in here to see if the data needs to be direction averaged
     if modelfunc.spherical_mean:        
         #direction average the data. img, grad now become the direction-averaged versions
+        print(grad)
         img,grad = direction_average(img,grad)
         
     #convert to "voxel-form" i.e. flatten
@@ -99,9 +106,9 @@ def main():
     Path(output_folder).mkdir(parents=True, exist_ok=True)
 
     # Save output maps as NIFTI 
-    img     = nib.load(args.image)
+    img     = nib.load(os.path.join(args.folder, args.image))
     new_img = nib.Nifti1Image(param_map, img.affine, img.header)
-    nib.save(new_img, os.path.join(output_folder, args.image[:-6]+'_param_maps.nii.gz'))
+    nib.save(new_img, os.path.join(output_folder, args.image[:-7]+'_param_maps.nii.gz'))
     
     # Visualise output maps
     _, ax = plt.subplots(1, modelfunc.n_params + modelfunc.n_frac ,figsize=(5 * (modelfunc.n_params + modelfunc.n_frac), 2))
