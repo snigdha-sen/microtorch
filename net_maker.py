@@ -42,7 +42,6 @@ class Net(nn.Module):
             X = self.dropout(X)
 
         #params = self.encoder(X)   
-        print("X", X.shape)            
         params = F.softplus(self.encoder(X))
               
         #get the signal model function        

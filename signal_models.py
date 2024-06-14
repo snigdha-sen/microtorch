@@ -31,8 +31,6 @@ class Ball:
 
         b_values = grad.bvalues
 
-        print(D.shape)
-        print(b_values.shape)
         S = torch.exp(-b_values * D)
         
 
@@ -48,7 +46,7 @@ class Stick:
 
 
     def __call__(self, grad, params):                   
-        bvecs = grad.bvecs
+        bvecs    = grad.bvecs
         b_values = grad.bvalues
 
         Dpar = params[:, 0].unsqueeze(1)
@@ -115,9 +113,9 @@ class Sphere:
         alpha2D = alpha2D.unsqueeze(1)
 
         gamma = 2.675987e2
-        gradient_strength   = torch.FloatTensor([np.sqrt(b_values[i])/(gamma*delta[i]*np.sqrt(Delta[i]-delta[i]/3)) for i,_ in enumerate(b_values)]) ### Some vals are NaN!
+        gradient_strength   = torch.FloatTensor([np.sqrt(b_values[i])/(gamma*delta[i]*np.sqrt(Delta[i]-delta[i]/3)) for i,_ in enumerate(b_values)]) 
         first_factor        = -2*(gamma*gradient_strength)**2 / 2
-        
+                
         Delta = Delta.unsqueeze(0).unsqueeze(2)
         delta = delta.unsqueeze(0).unsqueeze(2)
         
@@ -142,9 +140,9 @@ class Sphere:
 class Astrosticks:
     def __init__(self):
         self.parameter_ranges = [[0.5, 3]]
-        self.param_names    = ['D_par']
-        self.n_params       = 1
-        self.spherical_mean = True
+        self.param_names      = ['D_par']
+        self.n_params         = 1
+        self.spherical_mean   = True
 
     def __call__(self, grad, params):
         b_values = grad.bvalues
@@ -162,10 +160,9 @@ class Astrosticks:
 class Zeppelin:
     def __init__(self):
         self.parameter_ranges = [[.001, 3], [.001, 1], [0, torch.pi], [-torch.pi, torch.pi]]
-        
-        self.param_names = ['Dpar', 'k', 'theta', 'phi']
-        self.n_params = 4
-        self.spherical_mean = False
+        self.param_names      = ['Dpar', 'k', 'theta', 'phi']
+        self.n_params         = 4
+        self.spherical_mean   = False
 
 
     def __call__(self, grad, params):                   
