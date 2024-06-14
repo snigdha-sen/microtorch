@@ -274,7 +274,8 @@ class t1_smdt:
         S = sfac * S0 * torch.abs(1.0 - torch.exp(-TI/T1) - (torch.exp(-TS/T1)) * torch.exp(-TI/T1)) * torch.erf(torch.sqrt(b_values*(Dpar-Dperp)))/torch.sqrt(b_values*(Dpar-Dperp))
 
         return S
-   
+
+    '''
     class Cylinder:
 
         def __init__(self, grad, params):
@@ -285,9 +286,8 @@ class t1_smdt:
             self.spherical_mean = False
 
         def __call__(self, grad, params):
-            
-            
 
+    '''
 
 
 
