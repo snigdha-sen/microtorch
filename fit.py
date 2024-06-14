@@ -11,6 +11,7 @@ from train import train
 from model_maker import ModelMaker
 from net_maker import Net
 import torch.nn as nn
+from acquisition_scheme import txt_file_loader, acquisition_scheme_loader
 import matplotlib.pyplot as plt
 from pathlib import Path
             
@@ -40,6 +41,8 @@ def main():
     parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", type=float,    default=1)
 
     args = parser.parse_args()
+
+    print(args.model)
     mlp_activation = {'relu': torch.nn.ReLU(), 'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
 
     # Set random seeds
@@ -64,12 +67,16 @@ def main():
     # OPTIONAL: make a smaller mask for testing
     tmpmask  = torch.zeros_like(mask)
     zslice   = 5
+    #make a smaller mask for testing
+    tmpmask = torch.zeros_like(mask)
+    zslice = 0
     tmpmask[:,:,zslice] = mask[:,:,zslice]
     mask     = tmpmask
 
     #need to put a check in here to see if the data needs to be direction averaged
     if modelfunc.spherical_mean:        
         #direction average the data. img, grad now become the direction-averaged versions
+        print(grad)
         img,grad = direction_average(img,grad)
         
     #convert to "voxel-form" i.e. flatten

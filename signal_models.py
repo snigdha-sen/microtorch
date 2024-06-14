@@ -10,7 +10,8 @@ __all__ = [
     't2_adc',  
     't1_smdt',
     'get_model_nparams',
-    'StandardWM']
+    'StandardWM',
+    'NEXI',]
 
 
 class Ball:
@@ -18,7 +19,7 @@ class Ball:
         self.parameter_ranges   = [[.001, 3]]
         self.param_names        = ['D']
         self.n_params           = 1
-        self.spherical_mean     = True
+        self.spherical_mean     = False
 
 
     def __call__(self, grad, params):    
@@ -293,5 +294,65 @@ class t1_smdt:
 
 
 
+class NEXI:
+    def __init__(self):
+        self.parameter_ranges = [[0, 1], [0, 1000], [0, 3], [0, 3], [0, 1]]
+        self.param_names = ['S0', 'tex', 'Di', 'De', 'f']
+        self.n_params = 5
+        self.spherical_mean = False
+
+    def __call__(self, grad, params):
+        bvals = grad.bvalues
+        bvals[bvals==0] = 1e-4
+        delta = grad.delta
+        Delta = grad.Delta
+
+        tds = (Delta - delta/3)* 1e3 # unit conversion to ms
+
+        bvals = bvals.unsqueeze(0).unsqueeze(2)
+        tds = tds.unsqueeze(0).unsqueeze(2)
+        
+        S0 = params[:, 0].unsqueeze(1).unsqueeze(2)
+        tex = params[:, 1].unsqueeze(1).unsqueeze(2)
+        Di = params[:, 2].unsqueeze(1).unsqueeze(2)
+        De = params[:, 3].unsqueeze(1).unsqueeze(2)
+        f = params[:, 4].unsqueeze(1).unsqueeze(2)
+
+
+        # print(tex.shape)
+
+        # Define the integration bounds
+        a = 0.0
+        b = 1.0
+
+        # Number of points to use for the numerical integration
+        n_points = 10001
+
+        # Create the points
+        x = torch.linspace(a, b, n_points).unsqueeze(0).unsqueeze(0)
+
+        # Evaluate the function at these points
+        q2 = (bvals / tds)
+        Dii = Di * x ** 2
+    
+        # print('bvals', bvals.shape)
+        # print('Dii', Dii.shape)
+        # print('x', x.shape)
+        Dee = De 
+        # r = 1 / tex
+        # r_ei = (1 - f) * r
+        # r_ie = f * r
+        Di_ = 0.5 * (Dii + Dee + 1 / (q2 * tex) - torch.sqrt((Dee - Dii + (2 * f - 1) / (q2 * tex)) ** 2
+                                                        + (4 * f * (1 - f)) / (q2 * tex) ** 2))
+        De_ = 0.5 * (Dii + Dee + 1 / (q2 * tex) + torch.sqrt((Dee - Dii + (2 * f - 1) / (q2 * tex)) ** 2
+                                                        + (4 * f * (1 - f)) / (q2 * tex) ** 2))
+        f_ = 1 / (Di_ - De_) * (f * Dii + (1 - f) * Dee - De_)
+
+        model = S0 * (f_ * torch.exp(-b * Di_) + (1 - f_) * torch.exp(-b * De_))
+        print(model.shape, x.shape)
+        # Compute the integral using the trapezoidal rule
+        S = torch.trapz(model, x, dim=2)
+
+        return S        
 
 
