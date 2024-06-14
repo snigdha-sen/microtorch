@@ -1,19 +1,23 @@
 # microTorch: microstructure model fitting with PyTorch
 
-<div style="display: flex; align-items: center;">
-  <img src="logo.jpeg" alt="logo" style="width: 30%; margin-right: 20px;">
-  <div>
-    <p>The microTorch software package is designed to flexibly fit diffusion MRI microstructure models, using a self-supervised deep learning approach.</p>
-    <p>This work is by members of the UCL Centre for Medical Image Computing and the Cardiff University Brain Research Imaging Centre. Please contact snigdha.sen.20@ucl.ac.uk with any questions.</p>
-  </div>
-</div>
 
-<table>
-<tr>
-<td><img src="torch.jpeg" alt="icon" width="50" height="50"></td>
-<td><h2>Installation</h2></td>
-</tr>
-</table>
+<img align="left" width="250" height="250" src="logo.jpeg" > 
+The microTorch software package is designed to flexibly fit diffusion MRI microstructure models, using a self-supervised deep learning approach. 
+
+This work is by members of the UCL Centre for Medical Image Computing and the Cardiff University Brain Research Imaging Centre. Please contact snigdha.sen.20@ucl.ac.uk with any questions.  
+
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+
+<img align="left" src="torch.jpeg" alt="icon" width="50" height="50">
+
+## Installation
+
 
 ### Without virtual enviroment (not recommended)
 
@@ -56,13 +60,12 @@ pip install torch numpy nibabel tqdm scipy matplotlib
 ```
 And the code should work!
 
+&nbsp;  
+&nbsp;  
 
-<table>
-<tr>
-<td><img src="torch.jpeg" alt="icon" width="50" height="50"></td>
-<td><h2>Command line examples</h2></td>
-</tr>
-</table>
+<img align="left" src="torch.jpeg" alt="icon" width="50" height="50">
+
+## Command line examples
 
 The command line input takes in a number of parameters that allow personalisation of file paths, model type and network parameters. 
 
@@ -98,12 +101,12 @@ We have provided some test images to allow you to test if you have correctly set
 python fit.py -m BallStick -img BallStick.nii.gz -ma mask.nii.gz -bvals data/grad_files/bvals -bvecs data/grad_files/bvecs -se 123 -a relu -lr 0.0001 -ni 20
 ```
 
-<table>
-<tr>
-<td><img src="torch.jpeg" alt="icon" width="50" height="50"></td>
-<td><h2>Choosing a model</h2></td>
-</tr>
-</table>
+&nbsp;  
+&nbsp;  
+
+<img align="left" src="torch.jpeg" alt="icon" width="50" height="50">
+
+## Choosing a model
 
 To create a model comprising a single compartment, set 
 ```-m <compartment_name>```. There are a number of typical compartments included:
@@ -126,12 +129,13 @@ There are also a number of predefined models to be used as ```-m <model_name>```
 - SANDI (Ball, Zeppelin, Astrosticks)
 - IVIM (Ball, Ball)
 
-<table>
-<tr>
-<td><img src="torch.jpeg" alt="icon" width="50" height="50"></td>
-<td><h2>Adding a new compartment</h2></td>
-</tr>
-</table>
+
+&nbsp;  
+&nbsp;  
+
+<img align="left" src="torch.jpeg" alt="icon" width="50" height="50">
+
+## Adding a new compartment
 
 You can add compartments that are not included in microTorch by modifying the ```signal_models.py``` file. Compartments must adhere to the following structure:
 
