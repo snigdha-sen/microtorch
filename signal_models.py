@@ -1,10 +1,6 @@
-from typing import Any
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.utils.data as utils
-from utils.util_function import sphere2cart, cart2sphere
+from utils.util_function import sphere2cart
 from utils.utils_wm import WM_model, spherical_harmonics_directions
 
 __all__ = [     
@@ -14,40 +10,38 @@ __all__ = [
     't2_adc',  
     't1_smdt',
     'get_model_nparams',
-    'StandardWM']
+    'StandardWM',
+    'NEXI',]
 
 
 class Ball:
     def __init__(self):
-        self.parameter_ranges = [[.001, 3]]
-        self.param_names = ['D']
-        self.n_params = 1
-        self.spherical_mean = False
+        self.parameter_ranges   = [[.001, 3]]
+        self.param_names        = ['D']
+        self.n_params           = 1
+        self.spherical_mean     = False
 
 
     def __call__(self, grad, params):    
         
-        D = params[:, 0].unsqueeze(1) # ADC
-
+        D        = params[:, 0].unsqueeze(1) 
         b_values = grad.bvalues
 
         S = torch.exp(-b_values * D)
-        
 
         return S
 
 
 class Stick:
     def __init__(self):
-        self.parameter_ranges = [[.001, 3], [0, torch.pi], [-torch.pi, torch.pi]]
-        
-        self.param_names = ['Dpar', 'theta', 'phi']
-        self.n_params = 3
-        self.spherical_mean = False
+        self.parameter_ranges   = [[.001, 3], [0, torch.pi], [-torch.pi, torch.pi]]
+        self.param_names        = ['Dpar', 'theta', 'phi']
+        self.n_params           = 3
+        self.spherical_mean     = False
 
 
     def __call__(self, grad, params):                   
-        bvecs = grad.bvecs
+        bvecs    = grad.bvecs
         b_values = grad.bvalues
 
         Dpar = params[:, 0].unsqueeze(1)
@@ -62,12 +56,12 @@ class Stick:
         return S
 
 
-class MSDKI:
+class Msdki:
     def __init__(self):        
-        self.parameter_ranges = [[0.001, 3], [0.001, 2]]        
-        self.param_names = ['D', 'K']        
-        self.n_params = 2
-        self.spherical_mean = True
+        self.parameter_ranges   = [[0.001, 3], [0.001, 2]]        
+        self.param_names        = ['D', 'K']        
+        self.n_params           = 2
+        self.spherical_mean     = True
     
     def __call__(self, grad, params):
         b_values = grad.bvalues
@@ -81,16 +75,18 @@ class MSDKI:
 
 class Sphere:
     def __init__(self):
-        self.parameter_rangers = [[0.001, 15]]
-        self.param_names = ['radius']
-        self.n_params = 1
-        self.spherical_mean = True
+        self.parameter_ranges   = [[0.001, 15]]
+        self.param_names        = ['radius']
+        self.n_params           = 1
+        self.spherical_mean     = True
 
     def __call__(self, grad, params):
+
         b_values = grad.bvalues
         delta = grad.delta
         Delta = grad.Delta
-     
+
+        D = 2 # D_IC
         radius = params[:,0].unsqueeze(1)
 
         SPHERE_TRASCENDENTAL_ROOTS = np.r_[
@@ -107,29 +103,28 @@ class Sphere:
         
         alpha = torch.FloatTensor(SPHERE_TRASCENDENTAL_ROOTS) / (radius)
         alpha2 = alpha ** 2
-        alpha2D = alpha2 * 2
+        alpha2D = alpha2 * D
         alpha = alpha.unsqueeze(1)
         alpha2 = alpha2.unsqueeze(1)
         alpha2D = alpha2D.unsqueeze(1)
-
+ 
         gamma = 2.675987e2
-        gradient_strength = np.array([np.sqrt(b_values[i])/(gamma*delta[i]*np.sqrt(Delta[i]-delta[i]/3)) for i,_ in enumerate(b_values)])
-        first_factor = -2*(gamma*gradient_strength)**2 / 2
+        gradient_strength   = torch.FloatTensor([np.sqrt(b_values[i])/(gamma*delta[i]*np.sqrt(Delta[i]-delta[i]/3)) for i,_ in enumerate(b_values)]) 
+        first_factor        = -2*(gamma*gradient_strength)**2 / 2
+                
+        Delta = Delta.unsqueeze(0).unsqueeze(2)
+        delta = delta.unsqueeze(0).unsqueeze(2)
         
-        summands = np.zeros((len(SPHERE_TRASCENDENTAL_ROOTS),len(b_values)))
-        for i,_ in enumerate(delta):
-            summands[:,i] = (
-                alpha ** (-4) / (alpha2 * radius ** 2 - 2) *
-                (
-                    2 * delta[i] - (
-                        2 +
-                        torch.exp(-alpha2D * (Delta[i] - delta[i])) -
-                        2 * torch.exp(-alpha2D * delta[i]) -
-                        2 * torch.exp(-alpha2D * Delta[i]) +
-                        torch.exp(-alpha2D * (Delta[i] + delta[i]))
-                    ) / (alpha2D)
+        summands = (alpha ** (-4) / (alpha2 * (radius.unsqueeze(2))**2 - 2) * (
+                            2 * delta - (
+                            2 +
+                            torch.exp(-alpha2D * (Delta - delta)) -
+                            2 * torch.exp(-alpha2D * delta) -
+                            2 * torch.exp(-alpha2D * Delta) +
+                            torch.exp(-alpha2D * (Delta + delta))
+                        ) / (alpha2D)
+                    )
                 )
-            )
         
         S = torch.exp(
             first_factor *
@@ -141,17 +136,38 @@ class Sphere:
 class Astrosticks:
     def __init__(self):
         self.parameter_ranges = [[0.5, 3]]
-        self.param_names = ['D_par']
-        self.n_params = 1
-        self.spherical_mean = True
+        self.param_names      = ['D_par']
+        self.n_params         = 1
+        self.spherical_mean   = True
 
     def __call__(self, grad, params):
         b_values = grad.bvalues
+        D_par    = params[:, 0].unsqueeze(1)
+    
+        pi_tensor = torch.tensor(torch.pi)
 
-        D_par = params[:, 0].unsqueeze(1)
         S = np.ones_like(b_values)
-        S = ((np.sqrt(np.pi) * torch.erf(np.sqrt(b_values * D_par))) /
-                    (2 * np.sqrt(b_values * D_par)))
+        S = ((torch.sqrt(pi_tensor) * torch.erf(torch.sqrt(b_values * D_par))) /
+                    (2 * torch.sqrt(b_values * D_par)))
+
+        return S
+    
+class Astrosticks_fixed:
+    def __init__(self):
+        self.parameter_ranges = [[2, 2]]
+        self.param_names      = ['D_par']
+        self.n_params         = 1
+        self.spherical_mean   = True
+
+    def __call__(self, grad, params):
+        b_values = grad.bvalues
+        D_par    = params[:, 0].unsqueeze(1)
+    
+        pi_tensor = torch.tensor(torch.pi)
+
+        S = np.ones_like(b_values)
+        S = ((torch.sqrt(pi_tensor) * torch.erf(torch.sqrt(b_values * D_par))) /
+                    (2 * torch.sqrt(b_values * D_par)))
 
         return S
 
@@ -159,10 +175,9 @@ class Astrosticks:
 class Zeppelin:
     def __init__(self):
         self.parameter_ranges = [[.001, 3], [.001, 1], [0, torch.pi], [-torch.pi, torch.pi]]
-        
-        self.param_names = ['Dpar', 'k', 'theta', 'phi']
-        self.n_params = 4
-        self.spherical_mean = False
+        self.param_names      = ['Dpar', 'k', 'theta', 'phi']
+        self.n_params         = 4
+        self.spherical_mean   = False
 
 
     def __call__(self, grad, params):                   
@@ -188,7 +203,7 @@ class Standard_WM:
 
         self.order = 2 #have to figure something out for this
         order = 2
-        nSH = int((order + 1) * (order + 2) / 2)
+        #nSH = int((order + 1) * (order + 2) / 2)
         self.parameter_ranges = [[0,1], [0, 3], [0, 3], [0, 3], [0, 1],[-0.5, 0.5],[-0.5, 0.5], [-0.5, 0.5], [-0.5, 0.5], [-0.5, 0.5] ]  # pas ranges aan      
         self.param_names = ['S0', 'Di', 'De', 'Dp', 'f', 'p2_2', 'p2_1', 'p20', 'p21', 'p22' ]  #consider order 2 for now
         self.n_params = 10
@@ -197,13 +212,14 @@ class Standard_WM:
     
     def __call__(self, grad, params):
         order = 2
-        b_values = torch.flatten(grad.bvalues)
-        b_vectors = torch.transpose(grad.bvecs,0,1)
+        b_values = grad.bvalues
+        b_vectors = grad.bvecs
+
         # is not really delta 
         if grad.bdelta == None:
             bdelta = 1
         else:
-            bdelta = torch.transpose(grad.bdelta,0,1)
+            bdelta = grad.bdelta
         
         p00 = 1/torch.sqrt(torch.tensor(4)*torch.pi)*torch.ones_like(params[:,4].unsqueeze(1))
 
@@ -217,7 +233,7 @@ class Standard_WM:
 
         # Compute spherical harmonics
         Ysh = torch.from_numpy(spherical_harmonics_directions(b_vectors, order)) #this might be a problem. Regarding torch/scipy. Can maybe also be used as input?
-            
+                
         S = WM_model(order, b_values, bdelta, Ysh, f, Di, De, Dp, fODF, S0)
 
         return S
@@ -260,7 +276,61 @@ class t1_smdt:
 
         return S
 
+    '''
+    class Cylinder:
+
+        def __init__(self, grad, params):
+
+            self.parameter_ranges = [[0, torch.pi], [-torch.pi, torch.pi], [.001, 3], [.001, 10]] 
+            self.param_names = ['theta', 'phi', 'D_par', 'radius']
+            self.n_params = 3
+            self.spherical_mean = False
+
+        def __call__(self, grad, params):
+
+    '''
 
 
 
 
+
+class NEXI:
+    def __init__(self):
+        self.parameter_ranges = [[0, 1], [0, 1000], [0, 3], [0, 3], [0, 1]]
+        self.param_names = ['S0', 'tex', 'Di', 'De', 'f']
+        self.n_params = 5
+        self.spherical_mean = True
+
+    def __call__(self, grad, params):
+        bvals = grad.bvalues
+        bvals[bvals==0] = 1e-4
+        delta = grad.delta
+        Delta = grad.Delta
+
+        tds = (Delta - delta/3)* 1e3 # unit conversion to ms
+
+        bvals = bvals.unsqueeze(0)
+        tds = tds.unsqueeze(0)
+        
+        S0 = params[:, 0].unsqueeze(1)
+        tex = params[:, 1].unsqueeze(1)
+        Di = params[:, 2].unsqueeze(1)
+        De = params[:, 3].unsqueeze(1)
+        f = params[:, 4].unsqueeze(1)
+
+
+        q2 = (bvals / tds)
+        Dii = Di
+        Dee = De 
+        # r = 1 / tex
+        # r_ei = (1 - f) * r
+        # r_ie = f * r
+        Di_ = 0.5 * (Dii + Dee + 1 / (q2 * tex) - torch.sqrt((Dee - Dii + (2 * f - 1) / (q2 * tex)) ** 2
+                                                        + (4 * f * (1 - f)) / (q2 * tex) ** 2))
+        De_ = 0.5 * (Dii + Dee + 1 / (q2 * tex) + torch.sqrt((Dee - Dii + (2 * f - 1) / (q2 * tex)) ** 2
+                                                        + (4 * f * (1 - f)) / (q2 * tex) ** 2))
+        f_ = 1 / (Di_ - De_) * (f * Dii + (1 - f) * Dee - De_)
+
+        S = S0 * (f_ * torch.exp(-bvals * Di_) + (1 - f_) * torch.exp(-bvals * De_))
+
+        return S  

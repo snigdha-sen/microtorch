@@ -9,7 +9,7 @@ class acquisitions_scheme:
                  gradient_strengths, delta, Delta, TE, bdelta):
         
         self.bvalues = torch.from_numpy(bvalues.astype(np.float32))
-        self.number_of_measurements = torch.tensor(len(self.bvalues))
+        self.number_of_measurements = torch.tensor(len(self.bvalues[0,:]))
         self.bvecs = torch.from_numpy(bvecs.astype(np.float32))
 
         self.gradient_strengths = None

@@ -16,22 +16,36 @@ import signal_models
 
 #def net_maker(grad, modelfunc, dim_hidden, num_layers, dropout_frac, activation=nn.PReLU()):
 class Net(nn.Module):
-    def __init__(self, grad, modelfunc, dim_hidden, num_layers, dropout_frac, clipping_method = 'clamp', activation=nn.PReLU()):  
+    def __init__(self,grad, modelfunc, dim_hidden, num_layers, dropout_frac, clipping_method = 'clamp', activation=nn.PReLU()):  
+        """
+        Define the network architecture
+        
+        Args:
+            grad: gradient table/sequence details
+            model: compartmental model to fit
+            dim_hidden: number of units in each hidden layer
+            num_layers: number of hidden layers
+            dropout_frac: dropout fraction
+            activation: activation function for each layer. Defaults to nn.PReLU().
+        """
+        
         super(Net, self).__init__()
-        #add gradient table
         self.grad = grad
+        self.modelfunc  = modelfunc
         self.clipping_method = clipping_method
-        self.modelfunc = modelfunc
-        self.fc_layers = nn.ModuleList()
-        #create the first layer - input layer
-        dim_in = dim_hidden
+        dim_in          = dim_hidden
+        self.fc_layers  = nn.ModuleList()
         self.fc_layers.extend([nn.Linear(dim_in, dim_hidden), activation])
-        #get the number of signal model parameters
+        
+        # Get the number of signal model parameters
         dim_out = modelfunc.n_params + modelfunc.n_frac
         
-        for i in range(num_layers-1): # num_layers fully connected hidden layers - number of nodes defined by the user as dim_hidden
+        # Add fully connected hidden layers 
+        for _ in range(num_layers-1): 
             self.fc_layers.extend([nn.Linear(dim_hidden, dim_hidden), activation])
-        self.encoder = nn.Sequential(*self.fc_layers, nn.Linear(dim_hidden, dim_out)) # Add the last linear layer for regression
+        
+        # Add the last linear layer for regression    
+        self.encoder = nn.Sequential(*self.fc_layers, nn.Linear(dim_hidden, dim_out)) 
         
         self.dropout_frac = dropout_frac
         if dropout_frac > 0:

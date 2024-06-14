@@ -5,7 +5,7 @@ import torch.optim as optim
 import torch.utils.data as utils
 from tqdm import tqdm
 
-def train(net, img, grad, modelfunc, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
+def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
 
     # create batch queues for data
     num_batches = len(img) // batch_size
@@ -16,9 +16,8 @@ def train(net, img, grad, modelfunc, lossfunc, lr=1e-3, batch_size=256, num_iter
                                     drop_last = True)
 
     # loss function and optimizer
-    #criterion =  nn.MSELoss(reduction='mean') # loss function now input as a argument "lossfunc" - ssFit updated to specificy argument as input to train()
+    # criterion =  nn.MSELoss() # loss function now input as a argument "lossfunc" - ssFit updated to specificy argument as input to train()
     my_optim =  optim.Adam(net.parameters(), lr=lr)
-
 
     # best loss
     best = 1e16
