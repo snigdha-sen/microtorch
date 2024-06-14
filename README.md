@@ -14,7 +14,7 @@ This work is by members of the UCL Centre for Medical Image Computing and the Ca
 &nbsp;  
 &nbsp;  
 
-<img align="left" src="torch.jpeg" alt="icon" width="50" height="50">
+<img align="left" src="torch.png" alt="icon" width="45" height="45">
 
 ## Installation
 
@@ -63,7 +63,7 @@ And the code should work!
 &nbsp;  
 &nbsp;  
 
-<img align="left" src="torch.jpeg" alt="icon" width="50" height="50">
+<img align="left" src="torch.png" alt="icon" width="45" height="45">
 
 ## Command line examples
 
@@ -104,7 +104,7 @@ python fit.py -m BallStick -img BallStick.nii.gz -ma mask.nii.gz -bvals data/gra
 &nbsp;  
 &nbsp;  
 
-<img align="left" src="torch.jpeg" alt="icon" width="50" height="50">
+<img align="left" src="torch.png" alt="icon" width="45" height="45">
 
 ## Choosing a model
 
@@ -133,7 +133,7 @@ There are also a number of predefined models to be used as ```-m <model_name>```
 &nbsp;  
 &nbsp;  
 
-<img align="left" src="torch.jpeg" alt="icon" width="50" height="50">
+<img align="left" src="torch.png" alt="icon" width="45" height="45">
 
 ## Adding a new compartment
 
