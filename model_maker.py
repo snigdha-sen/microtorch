@@ -94,7 +94,6 @@ class ModelMaker:
             compartment_list = ["Ball", "Ball"]
         else:
             compartment_list = re.findall('([A-Z][a-z]+)', modelname)
-        
         for comp in compartment_list:
             this_class = getattr(signal_models_module, comp)
             comps_classes.append(this_class())
