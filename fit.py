@@ -39,6 +39,7 @@ def main():
     parser.add_argument("-df",  "--dropout_frac", help="dropout fraction", type=float, default=0)
     parser.add_argument("-lmax","--lmax",       help="max order used for spherical harmonics", default = 2)
     parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", default=1, type=float)
+    parser.add_argument("-g",  "--grad",     help="MicroTorch grad file", default="data/grad_files/grad_HCP.txt", type=str)
 
     args = parser.parse_args()
     mlp_activation = {'relu': torch.nn.ReLU(), 'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}

@@ -288,10 +288,10 @@ class NEXI:
         self.spherical_mean = True
 
     def __call__(self, grad, params) -> Any:
-        bvals = grad[:, 3]
+        bvals = grad.bvalues
         bvals[bvals==0] = 1e-4
-        delta = grad[:, 4]
-        Delta = grad[:, 5]
+        delta = grad.delta
+        Delta = grad.Delta
 
         tds = (Delta - delta/3)* 1e3 # unit conversion to ms
 
