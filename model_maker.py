@@ -122,7 +122,7 @@ class ModelMaker:
         compartment_list = []
         
         if modelname == "VERDICT":
-            compartment_list = ["Ball", "Sphere", "Astrosticks"]
+            compartment_list = ["Ball", "Sphere", "Astrosticks_fixed"]
         elif modelname == "SANDI":
             compartment_list = ["Ball", "Zeppelin", "Astrosticks"]
         elif modelname == "IVIM":
@@ -131,7 +131,6 @@ class ModelMaker:
             compartment_list = ["NEXI",]
         else:
             compartment_list = re.findall('([A-Z][a-z]+)', modelname)
-        
         for comp in compartment_list:
             this_class = getattr(signal_models_module, comp)
             comps_classes.append(this_class())
