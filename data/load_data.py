@@ -14,6 +14,7 @@ def load_grad(grad_filename):
     except:
         return None
 
+
 # def load_bvals_bvecs_files(bvals_filename, bvecs_filename):
 
 # return grad
