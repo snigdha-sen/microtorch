@@ -41,7 +41,7 @@ def main():
     parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", default=1, type=float)
 
     args = parser.parse_args()
-    mlp_activation = {'relu': torch.nn.ReLU(),'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
+    mlp_activation = {'relu': torch.nn.ReLU(), 'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
 
     # Set up torch and cuda
     #deviceinuse = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -53,35 +53,9 @@ def main():
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
 
-    # Set the inputs
-    model = args.model
-
-
-    #need to write a big function that does this for all models 
-    if model == "MSDKI":
-        comps = ("MSDKI",)
-    elif model == "BallStick":
-        comps = ("Ball","Stick")
-    elif model == "StickBall":
-        comps = ("Stick","Ball")
-    elif model == "VERDICT":
-        comps = ("Ball","Sphere","Astrosticks")
-    elif model == "StandardWM":
-        comps = ("Standard_WM",)
-
-    #import compartment classes dynamically based on the chosen model (write a function to do this!)
-    signal_models_module = importlib.import_module("signal_models")
-
-    comps_classes = () #initialise tuple
-    for comp in comps:
-        #get the class
-        this_class = getattr(signal_models_module, comp) #add to the tuple
-        #create an instance of the class and add to the tuple
-        comps_classes += (this_class(),)
-
     #make the model function that will be incorporated into the net
-    from model_maker import ModelMaker
-    modelfunc = ModelMaker(comps_classes)
+    #comps_classes = model_compartments(model)
+    modelfunc = ModelMaker(args.model)
 
     # def img_masker(imgfile, maskfile):
 
@@ -104,8 +78,8 @@ def main():
     # imgm = img_masker(img, mask)
     
     #load the image and mask
-    img  = torch.from_numpy(nib.load(imgfile).get_fdata().astype(np.float32))
-    mask = torch.from_numpy(nib.load(maskfile).get_fdata().astype(np.float32))
+    img  = torch.from_numpy(nib.load(args.image).get_fdata().astype(np.float32))
+    mask = torch.from_numpy(nib.load(args.mask).get_fdata().astype(np.float32))
     
     #make a smaller mask for testing
     tmpmask = torch.zeros_like(mask)
@@ -142,15 +116,15 @@ def main():
 
     lossfunc = nn.MSELoss()
     
-    net = Net(grad, modelfunc, dim_hidden=grad.shape[0], num_layers=3, dropout_frac=dropout_frac, activation=mlp_activation[act])
+    net = Net(grad, modelfunc, dim_hidden=grad.shape[0], num_layers=3, dropout_frac=args.dropout_frac, activation=mlp_activation[args.activation])
    
-    signal, params = train(net, Xtrain_torch, grad, modelfunc, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
+    signal, params = train(net, X_train, grad, modelfunc, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
     
     param_map = np.zeros((*np.shape(mask),modelfunc.n_params + modelfunc.n_frac))
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
         param_map[...,i] = voxel2img(params[:,i], maskvox, mask.shape)
         
-    img     = nib.load(imgfile)
+    img     = nib.load(args.image)
     new_img = nib.Nifti1Image(param_map, img.affine, img.header)
     nib.save(new_img, './data/output/HMU_007_TN_param_maps.nii.gz')
     
@@ -160,7 +134,7 @@ def main():
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
         im = ax[i].imshow(param_map[0, :, :, i])
         cbar = plt.colorbar(im, ax=ax[i])
-        ax[i].set_title(modelfunc.param_names[i] + ' (' + modelfunc.comp_names[modelfunc.comp_ind[i]] + ')')
+        #ax[i].set_title(modelfunc.param_names[i])
     
     plt.show()
 
