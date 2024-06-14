@@ -135,4 +135,6 @@ class ModelMaker:
             this_class = getattr(signal_models_module, comp)
             comps_classes.append(this_class())
 
+
         return tuple(comps_classes)
+

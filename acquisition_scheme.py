@@ -28,6 +28,7 @@ class acquisitions_scheme:
         if bdelta is not None:
             self.bdelta = torch.from_numpy(bdelta.astype(np.float32))
         
+        
 
 
 def acquisition_scheme_loader(filepath_acquisition_scheme):
@@ -37,18 +38,19 @@ def acquisition_scheme_loader(filepath_acquisition_scheme):
 
     """
     acq_scheme = np.loadtxt(filepath_acquisition_scheme)
-    bvalues = acq_scheme[:,3]
+    bvalues = np.reshape(acq_scheme[:,3], (1, len(acq_scheme[:,3])))
 
-    if max(bvalues) >100:
+    if max(bvalues[0,:]) >100:
         bvalues = bvalues/1000
 
     if np.any(bvalues < 0):
         raise ValueError("bvals contains negative values")
     
-    bvecs = acq_scheme[:,0:3]
+    bvecs = np.transpose(acq_scheme[:,0:3])
 
     try:
         Delta = acq_scheme[:,4]
+
     except:
         Delta = None
         
@@ -58,7 +60,7 @@ def acquisition_scheme_loader(filepath_acquisition_scheme):
         delta = None
 
     try:
-        gradient_strengths = acq_scheme[:,6] ##not sure yet if this is the right order in which schemes are ordered
+        gradient_strengths = acq_scheme[:,6]
     except:
         gradient_strengths = None
 
@@ -73,6 +75,7 @@ def acquisition_scheme_loader(filepath_acquisition_scheme):
         bdelta = None
     
     check_acquisition_scheme(bvalues, bvecs, delta, Delta, TE)
+
 
     return acquisitions_scheme(bvalues, bvecs, 
                                 gradient_strengths, Delta, delta, TE, bdelta)
@@ -154,6 +157,7 @@ def check_acquisition_scheme(
 
 
 def txt_file_loader(bvals, bvecs, Delta, delta,TE,bdelta):
+def txt_file_loader(bvals, bvecs, Delta, delta,TE,bdelta):
 
     bvals = load_grad(bvals)
     bvals = np.transpose(bvals)
@@ -165,7 +169,18 @@ def txt_file_loader(bvals, bvecs, Delta, delta,TE,bdelta):
     smalldeta = np.transpose(smalldelta)
     TE = load_grad(TE)
     TE = np.transpose(TE)
+    bvals = load_grad(bvals)
+    bvals = np.transpose(bvals)
+    bvecs = load_grad(bvecs)
+    bvecs = np.transpose(bvecs)
+    Delta = load_grad(Delta)
+    Delta = np.transpose(Delta)
+    smalldelta = load_grad(delta)
+    smalldeta = np.transpose(smalldelta)
+    TE = load_grad(TE)
+    TE = np.transpose(TE)
     bdelta = load_grad(bdelta)
+    bdelta = np.transpose(bdelta)
     bdelta = np.transpose(bdelta)
     gradient_strengths = None #for now just name this none, can be input or calcualted with deltas
 
@@ -184,6 +199,17 @@ def txt_file_loader(bvals, bvecs, Delta, delta,TE,bdelta):
         grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE,TR,TI),axis=1)
     '''
 
+    '''
+    if TE:
+        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE),axis=1)
+    if TR and TI:
+        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE=None,TR,TI),axis=1)
+    if TE and TR and TI:
+        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE,TR,TI),axis=1)
+    '''
+
     return acquisitions_scheme(bvals, bvecs,
+                                  gradient_strengths, smalldelta, Delta, TE, bdelta
+                                    )
                                   gradient_strengths, smalldelta, Delta, TE, bdelta
                                     )

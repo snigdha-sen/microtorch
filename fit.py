@@ -14,12 +14,12 @@ import torch.nn as nn
 from acquisition_scheme import txt_file_loader, acquisition_scheme_loader
 import matplotlib.pyplot as plt
 from pathlib import Path
-            
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-ni",  "--num_iters",  help="Number of iterations to train for", type=int, default=2000)
-    parser.add_argument("-lr",  "--learning_rate", help="Learning rate", type=float, default=3e-4)
-    parser.add_argument("-se",  "--seed",       help="Random seed", type=int, default=random.randint(1, int(1e6)))
+    parser.add_argument("-lr",  "--learning_rate", help="Learning rate",            type=float,default=3e-4)
+    parser.add_argument("-se",  "--seed",       help="Random seed",                 type=int,  default=random.randint(1, int(1e6)))
     parser.add_argument("-f",   "--folder",     help="Folder where image & mask are stored",   default="./data/test_images")
     parser.add_argument("-img", "--image",      help="Filename of the image to train on",      default="image.nii.gz")
     parser.add_argument("-ma",  "--mask",       help="Filename of the mask to apply to image", default="mask.nii.gz")
@@ -90,6 +90,7 @@ def main():
     #normalise using the function
     X_train = normalise(X_train,grad)
 
+    print(X_train.shape)
     # Define network
     torch.autograd.set_detect_anomaly(True) 
     lossfunc = nn.MSELoss()

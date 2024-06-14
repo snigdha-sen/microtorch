@@ -99,7 +99,7 @@ def analytical_sol(a,n):
 
     #function is not continious in a = 0, so approx by a -> 0.00001
     a[a == 0.] = 0.001
-    a = torch.tensor(a,dtype=torch.complex64)
+    a = a.clone().detach().to(dtype=torch.complex64)
 
     if n ==0:
         analytical_sol = (torch.sqrt(torch.tensor(torch.pi)) * erf(torch.sqrt(a))) / (2 * torch.sqrt(a))
@@ -121,7 +121,7 @@ def spherical_harmonics_directions(directions, l):
     mu = cart2sphere(directions) #theta is elevation, phi is elevation
     theta = mu[...,0]
     phi = mu[...,1]
-    theta = np.pi/2-theta
+    phi = np.pi/2-phi
 
     
     # Initialize array for spherical harmonic values
