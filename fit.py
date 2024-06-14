@@ -11,6 +11,7 @@ from model_maker import ModelMaker
 from net_maker import Net
 from data.load_data import load_grad
 import torch.nn as nn
+from acquisition_scheme import txt_file_loader, acquisition_scheme_loader
 import matplotlib.pyplot as plt
 import importlib
 
@@ -29,10 +30,10 @@ def main():
     parser.add_argument("-m",   "--model", type=str, help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="verdict")
     parser.add_argument("-a",   "--activation", type=str, help="Activation function to use with mlp: elu, relu, prelu or tanh.", default="prelu")
     parser.add_argument("-op",  "--operation",  help="Operation to perform (train+fit, train, fit).", default="train+fit")
-    parser.add_argument("-bvals", "--bvals",    help="bvals file in FSL format and in [s/mm2]",      default="data/grad_files/bvals.txt",      type=str)
-    parser.add_argument("-bvecs", "--bvecs",    help="bvecs file in FSL format",                     default="data/grad_files/bvecs.txt",      type=str)
-    parser.add_argument("-d",   "--delta",      help="txt file with gradient pulse separation (ms)", default="data/grad_files/delta.txt",      type=str)
-    parser.add_argument("-sd",  "--smalldelta", help="txt file with gradient pulse duration (ms)",   default="data/grad_files/smalldelta.txt", type=str)
+    parser.add_argument("-bvals", "--bvals",    help="bvals file in FSL format and in [s/mm2]",      default=None,      type=str)
+    parser.add_argument("-bvecs", "--bvecs",    help="bvecs file in FSL format",                     default=None,      type=str)
+    parser.add_argument("-d",   "--delta",      help="txt file with gradient pulse separation (ms)", default=None,      type=str)
+    parser.add_argument("-sd",  "--smalldelta", help="txt file with gradient pulse duration (ms)",   default=None, type=str)
     parser.add_argument("-TE",  "--TE",         help="echo time in ms", default="")
     parser.add_argument("-TR",  "--TR",         help="repetition time in ms", default="")
     parser.add_argument("-TI",  "--TI",         help="inversion time in ms", default="")
@@ -42,6 +43,8 @@ def main():
     parser.add_argument("-g",  "--grad",     help="MicroTorch grad file", default="data/grad_files/grad_HCP.txt", type=str)
 
     args = parser.parse_args()
+
+    print(args.model)
     mlp_activation = {'relu': torch.nn.ReLU(), 'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
 
     # Set up torch and cuda
@@ -84,13 +87,14 @@ def main():
     
     #make a smaller mask for testing
     tmpmask = torch.zeros_like(mask)
-    zslice = 5
+    zslice = 0
     tmpmask[:,:,zslice] = mask[:,:,zslice]
     mask=tmpmask
 
     #need to put a check in here to see if the data needs to be direction averaged
     if modelfunc.spherical_mean:        
         #direction average the data. img, grad now become the direction-averaged versions
+        print(grad)
         img,grad = direction_average(img,grad)
         
     #convert to "voxel-form" i.e. flatten
