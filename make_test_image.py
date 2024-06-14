@@ -102,33 +102,34 @@ def main():
 
     model = args.model
 
-    #need to write a big function that does this for all models 
-    if model == "MSDKI":
-        comps = ("MSDKI",)
-    elif model == "BallStick":
-        comps = ("Ball","Stick")
-    elif model == "StickBall":
-        comps = ("Stick","Ball")
-    elif model == "StandardWM":
-        comps = ("Standard_WM",)
-    elif model == "VERDICT":
-        comps = ("Ball", "Sphere", "Astrosticks")
+    # #need to write a big function that does this for all models 
+    # if model == "MSDKI":
+    #     comps = ("MSDKI",)
+    # elif model == "BallStick":
+    #     comps = ("Ball","Stick")
+    # elif model == "StickBall":
+    #     comps = ("Stick","Ball")
+    # elif model == "StandardWM":
+    #     comps = ("Standard_WM",)
+    # elif model == "VERDICT":
+    #     comps = ("Ball", "Sphere", "Astrosticks")
 
 
-    #import compartment classes dynamically based on the chosen model (write a function to do this!)
-    import importlib
-    signal_models_module = importlib.import_module("signal_models")
+    # #import compartment classes dynamically based on the chosen model (write a function to do this!)
+    # import importlib
+    # signal_models_module = importlib.import_module("signal_models")
 
-    comps_classes = () #initialise tuple
-    for comp in comps:
-        #get the class
-        this_class = getattr(signal_models_module, comp) #add to the tuple
-        #create an instance of the class and add to the tuple
-        comps_classes += (this_class(),)
+    # comps_classes = () #initialise tuple
+    # for comp in comps:
+    #     #get the class
+    #     this_class = getattr(signal_models_module, comp) #add to the tuple
+    #     #create an instance of the class and add to the tuple
+    #     comps_classes += (this_class(),)
 
-    #make the model function that will be incorporated into the net
-    from model_maker import ModelMaker
-    modelfunc = ModelMaker(comps_classes)
+    # #make the model function that will be incorporated into the net
+    
+    from model_maker import ModelMaker    
+    modelfunc = ModelMaker(args.model)
 
     #load the acquisition scheme in
     if args.bvals is not None:
