@@ -1,10 +1,6 @@
-from typing import Any
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.utils.data as utils
-from utils.util_function import sphere2cart, cart2sphere
+from utils.util_function import sphere2cart
 from utils.utils_wm import WM_model, spherical_harmonics_directions
 
 __all__ = [     
@@ -27,12 +23,10 @@ class Ball:
 
     def __call__(self, grad, params):    
         
-        D = params[:, 0].unsqueeze(1) # ADC
-
+        D        = params[:, 0].unsqueeze(1) 
         b_values = grad.bvalues
 
         S = torch.exp(-b_values * D)
-        
 
         return S
 
@@ -61,7 +55,7 @@ class Stick:
         return S
 
 
-class MSDKI:
+class Msdki:
     def __init__(self):        
         self.parameter_ranges   = [[0.001, 3], [0.001, 2]]        
         self.param_names        = ['D', 'K']        
@@ -156,6 +150,25 @@ class Astrosticks:
                     (2 * torch.sqrt(b_values * D_par)))
 
         return S
+    
+class Astrosticks_fixed:
+    def __init__(self):
+        self.parameter_ranges = [[2, 2]]
+        self.param_names      = ['D_par']
+        self.n_params         = 1
+        self.spherical_mean   = True
+
+    def __call__(self, grad, params):
+        b_values = grad.bvalues
+        D_par    = params[:, 0].unsqueeze(1)
+    
+        pi_tensor = torch.tensor(torch.pi)
+
+        S = np.ones_like(b_values)
+        S = ((torch.sqrt(pi_tensor) * torch.erf(torch.sqrt(b_values * D_par))) /
+                    (2 * torch.sqrt(b_values * D_par)))
+
+        return S
 
 
 class Zeppelin:
@@ -189,7 +202,7 @@ class Standard_WM:
 
         self.order = 2 #have to figure something out for this
         order = 2
-        nSH = int((order + 1) * (order + 2) / 2)
+        #nSH = int((order + 1) * (order + 2) / 2)
         self.parameter_ranges = [[0,1], [0, 3], [0, 3], [0, 3], [0, 1],[-0.5, 0.5],[-0.5, 0.5], [-0.5, 0.5], [-0.5, 0.5], [-0.5, 0.5] ]  # pas ranges aan      
         self.param_names = ['S0', 'Di', 'De', 'Dp', 'f', 'p2_2', 'p2_1', 'p20', 'p21', 'p22' ]  #consider order 2 for now
         self.n_params = 10
@@ -262,20 +275,18 @@ class t1_smdt:
 
         return S
    
-    class Cylinder:
+# class Cylinder:
 
-        def __init__(self, grad, params):
+#     def __init__(self, grad, params):
 
-            self.parameter_ranges = [[0, torch.pi], [-torch.pi, torch.pi], [.001, 3], [.001, 10]] 
-            self.param_names = ['theta', 'phi', 'D_par', 'radius']
-            self.n_params = 3
-            self.spherical_mean = False
+#         self.parameter_ranges = [[0, torch.pi], [-torch.pi, torch.pi], [.001, 3], [.001, 10]] 
+#         self.param_names = ['theta', 'phi', 'D_par', 'radius']
+#         self.n_params = 3
+#         self.spherical_mean = False
 
-        def __call__(self, grad, params):
+#     def __call__(self, grad, params):
             
             
-
-
 
 
 
