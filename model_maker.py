@@ -87,7 +87,7 @@ class ModelMaker:
         compartment_list = []
         
         if modelname == "VERDICT":
-            compartment_list = ["Ball", "Sphere", "Astrosticks"]
+            compartment_list = ["Ball", "Sphere", "Astrosticks_fixed"]
         elif modelname == "SANDI":
             compartment_list = ["Ball", "Zeppelin", "Astrosticks"]
         elif modelname == "IVIM":
