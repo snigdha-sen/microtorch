@@ -19,7 +19,7 @@ class Ball:
         self.parameter_ranges   = [[.001, 3]]
         self.param_names        = ['D']
         self.n_params           = 1
-        self.spherical_mean     = True
+        self.spherical_mean     = False
 
 
     def __call__(self, grad, params):    
@@ -299,7 +299,7 @@ class NEXI:
         self.parameter_ranges = [[0, 1], [0, 1000], [0, 3], [0, 3], [0, 1]]
         self.param_names = ['S0', 'tex', 'Di', 'De', 'f']
         self.n_params = 5
-        self.spherical_mean = True
+        self.spherical_mean = False
 
     def __call__(self, grad, params):
         bvals = grad.bvalues
@@ -309,18 +309,35 @@ class NEXI:
 
         tds = (Delta - delta/3)* 1e3 # unit conversion to ms
 
-        bvals = bvals.unsqueeze(0)
-        tds = tds.unsqueeze(0)
+        bvals = bvals.unsqueeze(0).unsqueeze(2)
+        tds = tds.unsqueeze(0).unsqueeze(2)
         
-        S0 = params[:, 0].unsqueeze(1)
-        tex = params[:, 1].unsqueeze(1)
-        Di = params[:, 2].unsqueeze(1)
-        De = params[:, 3].unsqueeze(1)
-        f = params[:, 4].unsqueeze(1)
+        S0 = params[:, 0].unsqueeze(1).unsqueeze(2)
+        tex = params[:, 1].unsqueeze(1).unsqueeze(2)
+        Di = params[:, 2].unsqueeze(1).unsqueeze(2)
+        De = params[:, 3].unsqueeze(1).unsqueeze(2)
+        f = params[:, 4].unsqueeze(1).unsqueeze(2)
 
 
+        # print(tex.shape)
+
+        # Define the integration bounds
+        a = 0.0
+        b = 1.0
+
+        # Number of points to use for the numerical integration
+        n_points = 10001
+
+        # Create the points
+        x = torch.linspace(a, b, n_points).unsqueeze(0).unsqueeze(0)
+
+        # Evaluate the function at these points
         q2 = (bvals / tds)
-        Dii = Di
+        Dii = Di * x ** 2
+    
+        # print('bvals', bvals.shape)
+        # print('Dii', Dii.shape)
+        # print('x', x.shape)
         Dee = De 
         # r = 1 / tex
         # r_ei = (1 - f) * r
@@ -331,7 +348,10 @@ class NEXI:
                                                         + (4 * f * (1 - f)) / (q2 * tex) ** 2))
         f_ = 1 / (Di_ - De_) * (f * Dii + (1 - f) * Dee - De_)
 
-        S = S0 * (f_ * torch.exp(-bvals * Di_) + (1 - f_) * torch.exp(-bvals * De_))
+        model = S0 * (f_ * torch.exp(-b * Di_) + (1 - f_) * torch.exp(-b * De_))
+        print(model.shape, x.shape)
+        # Compute the integral using the trapezoidal rule
+        S = torch.trapz(model, x, dim=2)
 
         return S        
 
