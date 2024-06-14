@@ -5,7 +5,7 @@ import torch.optim as optim
 import torch.utils.data as utils
 from tqdm import tqdm
 
-def train(net, img, grad, modelfunc, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
+def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
 
     # create batch queues for data
     num_batches = len(img) // batch_size
@@ -35,7 +35,6 @@ def train(net, img, grad, modelfunc, lossfunc, lr=1e-3, batch_size=256, num_iter
             my_optim.zero_grad()
 
             # forward + backward + optimize
-            print(X_batch.shape)
             X_pred, pred_params = net(X_batch)
             loss = lossfunc(X_pred, X_batch)
             loss.backward()
