@@ -1,50 +1,44 @@
 from multiprocessing import freeze_support
+from utils.preprocessing import *
+import argparse
+import getpass
+import random
+import torch
+import numpy as np
+import nibabel as nib
+from train import train
+from model_maker import ModelMaker
+from net_maker import Net
+from data.load_data import load_grad
+import torch.nn as nn
+import matplotlib.pyplot as plt
+import importlib
 
             
 def main():
-    import argparse
-    import getpass
-    import os
-    import random
-    import sys
-    import torch
-    import utils
-    import numpy as np
-    import nibabel as nib
-    #from sklearn.preprocessing import MinMaxScaler
-    #import pickle
-    from train import train
-    from model_maker import ModelMaker
-    from net_maker import Net
-    import torch.nn as nn
-    import matplotlib.pyplot as plt
-    import re
-    from acquisition_scheme import acquisition_scheme_loader, txt_file_loader
-                    
     parser = argparse.ArgumentParser()
     #parser.add_argument("-ld", "--logdir", help="Path to save output", default=f"/tmp/{getpass.getuser()}")
     #parser.add_argument("-lm", "--log_measures", help="Save measures for each epoch", action='store_true')
-    parser.add_argument("-ni", "--num_iters", help="Number of iterations to train for", type=int, default=2000)
-    parser.add_argument("-lr", "--learning_rate", help="Learning rate", type=float, default=3e-4)
-    parser.add_argument("-se", "--seed", help="Random seed", type=int, default=random.randint(1, int(1e6)))
-    parser.add_argument("-img", "--image", help="Filename of the image to train on", default=f"/tmp/{getpass.getuser()}")
-    parser.add_argument("-ma", "--mask", help="Filename of the mask to apply to image", default=f"/tmp/{getpass.getuser()}")
+    parser.add_argument("-ni",  "--num_iters",  help="Number of iterations to train for", type=int, default=2000)
+    parser.add_argument("-lr",  "--learning_rate", help="Learning rate", type=float, default=3e-4)
+    parser.add_argument("-se",  "--seed",       help="Random seed", type=int, default=random.randint(1, int(1e6)))
+    parser.add_argument("-img", "--image",      help="Filename of the image to train on", default=f"/tmp/{getpass.getuser()}")
+    parser.add_argument("-ma",  "--mask",       help="Filename of the mask to apply to image", default=f"/tmp/{getpass.getuser()}")
     parser.add_argument("-lss", "--layer_size", help="Layer sizes as list of ints", type=int, default=256)
-    parser.add_argument("-nl", "--num_layers", help="Number of layers", type=int, default=3)
-    parser.add_argument("-m", "--model", type=str, help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="verdict")
-    parser.add_argument("-a", "--activation", type=str, help="Activation function to use with mlp: elu, relu, prelu or tanh.", default="prelu")
-    parser.add_argument("-op", "--operation", help="Operation to perform (train+fit, train, fit).", default="train+fit")
-    parser.add_argument("-grad", "--grad", help="grad file in FSL format", default=None)
-    parser.add_argument("-bvals", "--bvals", help="bval file in FSL format and in [s/mm2]", default=None)
-    parser.add_argument("-bvecs", "--bvecs", help="bvec file in FSL format", default=None)
-    parser.add_argument("-d", "--delta", help="gradient pulse separation in ms", default=24, type=float)
-    parser.add_argument("-sd", "--smalldelta", help="gradient pulse duration in ms", default=8, type=float)
-    parser.add_argument("-TE", "--TE", help="echo time in ms", default="")
-    parser.add_argument("-TR", "--TR", help="repetition time in ms", default="")
-    parser.add_argument("-TI", "--TI", help="inversion time in ms", default="")
-    parser.add_argument("-df","--dropout_frac", help="dropout fraction", type=float, default=0)
-    parser.add_argument("-lmax", "--lmax", help="max order used for spherical harmonics", default = 2)
-    parser.add_argument("-bd", "--bdelta", help="shape of gradient pulse", default=1, type=float)
+    parser.add_argument("-nl",  "--num_layers", help="Number of layers", type=int, default=3)
+    parser.add_argument("-m",   "--model", type=str, help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="verdict")
+    parser.add_argument("-a",   "--activation", type=str, help="Activation function to use with mlp: elu, relu, prelu or tanh.", default="prelu")
+    parser.add_argument("-op",  "--operation",  help="Operation to perform (train+fit, train, fit).", default="train+fit")
+    parser.add_argument("-bvals", "--bvals",    help="bvals file in FSL format and in [s/mm2]",      default="data/grad_files/bvals.txt",      type=str)
+    parser.add_argument("-bvecs", "--bvecs",    help="bvecs file in FSL format",                     default="data/grad_files/bvecs.txt",      type=str)
+    parser.add_argument("-d",   "--delta",      help="txt file with gradient pulse separation (ms)", default="data/grad_files/delta.txt",      type=str)
+    parser.add_argument("-sd",  "--smalldelta", help="txt file with gradient pulse duration (ms)",   default="data/grad_files/smalldelta.txt", type=str)
+    parser.add_argument("-TE",  "--TE",         help="echo time in ms", default="")
+    parser.add_argument("-TR",  "--TR",         help="repetition time in ms", default="")
+    parser.add_argument("-TI",  "--TI",         help="inversion time in ms", default="")
+    parser.add_argument("-df",  "--dropout_frac", help="dropout fraction", type=float, default=0)
+    parser.add_argument("-lmax","--lmax",       help="max order used for spherical harmonics", default = 2)
+    parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", default=1, type=float)
 
     args = parser.parse_args()
     mlp_activation = {'relu': torch.nn.ReLU(), 'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
@@ -59,36 +53,9 @@ def main():
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
 
-    # Set the inputs
-    model = args.model
-
-
-    import importlib
-    signal_models_module = importlib.import_module("signal_models")
-
-    def model_compartments(modelname):
-
-        comps_classes = ()
-        compartment_list = []
-        
-        if modelname == "VERDICT":
-            compartment_list = ["Ball", "Sphere", "Astrosticks"]
-        elif modelname == "SANDI":
-            compartment_list = ["Ball", "Zeppelin", "Astrosticks"]
-        elif modelname == "IVIM":
-            compartment_list = ["Ball", "Ball"]
-        else:
-            compartment_list = re.findall('([A-Z][a-z]+)', modelname)
-        for i, comp in enumerate(compartment_list):
-            this_class = getattr(signal_models_module, comp)
-            comps_classes += (this_class(),)
-
-        return comps_classes
-
     #make the model function that will be incorporated into the net
     #comps_classes = model_compartments(model)
-    modelfunc = ModelMaker(model)
-
+    modelfunc = ModelMaker(args.model)
 
     # def img_masker(imgfile, maskfile):
 
@@ -111,31 +78,27 @@ def main():
     # imgm = img_masker(img, mask)
     
     #load the image and mask
-    img = nib.load(args.image).get_fdata()
-    mask = nib.load(args.mask).get_fdata()
-
+    img  = torch.from_numpy(nib.load(args.image).get_fdata().astype(np.float32))
+    mask = torch.from_numpy(nib.load(args.mask).get_fdata().astype(np.float32))
+    
     #make a smaller mask for testing
-    # tmpmask = np.zeros_like(mask)
-    # zslice = 70
-    # tmpmask[:,:,zslice] = mask[:,:,zslice]
-    # mask=tmpmask
+    tmpmask = torch.zeros_like(mask)
+    zslice = 5
+    tmpmask[:,:,zslice] = mask[:,:,zslice]
+    mask=tmpmask
 
-    #what does this do??
-    # #need to put a check in here to see if the data needs to be direction averaged
-    if modelfunc.spherical_mean:      
-        from utils.preprocessing import direction_average
+    #need to put a check in here to see if the data needs to be direction averaged
+    if modelfunc.spherical_mean:        
         #direction average the data. img, grad now become the direction-averaged versions
         img,grad = direction_average(img,grad)
         
     #convert to "voxel-form" i.e. flatten
-    from utils.preprocessing import img2voxel
     X_train, maskvox = img2voxel(img,mask)
     
     #this ensures that there wont be any NaNs
     X_train = X_train + 1e-16
         
     #normalise using the function
-    from utils.preprocessing import normalise
     X_train = normalise(X_train,grad)
 
     
@@ -149,33 +112,23 @@ def main():
     # grad_ave[:,3] = bunique
     # grad_ave = torch.tensor(grad_ave)
     
-    #convert grad and data to tensor ready for training
-    Xtrain_torch = torch.from_numpy(X_train.astype(np.float32))
-    
-    torch.autograd.set_detect_anomaly(True)
+    torch.autograd.set_detect_anomaly(True) 
 
     lossfunc = nn.MSELoss()
-
-    net = Net(grad, modelfunc, dim_hidden=len(grad.bvalues[0,:]), num_layers=3, dropout_frac=args.dropout_frac, activation=mlp_activation[args.activation])
-        
-    signal, params = train(net, Xtrain_torch, grad, modelfunc, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
-        
-    from utils.preprocessing import voxel2img        
     
-    print(modelfunc.n_params)
-    
-    print(np.shape(params))
+    net = Net(grad, modelfunc, dim_hidden=grad.shape[0], num_layers=3, dropout_frac=args.dropout_frac, activation=mlp_activation[args.activation])
+   
+    signal, params = train(net, X_train, grad, modelfunc, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
     
     param_map = np.zeros((*np.shape(mask),modelfunc.n_params + modelfunc.n_frac))
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
-        tmpparams = np.zeros_like(maskvox)
-        tmpparams[maskvox == 1] = params[:,i]
-        param_map[...,i] = np.reshape(tmpparams, np.shape(mask))
-
-    print(np.shape(param_map))
-
-
-    fig, ax = plt.subplots(modelfunc.n_params + modelfunc.n_frac ,1 ,figsize=(5, 2 * (modelfunc.n_params + modelfunc.n_frac)))
+        param_map[...,i] = voxel2img(params[:,i], maskvox, mask.shape)
+        
+    img     = nib.load(args.image)
+    new_img = nib.Nifti1Image(param_map, img.affine, img.header)
+    nib.save(new_img, './data/output/HMU_007_TN_param_maps.nii.gz')
+    
+    fig, ax = plt.subplots(1, modelfunc.n_params + modelfunc.n_frac ,figsize=(5 * (modelfunc.n_params + modelfunc.n_frac), 2))
     
     # Iterate through subplots
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
