@@ -62,7 +62,6 @@ class Stick:
      
         return S
 
-
 class MSDKI:
     def __init__(self):        
         self.parameter_ranges   = [[0.001, 3], [0.001, 2]]        
@@ -109,11 +108,11 @@ class Sphere:
         
         alpha = torch.FloatTensor(SPHERE_TRASCENDENTAL_ROOTS) / (radius)
         alpha2 = alpha ** 2
-        alpha2D = alpha2 * 2
+        alpha2D = alpha2 * D
         alpha = alpha.unsqueeze(1)
         alpha2 = alpha2.unsqueeze(1)
         alpha2D = alpha2D.unsqueeze(1)
-
+ 
         gamma = 2.675987e2
         gradient_strength   = torch.FloatTensor([np.sqrt(b_values[i])/(gamma*delta[i]*np.sqrt(Delta[i]-delta[i]/3)) for i,_ in enumerate(b_values)]) ### Some vals are NaN!
         first_factor        = -2*(gamma*gradient_strength)**2 / 2
@@ -263,6 +262,22 @@ class t1_smdt:
         S = sfac * S0 * torch.abs(1.0 - torch.exp(-TI/T1) - (torch.exp(-TS/T1)) * torch.exp(-TI/T1)) * torch.erf(torch.sqrt(b_values*(Dpar-Dperp)))/torch.sqrt(b_values*(Dpar-Dperp))
 
         return S
+    '''
+    class Cylinder:
+
+        def __init__(self, grad, params):
+
+            self.parameter_ranges = [[0, torch.pi], [-torch.pi, torch.pi], [.001, 3], [.001, 10]] 
+            self.param_names = ['theta', 'phi', 'D_par', 'radius']
+            self.n_params = 3
+            self.spherical_mean = False
+
+        def __call__(self, grad, params):
+    '''
+            
+
+
+
 
 
 
