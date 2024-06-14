@@ -90,12 +90,11 @@ def main():
     #normalise using the function
     X_train = normalise(X_train,grad)
 
-    print(X_train.shape)
     # Define network
     torch.autograd.set_detect_anomaly(True) 
     lossfunc = nn.MSELoss()
     net = Net(grad, modelfunc, dim_hidden=grad.number_of_measurements, num_layers=3, dropout_frac=args.dropout_frac, clipping_method=args.clip, activation=mlp_activation[args.activation])
-    
+    print(grad.bvecs.shape)
     # Train network
     _, params = train(net, X_train, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
     
@@ -103,7 +102,7 @@ def main():
     param_map = np.zeros((*np.shape(mask),modelfunc.n_params + modelfunc.n_frac))
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
         param_map[...,i] = voxel2img(params[:,i], maskvox, mask.shape)
-        
+
     # Create folder to store results
     output_folder = "./results"
     Path(output_folder).mkdir(parents=True, exist_ok=True)

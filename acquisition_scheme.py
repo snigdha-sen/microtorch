@@ -46,7 +46,7 @@ def acquisition_scheme_loader(filepath_acquisition_scheme):
     if np.any(bvalues < 0):
         raise ValueError("bvals contains negative values")
     
-    bvecs = np.transpose(acq_scheme[:,0:3])
+    bvecs = acq_scheme[:,0:3]
 
     try:
         Delta = acq_scheme[:,4]
@@ -74,7 +74,7 @@ def acquisition_scheme_loader(filepath_acquisition_scheme):
     except:
         bdelta = None
     
-    check_acquisition_scheme(bvalues, bvecs, delta, Delta, TE)
+    #check_acquisition_scheme(bvalues, bvecs, delta, Delta, TE)
 
 
     return acquisitions_scheme(bvalues, bvecs, 
@@ -157,7 +157,6 @@ def check_acquisition_scheme(
 
 
 def txt_file_loader(bvals, bvecs, Delta, delta,TE,bdelta):
-def txt_file_loader(bvals, bvecs, Delta, delta,TE,bdelta):
 
     bvals = load_grad(bvals)
     bvals = np.transpose(bvals)
@@ -169,18 +168,7 @@ def txt_file_loader(bvals, bvecs, Delta, delta,TE,bdelta):
     smalldeta = np.transpose(smalldelta)
     TE = load_grad(TE)
     TE = np.transpose(TE)
-    bvals = load_grad(bvals)
-    bvals = np.transpose(bvals)
-    bvecs = load_grad(bvecs)
-    bvecs = np.transpose(bvecs)
-    Delta = load_grad(Delta)
-    Delta = np.transpose(Delta)
-    smalldelta = load_grad(delta)
-    smalldeta = np.transpose(smalldelta)
-    TE = load_grad(TE)
-    TE = np.transpose(TE)
     bdelta = load_grad(bdelta)
-    bdelta = np.transpose(bdelta)
     bdelta = np.transpose(bdelta)
     gradient_strengths = None #for now just name this none, can be input or calcualted with deltas
 
@@ -211,5 +199,4 @@ def txt_file_loader(bvals, bvecs, Delta, delta,TE,bdelta):
     return acquisitions_scheme(bvals, bvecs,
                                   gradient_strengths, smalldelta, Delta, TE, bdelta
                                     )
-                                  gradient_strengths, smalldelta, Delta, TE, bdelta
-                                    )
+
