@@ -31,8 +31,6 @@ class Ball:
 
         b_values = grad.bvalues
 
-        print(D.shape)
-        print(b_values.shape)
         S = torch.exp(-b_values * D)
         
 
@@ -199,14 +197,13 @@ class Standard_WM:
     
     def __call__(self, grad, params):
         order = 2
-        b_values = grad.bvalues
-        b_vectors = grad.bvecs
-
+        b_values = torch.flatten(grad.bvalues)
+        b_vectors = torch.transpose(grad.bvecs,0,1)
         # is not really delta 
         if grad.bdelta == None:
             bdelta = 1
         else:
-            bdelta = grad.bdelta
+            bdelta = torch.transpose(grad.bdelta,0,1)
         
         p00 = 1/torch.sqrt(torch.tensor(4)*torch.pi)*torch.ones_like(params[:,4].unsqueeze(1))
 
@@ -220,7 +217,7 @@ class Standard_WM:
 
         # Compute spherical harmonics
         Ysh = torch.from_numpy(spherical_harmonics_directions(b_vectors, order)) #this might be a problem. Regarding torch/scipy. Can maybe also be used as input?
-                
+            
         S = WM_model(order, b_values, bdelta, Ysh, f, Di, De, Dp, fODF, S0)
 
         return S
