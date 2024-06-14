@@ -14,7 +14,7 @@ import torch.nn as nn
 from acquisition_scheme import txt_file_loader, acquisition_scheme_loader
 import matplotlib.pyplot as plt
 from pathlib import Path
-            
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-ni",  "--num_iters",  help="Number of iterations to train for", type=int, default=2000)
@@ -24,21 +24,23 @@ def main():
     parser.add_argument("-img", "--image",      help="Filename of the image to train on",      default="image.nii.gz")
     parser.add_argument("-ma",  "--mask",       help="Filename of the mask to apply to image", default="mask.nii.gz")
     parser.add_argument("-lss", "--layer_size", help="Layer sizes as list of ints", type=int,  default=256)
-    parser.add_argument("-nl",  "--num_layers", help="Number of layers",            type=int,  default=3)
-    parser.add_argument("-m",   "--model",      help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="verdict", type=str)
+    parser.add_argument("-nl",  "--num_layers", help="Number of layers", type=int, default=3)
+    parser.add_argument("-m",   "--model", type=str, help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="verdict")
     parser.add_argument("-a",   "--activation", type=str, help="Activation function to use with mlp: elu, relu, prelu or tanh.", default="prelu")
     parser.add_argument("-op",  "--operation",  help="Operation to perform (train+fit, train, fit).", default="train+fit")
-    parser.add_argument("-bvals", "--bvals",    help="bvals file in FSL format and in [s/mm2]",       default=None, type=str)
-    parser.add_argument("-bvecs", "--bvecs",    help="bvecs file in FSL format",                      default=None, type=str)
+    parser.add_argument("-bvals", "--bvals",    help="bvals file in FSL format and in [s/mm2]",      default=None,      type=str)
+    parser.add_argument("-bvecs", "--bvecs",    help="bvecs file in FSL format",                     default=None,      type=str)
     parser.add_argument("-grad", "--grad",      help="acquisition scheme file in FSL format and in [s/mm2]", default=None,  type=str)
-    parser.add_argument("-d",   "--delta",      help="txt file with gradient pulse separation (ms)", default="data/grad_files/delta",      type=str)
-    parser.add_argument("-sd",  "--smalldelta", help="txt file with gradient pulse duration (ms)",   default="data/grad_files/smalldelta", type=str)
-    parser.add_argument("-TE",  "--TE",         help="echo time in ms",         default="")
-    parser.add_argument("-TR",  "--TR",         help="repetition time in ms",   default="")
-    parser.add_argument("-TI",  "--TI",         help="inversion time in ms",    default="")
-    parser.add_argument("-df",  "--dropout_frac", help="dropout fraction",      type=float,    default=0)
-    parser.add_argument("-lmax","--lmax",       help="max order used for spherical harmonics", default=2)
-    parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", type=float,    default=1)
+    parser.add_argument("-d",   "--delta",      help="txt file with gradient pulse separation (ms)", default="data/grad_files/delta.txt",      type=str)
+    parser.add_argument("-sd",  "--smalldelta", help="txt file with gradient pulse duration (ms)",   default="data/grad_files/smalldelta.txt", type=str)
+    parser.add_argument("-TE",  "--TE",         help="echo time in ms", default="")
+    parser.add_argument("-TR",  "--TR",         help="repetition time in ms", default="")
+    parser.add_argument("-TI",  "--TI",         help="inversion time in ms", default="")
+    parser.add_argument("-df",  "--dropout_frac", help="dropout fraction", type=float, default=0)
+    parser.add_argument("-lmax","--lmax",       help="max order used for spherical harmonics", default = 2)
+    parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", default=1, type=float)
+    parser.add_argument("-c",   "--clip", type=str, help="clipping method sigmoid or clamp are valid", default="clamp")
+
 
     args = parser.parse_args()
 
@@ -88,10 +90,13 @@ def main():
     #normalise using the function
     X_train = normalise(X_train,grad)
 
+    print(X_train.shape)
     # Define network
     torch.autograd.set_detect_anomaly(True) 
     lossfunc = nn.MSELoss()
-    net = Net(grad, modelfunc, dim_hidden=grad.number_of_measurements, num_layers=3, dropout_frac=args.dropout_frac, activation=mlp_activation[args.activation])
+    print(grad.number_of_measurements)
+    net = Net(grad,modelfunc, dim_hidden=grad.number_of_measurements, num_layers=args.num_layers, dropout_frac=args.dropout_frac,clipping_method=args.clip, activation=mlp_activation[args.activation])
+
     
     # Train network
     _, params = train(net, X_train, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)

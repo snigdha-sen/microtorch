@@ -61,3 +61,6 @@ def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
     with torch.no_grad():
         X_real_pred, params = net(img)
     return X_real_pred, params
+
+
+
