@@ -39,6 +39,8 @@ def main():
     parser.add_argument("-df",  "--dropout_frac", help="dropout fraction", type=float, default=0)
     parser.add_argument("-lmax","--lmax",       help="max order used for spherical harmonics", default = 2)
     parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", default=1, type=float)
+    parser.add_argument("-c",   "--clip", type=str, help="Clipping method to go to parameter space. Options are clamp and sigmoid", default="clamp")
+
 
     args = parser.parse_args()
 
@@ -91,7 +93,7 @@ def main():
     # Define network
     torch.autograd.set_detect_anomaly(True) 
     lossfunc = nn.MSELoss()
-    net = Net(grad, modelfunc, dim_hidden=grad.number_of_measurements, num_layers=3, dropout_frac=args.dropout_frac, activation=mlp_activation[args.activation])
+    net = Net(grad, modelfunc, dim_hidden=grad.number_of_measurements, num_layers=3, dropout_frac=args.dropout_frac, clipping_method=args.clip, activation=mlp_activation[args.activation])
     
     # Train network
     _, params = train(net, X_train, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
