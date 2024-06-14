@@ -19,7 +19,7 @@ class Ball:
         self.parameter_ranges   = [[.001, 3]]
         self.param_names        = ['D']
         self.n_params           = 1
-        self.spherical_mean     = True
+        self.spherical_mean     = False
 
 
     def __call__(self, grad, params):    
