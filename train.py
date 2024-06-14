@@ -16,8 +16,9 @@ def train(net, img, grad, modelfunc, lossfunc, lr=1e-3, batch_size=256, num_iter
                                     drop_last = True)
 
     # loss function and optimizer
-    # criterion =  nn.MSELoss() # loss function now input as a argument "lossfunc" - ssFit updated to specificy argument as input to train()
+    #criterion =  nn.MSELoss(reduction='mean') # loss function now input as a argument "lossfunc" - ssFit updated to specificy argument as input to train()
     my_optim =  optim.Adam(net.parameters(), lr=lr)
+
 
     # best loss
     best = 1e16
@@ -35,7 +36,6 @@ def train(net, img, grad, modelfunc, lossfunc, lr=1e-3, batch_size=256, num_iter
             my_optim.zero_grad()
 
             # forward + backward + optimize
-            print(X_batch.shape)
             X_pred, pred_params = net(X_batch)
             loss = lossfunc(X_pred, X_batch)
             loss.backward()
@@ -62,3 +62,6 @@ def train(net, img, grad, modelfunc, lossfunc, lr=1e-3, batch_size=256, num_iter
     with torch.no_grad():
         X_real_pred, params = net(img)
     return X_real_pred, params
+
+
+

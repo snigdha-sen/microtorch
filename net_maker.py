@@ -16,14 +16,15 @@ import signal_models
 
 #def net_maker(grad, modelfunc, dim_hidden, num_layers, dropout_frac, activation=nn.PReLU()):
 class Net(nn.Module):
-    def __init__(self, grad, modelfunc, dim_hidden, num_layers, dropout_frac, activation=nn.PReLU()):  
+    def __init__(self, grad, modelfunc, dim_hidden, num_layers, dropout_frac, clipping_method = 'clamp', activation=nn.PReLU()):  
         super(Net, self).__init__()
         #add gradient table
         self.grad = grad
+        self.clipping_method = clipping_method
         self.modelfunc = modelfunc
-        dim_in = dim_hidden
         self.fc_layers = nn.ModuleList()
         #create the first layer - input layer
+        dim_in = dim_hidden
         self.fc_layers.extend([nn.Linear(dim_in, dim_hidden), activation])
         #get the number of signal model parameters
         dim_out = modelfunc.n_params + modelfunc.n_frac
@@ -40,26 +41,50 @@ class Net(nn.Module):
         
         if self.dropout_frac > 0:
             X = self.dropout(X)
-        #params = self.encoder(X)   
-        print("X", X.shape)            
+
+        #params = self.encoder(X)              
         params = F.softplus(self.encoder(X))
-              
+        #params = abs(self.encoder(X))
         #get the signal model function        
         #modelfunc = getattr(models, model)
         modelfunc = self.modelfunc
+        clipping_method = self.clipping_method
                                
         for i in range(modelfunc.n_params): #set min/max of non-volume fraction parameters       
-            this_param_clamped = torch.clamp(params[:, i].clone().unsqueeze(1), min = modelfunc.parameter_ranges[i,0], max =  modelfunc.parameter_ranges[i,1])  
-            params[:,i] = this_param_clamped.squeeze()
-            
+            params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
+         
+        #set min/max of volume fraction parameters  
+        for i in range(modelfunc.n_params, modelfunc.n_params + modelfunc.n_frac):
+            # Set negative values to 0
+            params[:, i] = torch.relu(params[:, i]) 
+
+        sum_params = torch.sum(params[:, modelfunc.n_params:modelfunc.n_params + modelfunc.n_frac], dim=1, keepdim=True)
         for i in range(modelfunc.n_params, modelfunc.n_params + modelfunc.n_frac): #set min/max of volume fraction parameters  
-            this_frac_clamped = torch.clamp(params[:, i].clone().unsqueeze(1), min = 0, max =  1) #TO DO: need to change this so it makes sum(frac) = 1 
-            params[:,i] = this_frac_clamped.squeeze()
+            # Normalize to make the sum of params[:, i] equal to 1
+            params[:, modelfunc.n_params:modelfunc.n_params + modelfunc.n_frac] /= sum_params
+
 
         
         X = self.modelfunc(self.grad, params)
-
-        
-        
         return X.to(torch.float32), params
-    #return Net(grad, modelfunc, dim_hidden, num_layers, dropout_frac, activation=nn.PReLU())
+    
+
+
+    def squash(param, method, p_min, p_max):
+
+        if method == 'clamp':
+
+            squashed_param_tensor =torch.clamp(param, min=p_min, max=p_max)
+            unsqueezed_param = squashed_param_tensor.squeeze(1)
+
+        elif method == 'sigmoid':
+
+            sigmoid_param = torch.sigmoid(param)
+            scaled_param = p_min + (p_max - p_min) * sigmoid_param
+            unsqueezed_param = scaled_param.squeeze(1)
+
+        else:
+            raise ValueError("Unsupported method: {}".format(method))
+
+        return unsqueezed_param
+

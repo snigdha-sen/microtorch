@@ -44,6 +44,9 @@ def main():
     parser.add_argument("-df","--dropout_frac", help="dropout fraction", type=float, default=0)
     parser.add_argument("-lmax", "--lmax", help="max order used for spherical harmonics", default = 2)
     parser.add_argument("-bd", "--bdelta", help="shape of gradient pulse", default=1, type=float)
+    parser.add_argument("-c", "--clip", type=str, help="Clipping method of parameters. Options are clamp, sigmoid, ", default="clamp")
+    parser.add_argument("-f",   "--folder",     help="Folder where image & mask are stored",   default="./data/test_images")
+
 
     args = parser.parse_args()
     mlp_activation = {'relu': torch.nn.ReLU(),'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
@@ -71,6 +74,8 @@ def main():
         comps = ("Stick","Ball")
     elif model == "StandardWM":
         comps = ("Standard_WM",)
+    elif model == "Ball":
+        comps = ("Ball",)
 
     #import compartment classes dynamically based on the chosen model (write a function to do this!)
     import importlib
@@ -105,12 +110,13 @@ def main():
         grad = txt_file_loader(args.bvals, args.bvecs, args.delta, args.smalldelta, args.TE, args.bdelta)
 
     if args.grad is not None:
-        grad = acquisition_scheme_loader(args.grad)
+        grad = acquisition_scheme_loader(os.path.join(args.folder, args.grad))
     # imgm = img_masker(img, mask)
     
     #load the image and mask
-    img = nib.load(args.image).get_fdata()
-    mask = nib.load(args.mask).get_fdata()
+    img  = torch.from_numpy(nib.load(os.path.join(args.folder, args.image)).get_fdata().astype(np.float32))
+    mask = torch.from_numpy(nib.load(os.path.join(args.folder, args.mask)).get_fdata().astype(np.float32))
+
 
     #make a smaller mask for testing
     # tmpmask = np.zeros_like(mask)
@@ -128,57 +134,117 @@ def main():
     #convert to "voxel-form" i.e. flatten
     from utils.preprocessing import img2voxel
     X_train, maskvox = img2voxel(img,mask)
-    
+
     #this ensures that there wont be any NaNs
-    X_train = X_train + 1e-16
-        
+    #X_train = X_train + 1e-16
+
     #normalise using the function
     from utils.preprocessing import normalise
+
     X_train = normalise(X_train,grad)
 
-    
-    # bunique = np.unique(grad[:,3])
-    # imgm_ave = np.zeros((imgm.shape[0],len(bunique)))
-    # for i in range(len(bunique)):
-    #     imgm_ave[:,i] = np.mean(imgm[:,grad[:,3]==bunique[i]], axis=1)
+    plt.figure()
+    for i in range(0,5):
 
-
-    # grad_ave = np.zeros((len(bunique), 4))
-    # grad_ave[:,3] = bunique
-    # grad_ave = torch.tensor(grad_ave)
-    
+        plt.scatter(np.array(grad.bvalues).flatten(), X_train[i,:])
+    plt.show()
     #convert grad and data to tensor ready for training
-    Xtrain_torch = torch.from_numpy(X_train.astype(np.float32))
     
     torch.autograd.set_detect_anomaly(True)
 
-    lossfunc = nn.MSELoss()
-
-    net = Net(grad, modelfunc, dim_hidden=len(grad.bvalues[0,:]), num_layers=3, dropout_frac=args.dropout_frac, activation=mlp_activation[args.activation])
+    lossfunc = nn.MSELoss(reduction='mean')
+    net = Net(grad, modelfunc, dim_hidden=len(grad.bvalues[0,:]), num_layers=args.num_layers, dropout_frac=args.dropout_frac,clipping_method=args.clip, activation=mlp_activation[args.activation])
         
-    signal, params = train(net, Xtrain_torch, grad, modelfunc, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
-        
-    from utils.preprocessing import voxel2img        
+    signal, params_pred = train(net, X_train, grad, modelfunc, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
     
+    #load in ground truths
+    import scipy
+    gt_params = scipy.io.loadmat(r'R:\C_PersonalData\Leon\qMRI_gradientcorrection\tryout_shit_for_microtorch\out_sameDelta_8384.mat')['out']['kernel'][0][0]
+    gt_plm = scipy.io.loadmat(r'R:\C_PersonalData\Leon\qMRI_gradientcorrection\tryout_shit_for_microtorch\out_sameDelta_8384.mat')['out']['plm'][0][0]
+    gt_s0 = scipy.io.loadmat(r'R:\C_PersonalData\Leon\qMRI_gradientcorrection\tryout_shit_for_microtorch\out_sameDelta_8384.mat')['out']['RotInvs'][0][0]['S0'][0][0][:,:,:,0] #take S0 fitted with first shell
     
-    
-    param_map = np.zeros((*np.shape(mask),modelfunc.n_params + modelfunc.n_frac))
-    for i in range(0,modelfunc.n_params + modelfunc.n_frac):
-        tmpparams = np.zeros_like(maskvox)
-        tmpparams[maskvox == 1] = params[:,i]
-        param_map[...,i] = np.reshape(tmpparams, np.shape(mask))
 
 
+    # fig, ax = plt.subplots(5, 2, figsize=(8,16))
 
-    fig, ax = plt.subplots(1, modelfunc.n_params + modelfunc.n_frac ,figsize=(5 * (modelfunc.n_params + modelfunc.n_frac), 2))
+
+    # ax[0,0].plot(params_plm_wm[:,0],params_pred[:,0],'o',markersize=1)
+    # ax[0, 0].set_xlim(params_plm_wm[:,0].min(), params_plm_wm[:,0].max())
+    # ax[0, 0].set_ylim(params_plm_wm[:,0].min(), params_plm_wm[:,0].max())
+    # ax[0, 0].set_title('S0')
+
+    # ax[0,1].plot(params_plm_wm[:,1],params_pred[:,1],'o',markersize=1)
+    # # ax[0, 1].set_xlim(params[:,1].min(), params[:,1].max())
+    # # ax[0, 1].set_ylim(params[:,1].min(), params[:,1].max())
+    # ax[0, 1].set_title('Di')
+
+
+    # ax[1,0].plot(params_plm_wm[:,2],params_pred[:,2],'o',markersize=1)
+    # # ax[1, 0].set_xlim(params[:,2].min(), params[:,2].max())
+    # # ax[1, 0].set_ylim(params[:,2].min(), params[:,2].max())
+    # ax[1, 0].set_title('De')
+
+
+    # ax[1,1].plot(params_plm_wm[:,3],params_pred[:,3],'o',markersize=1)
+    # # ax[1, 1].set_xlim(params[:,3].min(), params[:,3].max())
+    # # ax[1, 1].set_ylim(params[:,3].min(), params[:,3].max())
+    # ax[1, 1].set_title('De,perp')
+
+    # ax[2,0].plot(params_plm_wm[:,4],params_pred[:,4],'o',markersize=1)
+    # ax[2, 0].set_xlim(params_plm_wm[:,4].min(), params_plm_wm[:,4].max())
+    # ax[2, 0].set_ylim(params_plm_wm[:,4].min(), params_plm_wm[:,4].max())
+    # ax[2, 0].set_title('f')
+
+    # ax[2,1].plot(params_plm_wm[:,5],params_pred[:,5],'o',markersize=1)
+    # ax[2, 1].set_xlim(params_plm_wm[:,5].min(), params_plm_wm[:,5].max())
+    # ax[2, 1].set_ylim(params_plm_wm[:,5].min(), params_plm_wm[:,5].max())
+    # ax[2, 1].set_title('p2_2')
+
+    # ax[3,0].plot(params_plm_wm[:,6],params_pred[:,6],'o',markersize=1)
+    # ax[3, 0].set_xlim(params_plm_wm[:,6].min(), params_plm_wm[:,6].max())
+    # ax[3, 0].set_ylim(params_plm_wm[:,6].min(), params_plm_wm[:,6].max())
+    # ax[3, 0].set_title('p2_1')
+
+    # ax[3,1].plot(params_plm_wm[:,7],params_pred[:,7],'o',markersize=1)
+    # ax[3, 1].set_xlim(params_plm_wm[:,7].min(), params_plm_wm[:,7].max())
+    # ax[3, 1].set_ylim(params_plm_wm[:,7].min(), params_plm_wm[:,7].max())
+    # ax[3, 1].set_title('p20')
+
+    # ax[4,0].plot(params_plm_wm[:,8],params_pred[:,8],'o',markersize=1)
+    # ax[4, 0].set_xlim(params_plm_wm[:,8].min(), params_plm_wm[:,8].max())
+    # ax[4, 0].set_ylim(params_plm_wm[:,8].min(), params_plm_wm[:,8].max())
+    # ax[4, 0].set_title('p21')
+
+    # ax[4,1].plot(params_plm_wm[:,9],params_pred[:,9],'o',markersize=1)
+    # ax[4, 1].set_xlim(params_plm_wm[:,9].min(), params_plm_wm[:,9].max())
+    # ax[4, 1].set_ylim(params_plm_wm[:,9].min(), params_plm_wm[:,9].max())
+    # ax[4, 1].set_title('p22')
     
-    # Iterate through subplots
-    for i in range(0,modelfunc.n_params + modelfunc.n_frac):
-        im = ax[i].imshow(param_map[0, :, :, i])
-        cbar = plt.colorbar(im, ax=ax[i])
-        ax[i].set_title(modelfunc.param_names[i] + ' (' + modelfunc.comp_names[modelfunc.comp_ind[i]] + ')')
-    
+
+    plt.figure()
+    plt.scatter(signal, X_train)
     plt.show()
+
+    plt.figure()
+    plt.plot(params_pred[:,0])
+    plt.show()
+    # param_map = np.zeros((*np.shape(mask),modelfunc.n_params + modelfunc.n_frac))
+    # for i in range(0,modelfunc.n_params + modelfunc.n_frac):
+    #     tmpparams = np.zeros_like(maskvox)
+    #     tmpparams[maskvox == 1] = params[:,i]
+    #     param_map[...,i] = np.reshape(tmpparams, np.shape(mask))
+
+
+
+    # fig, ax = plt.subplots(1, modelfunc.n_params + modelfunc.n_frac ,figsize=(5 * (modelfunc.n_params + modelfunc.n_frac), 2))
+    
+    # # Iterate through subplots
+    # for i in range(0,modelfunc.n_params + modelfunc.n_frac):
+    #     im = ax[i].imshow(param_map[0, :, :, i])
+    #     cbar = plt.colorbar(im, ax=ax[i])
+    #     ax[i].set_title(modelfunc.param_names[i] + ' (' + modelfunc.comp_names[modelfunc.comp_ind[i]] + ')')
+    
+    # plt.show()
 
     
 if __name__ == '__main__':

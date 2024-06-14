@@ -27,6 +27,7 @@ class acquisitions_scheme:
         self.bdelta = None
         if bdelta is not None:
             self.bdelta = torch.from_numpy(bdelta.astype(np.float32))
+        
 
 
 def acquisition_scheme_loader(filepath_acquisition_scheme):
@@ -36,44 +37,42 @@ def acquisition_scheme_loader(filepath_acquisition_scheme):
 
     """
     acq_scheme = np.loadtxt(filepath_acquisition_scheme)
-    bvalues = acq_scheme[:,3]
+    bvalues = np.reshape(acq_scheme[:,3], (1, len(acq_scheme[:,3])))
 
-    if max(bvalues) >100:
+    if max(bvalues[0,:]) >100:
         bvalues = bvalues/1000
 
     if np.any(bvalues < 0):
         raise ValueError("bvals contains negative values")
     
-    bvecs = acq_scheme[:,0:3]
+    bvecs = np.transpose(acq_scheme[:,0:3])
 
     try:
-        delta = acq_scheme[:,4]
+        delta = np.reshape(acq_scheme[:,4], (1, len(acq_scheme[:,3])))
     except:
         delta = None
 
     try:
-        Delta = acq_scheme[:,5]
+        Delta = np.reshape(acq_scheme[:,5], (1, len(acq_scheme[:,3])))
     except:
         Delta = None
 
     try:
-        gradient_strengths = acq_scheme[:,6] ##not sure yet if this is the right order in which schemes are ordered
+        gradient_strengths = np.reshape(acq_scheme[:,6], (1, len(acq_scheme[:,3])))
     except:
         gradient_strengths = None
 
 
     try:
-        TE = acq_scheme[:,7]
+        TE = np.reshape(acq_scheme[:,7], (1, len(acq_scheme[:,3])))
     except:
         TE = None
 
     try:
-        bdelta = acq_scheme[:,8]
+        bdelta = np.reshape(acq_scheme[:,8], (1, len(acq_scheme[:,3])))
     except:
         bdelta = None
-    
-    check_acquisition_scheme(
-        bvalues, bvecs, delta, Delta, TE)
+
 
     return acquisitions_scheme(bvalues, bvecs,
                                   gradient_strengths, delta, Delta, TE, bdelta
