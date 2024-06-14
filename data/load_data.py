@@ -10,9 +10,11 @@ def load_grad(grad_filename):
         
         if len(grad.shape) < 2:
             grad = grad[:,None]
-        return grad
+        
+        return grad #np.transpose(grad)
     except:
         return None
+
 
 # def load_bvals_bvecs_files(bvals_filename, bvecs_filename):
 

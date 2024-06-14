@@ -1,22 +1,11 @@
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import signal_models
 
-# WRAPPER FUNCTION MAKE NETWORK 
-# make_net((grad, model, dim_hidden, dim_out, num_layers, dropout_frac, activation=nn.PReLU()))
-#
-# grad: gradient table/sequence details
-# model: compartmental model to fit
-# dim_hidden: number of units in each hidden layer
-# num_layers: number of hidden layers
-# dropout_frac: dropout fraction
-# activation: activation function for each layer
-
-#def net_maker(grad, modelfunc, dim_hidden, num_layers, dropout_frac, activation=nn.PReLU()):
 class Net(nn.Module):
+
     def __init__(self,grad, modelfunc, dim_hidden, num_layers, dropout_frac, clipping_method = 'clamp', activation=nn.PReLU()):  
+
         """
         Define the network architecture
         
@@ -33,6 +22,7 @@ class Net(nn.Module):
         self.grad = grad
         self.modelfunc  = modelfunc
         self.clipping_method = clipping_method
+
         dim_in          = dim_hidden
         self.fc_layers  = nn.ModuleList()
         self.fc_layers.extend([nn.Linear(dim_in, dim_hidden), activation])
