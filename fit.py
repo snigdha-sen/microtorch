@@ -14,12 +14,12 @@ import torch.nn as nn
 from acquisition_scheme import txt_file_loader, acquisition_scheme_loader
 import matplotlib.pyplot as plt
 from pathlib import Path
-            
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-ni",  "--num_iters",  help="Number of iterations to train for", type=int, default=2000)
-    parser.add_argument("-lr",  "--learning_rate", help="Learning rate", type=float, default=3e-4)
-    parser.add_argument("-se",  "--seed",       help="Random seed", type=int, default=random.randint(1, int(1e6)))
+    parser.add_argument("-lr",  "--learning_rate", help="Learning rate",            type=float,default=3e-4)
+    parser.add_argument("-se",  "--seed",       help="Random seed",                 type=int,  default=random.randint(1, int(1e6)))
     parser.add_argument("-f",   "--folder",     help="Folder where image & mask are stored",   default="./data/test_images")
     parser.add_argument("-img", "--image",      help="Filename of the image to train on",      default="image.nii.gz")
     parser.add_argument("-ma",  "--mask",       help="Filename of the mask to apply to image", default="mask.nii.gz")
@@ -39,6 +39,8 @@ def main():
     parser.add_argument("-df",  "--dropout_frac", help="dropout fraction", type=float, default=0)
     parser.add_argument("-lmax","--lmax",       help="max order used for spherical harmonics", default = 2)
     parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", default=1, type=float)
+    parser.add_argument("-c",   "--clip", type=str, help="Clipping method to go to parameter space. Options are clamp and sigmoid", default="clamp")
+
 
     args = parser.parse_args()
 
@@ -91,8 +93,8 @@ def main():
     # Define network
     torch.autograd.set_detect_anomaly(True) 
     lossfunc = nn.MSELoss()
-    net = Net(grad, modelfunc, dim_hidden=grad.number_of_measurements, num_layers=3, dropout_frac=args.dropout_frac, activation=mlp_activation[args.activation])
-    
+    net = Net(grad, modelfunc, dim_hidden=grad.number_of_measurements, num_layers=3, dropout_frac=args.dropout_frac, clipping_method=args.clip, activation=mlp_activation[args.activation])
+    print(grad.bvecs.shape)
     # Train network
     _, params = train(net, X_train, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
     
@@ -100,7 +102,7 @@ def main():
     param_map = np.zeros((*np.shape(mask),modelfunc.n_params + modelfunc.n_frac))
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
         param_map[...,i] = voxel2img(params[:,i], maskvox, mask.shape)
-        
+
     # Create folder to store results
     output_folder = "./results"
     Path(output_folder).mkdir(parents=True, exist_ok=True)

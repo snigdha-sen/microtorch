@@ -1,5 +1,7 @@
+
+import numpy as np 
 import torch
-import numpy as np
+
 
 def get_grad_matrix(grad):
     grad_matrix = torch.zeros(grad.number_of_measurements,9)
@@ -67,10 +69,12 @@ def img2voxel(img, mask):
     imgvox  = img.reshape(nvoxtotal, nvol)
     maskvox = mask.reshape(nvoxtotal)
 
+
     # Extract the voxels in the mask
     X_train = imgvox[maskvox == 1]
 
     return X_train, maskvox
+
 
 
 def voxel2img(params, maskvox, shape):
