@@ -51,7 +51,7 @@ class ModelMaker:
         if len(self.comps) == 1:
             S = self.comps[0](grad, params)
         else:
-            k = self.n_frac  # Number of volume fraction parameters
+            #k = self.n_frac  # Number of volume fraction parameters
             #f = params[:, -k:]  # Extracts the volume fraction parameters from the end of the parameter vector
             f = params[:, self.n_params:] # Extracts the volume fraction parameters from the end of the parameter vector         
 

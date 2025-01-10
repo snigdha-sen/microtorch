@@ -96,7 +96,7 @@ def main():
     net = Net(grad, modelfunc, dim_hidden=grad.number_of_measurements, num_layers=3, dropout_frac=args.dropout_frac, clipping_method=args.clip, activation=mlp_activation[args.activation])
     print(grad.bvecs.shape)
     # Train network
-    _, params = train(net, X_train, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
+    _, params = train(net, X_train, grad, modelfunc, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
     
     # Reconstruct parameter maps from network outputs
     param_map = np.zeros((*np.shape(mask),modelfunc.n_params + modelfunc.n_frac))
