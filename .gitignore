@@ -1,6 +1,8 @@
 #Results folder
-results/*
+./results/*
 
+
+data/.DS_Store
 
 
 #Everything below is from a template .gitignore file

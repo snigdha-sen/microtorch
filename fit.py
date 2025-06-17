@@ -14,15 +14,16 @@ import torch.nn as nn
 from acquisition_scheme import txt_file_loader, acquisition_scheme_loader
 import matplotlib.pyplot as plt
 from pathlib import Path
+from utils.util_function import strip_filename 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-ni",  "--num_iters",  help="Number of iterations to train for", type=int, default=2000)
+    parser.add_argument("-ni",  "--num_iters",  help="Number of iterations to train for", type=int, default=20)
     parser.add_argument("-lr",  "--learning_rate", help="Learning rate",            type=float,default=3e-4)
     parser.add_argument("-se",  "--seed",       help="Random seed",                 type=int,  default=random.randint(1, int(1e6)))
-    parser.add_argument("-f",   "--folder",     help="Folder where image & mask are stored",   default="./data/test_images")
-    parser.add_argument("-img", "--image",      help="Filename of the image to train on",      default="image.nii.gz")
-    parser.add_argument("-ma",  "--mask",       help="Filename of the mask to apply to image", default="mask.nii.gz")
+    parser.add_argument("-f",   "--folder",     help="Folder where image & mask are stored",   default=os.getcwd())
+    parser.add_argument("-img", "--image",      help="Path of the image to train on", required=True)
+    parser.add_argument("-ma",  "--mask",       help="Path of the mask to apply to image", default=None, type=str)
     parser.add_argument("-lss", "--layer_size", help="Layer sizes as list of ints", type=int,  default=256)
     parser.add_argument("-nl",  "--num_layers", help="Number of layers", type=int, default=3)
     parser.add_argument("-m",   "--model", type=str, help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="verdict")
@@ -36,16 +37,15 @@ def main():
     parser.add_argument("-TE",  "--TE",         help="echo time in ms", default="")
     parser.add_argument("-TR",  "--TR",         help="repetition time in ms", default="")
     parser.add_argument("-TI",  "--TI",         help="inversion time in ms", default="")
-    parser.add_argument("-df",  "--dropout_frac", help="dropout fraction", type=float, default=0)
+    parser.add_argument("-df",  "--dropout_frac", help="dropout fraction", type=float, default=0.2)
     parser.add_argument("-lmax","--lmax",       help="max order used for spherical harmonics", default = 2)
     parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", default=1, type=float)
     parser.add_argument("-c",   "--clip", type=str, help="Clipping method to go to parameter space. Options are clamp and sigmoid", default="clamp")
 
 
-    args = parser.parse_args()
+    args = parser.parse_args()      
 
-    print(args.model)
-    mlp_activation = {'relu': torch.nn.ReLU(), 'prelu': torch.nn.PReLU, 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
+    mlp_activation = {'relu': torch.nn.ReLU(), 'prelu': torch.nn.PReLU(), 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
 
     # Set random seeds
     torch.manual_seed(args.seed)
@@ -64,16 +64,21 @@ def main():
     
     # Load the image and mask
     img  = torch.from_numpy(nib.load(os.path.join(args.folder, args.image)).get_fdata().astype(np.float32))
-    mask = torch.from_numpy(nib.load(os.path.join(args.folder, args.mask)).get_fdata().astype(np.float32))
+    if args.mask is None:
+        # No mask provided; use whole image
+        mask = torch.ones(img.shape[:3], dtype=torch.float32)
+    else:
+        # Load mask from file
+        mask = torch.from_numpy(nib.load(os.path.join(args.folder, args.mask)).get_fdata().astype(np.float32))
     
-    # OPTIONAL: make a smaller mask for testing
-    tmpmask  = torch.zeros_like(mask)
-    zslice   = 5
-    #make a smaller mask for testing
-    tmpmask = torch.zeros_like(mask)
-    zslice = 0
-    tmpmask[:,:,zslice] = mask[:,:,zslice]
-    mask     = tmpmask
+    # # OPTIONAL: make a smaller mask for testing
+    # tmpmask  = torch.zeros_like(mask)
+    # zslice   = 5
+    # #make a smaller mask for testing
+    # tmpmask = torch.zeros_like(mask)
+    # zslice = 0
+    # tmpmask[:,:,zslice] = mask[:,:,zslice]
+    # mask     = tmpmask
 
     #need to put a check in here to see if the data needs to be direction averaged
     if modelfunc.spherical_mean:        
@@ -90,6 +95,7 @@ def main():
     #normalise using the function
     X_train = normalise(X_train,grad)
 
+
     # Define network
     torch.autograd.set_detect_anomaly(True) 
     lossfunc = nn.MSELoss()
@@ -97,7 +103,8 @@ def main():
     print(grad.bvecs.shape)
     # Train network
     _, params = train(net, X_train, grad, modelfunc, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
-    
+        
+
     # Reconstruct parameter maps from network outputs
     param_map = np.zeros((*np.shape(mask),modelfunc.n_params + modelfunc.n_frac))
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
@@ -105,14 +112,15 @@ def main():
 
     # Create folder to store results
     output_folder = "./results"
-    Path(output_folder).mkdir(parents=True, exist_ok=True)
+    Path(output_folder).mkdir(parents=True, exist_ok=True)  
 
     # Save output maps as NIFTI 
     img     = nib.load(os.path.join(args.folder, args.image))
-    new_img = nib.Nifti1Image(param_map, img.affine, img.header)
-    nib.save(new_img, os.path.join(output_folder, args.image[:-7]+'_param_maps.nii.gz'))
+    new_img = nib.Nifti1Image(param_map, img.affine, img.header)  
+    nib.save(new_img, os.path.join(output_folder, strip_filename(args.image) + '_param_maps.nii.gz'))
     
     # Visualise output maps
+    zslice = 0
     _, ax = plt.subplots(1, modelfunc.n_params + modelfunc.n_frac ,figsize=(5 * (modelfunc.n_params + modelfunc.n_frac), 2))
     for i in range(0,modelfunc.n_params + modelfunc.n_frac):
         im = ax[i].imshow(param_map[:, :, zslice, i])
