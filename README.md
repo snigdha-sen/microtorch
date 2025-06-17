@@ -98,7 +98,7 @@ python3 fit.py -lr <learning rate> -se <seed> -lss <layer size> -nl <number of l
 
 We have provided some test images to allow you to test if you have correctly set up all the dependencies:
 ```
-python fit.py -m BallStick -img BallStick.nii.gz -ma mask.nii.gz -bvals data/grad_files/bvals -bvecs data/grad_files/bvecs -se 123 -a relu -lr 0.0001 -ni 20
+python fit.py -m BallStick -img data/test_images/BallStick.nii.gz  -grad data/grad_files/grad_HCP.txt -a relu -lr 0.0001 -ni 20
 ```
 
 &nbsp;  
