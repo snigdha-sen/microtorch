@@ -23,6 +23,9 @@ class ModelMaker:
 
         # Check that all compartments are either spherical mean or not spherical mean
         # Using a set to count and check all spherical mean vals that aren't ball are the same
+        if len(self.comps) == 0:
+            raise ValueError("No compartments found. Check provided model name.")
+
         if len({comp.spherical_mean for comp in self.comps if comp.spherical_mean is not None}) != 1:
             raise ValueError("Invalid input. All compartments must have the same spherical mean property, either all spherical mean or all not spherical mean.")
 
