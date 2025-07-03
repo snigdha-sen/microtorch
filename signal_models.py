@@ -19,7 +19,7 @@ class Ball:
         self.parameter_ranges   = [[.001, 3]]
         self.param_names        = ['D']
         self.n_params           = 1
-        self.spherical_mean     = False
+        self.spherical_mean     = True ###Changing this from False to True for SANDI as it doesnt matter for sandi
 
 
     def __call__(self, grad, params):    
@@ -109,6 +109,7 @@ class Sphere:
         alpha2D = alpha2D.unsqueeze(1)
  
         gamma = 2.675987e2
+        print(b_values)
         gradient_strength   = torch.FloatTensor([np.sqrt(b_values[i])/(gamma*delta[i]*np.sqrt(Delta[i]-delta[i]/3)) for i,_ in enumerate(b_values)]) 
         first_factor        = -2*(gamma*gradient_strength)**2 / 2
                 
