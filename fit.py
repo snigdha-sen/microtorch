@@ -41,8 +41,6 @@ def main():
     parser.add_argument("-lmax","--lmax",       help="max order used for spherical harmonics", default = 2)
     parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", default=1, type=float)
     parser.add_argument("-c",   "--clip", type=str, help="Clipping method to go to parameter space. Options are clamp and sigmoid", default="clamp")
-
-
     args = parser.parse_args()      
 
     mlp_activation = {'relu': torch.nn.ReLU(), 'prelu': torch.nn.PReLU(), 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
