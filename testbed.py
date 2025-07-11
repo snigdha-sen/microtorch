@@ -14,7 +14,7 @@ def pull_shapes():
     bvecs = os.path.join(parent,"314_00395_CHARMED_denoisedMPPCA_driftCo_TED_gibbsCorrSubVoxShift-preproc_dwi.bvec")
     mask = os.path.join(parent,"314_00395_CHARMED_denoisedMPPCA_driftCo_TED_gibbsCorrSubVoxShift-preproc_mask.nii.gz")
     img = os.path.join(parent,"314_00395_CHARMED_denoisedMPPCA_driftCo_TED_gibbsCorrSubVoxShift-preproc_dwi.nii.gz")
-
+    '''
     bval_data = np.loadtxt(bval)
     bvecs_data = np.loadtxt(bvecs)
     mask_data = nib.load(mask).get_fdata()
@@ -24,10 +24,8 @@ def pull_shapes():
     print(bvecs_data.shape)
     print(mask_data.shape)
     print(img_data.shape)
+    '''
 
-    args = gen_args()
-    print(args.img)
-    
 
     
 
