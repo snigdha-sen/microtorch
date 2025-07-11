@@ -5,8 +5,14 @@ import torch
 class acquisitions_scheme:
 
 
-    def __init__(self, bvalues, bvecs, 
-                 gradient_strengths, delta, Delta, TE, bdelta):
+    def __init__(self,
+                 bvalues, ##Bvals
+                 bvecs, ##bvecs
+                 gradient_strengths,
+                 delta,
+                 Delta,
+                 TE,
+                 bdelta):
         
         self.bvalues = torch.from_numpy(bvalues.astype(np.float32))
         self.number_of_measurements = torch.tensor(len(self.bvalues.flatten()))
