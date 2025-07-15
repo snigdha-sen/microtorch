@@ -58,14 +58,18 @@ class Net(nn.Module):
             params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
          
         #set min/max of volume fraction parameters  
-        for i in range(modelfunc.n_params, modelfunc.n_params + modelfunc.n_frac):
-            # Set negative values to 0
-            params[:, i] = torch.relu(params[:, i]) 
+        if modelfunc.n_frac == 1: #if just two compartments, then constraining one volume fraction to [0,1] also constrains the other to [0,1]
+            params[:, modelfunc.n_params] = Net.squash(params[:, modelfunc.n_params].clone().unsqueeze(1), clipping_method, 0, 1)
+        else:    
+            ValueError("This isn't correct for more than two compartments at the moment. It doesn't consider the final volume fraction parameter, which is 1-sum(frac). Not sure where best to calculate the final volume fraction parameter so not trying to fix this yet (Paddy).")    
+            for i in range(modelfunc.n_params, modelfunc.n_params + modelfunc.n_frac):
+                # Set negative values to 0
+                params[:, i] = torch.relu(params[:, i]) 
 
-        sum_params = torch.sum(params[:, modelfunc.n_params:modelfunc.n_params + modelfunc.n_frac], dim=1, keepdim=True)
-        for i in range(modelfunc.n_params, modelfunc.n_params + modelfunc.n_frac): #set min/max of volume fraction parameters  
-            # Normalize to make the sum of params[:, i] equal to 1
-            params[:, modelfunc.n_params:modelfunc.n_params + modelfunc.n_frac] /= sum_params
+            sum_params = torch.sum(params[:, modelfunc.n_params:modelfunc.n_params + modelfunc.n_frac], dim=1, keepdim=True)
+            for i in range(modelfunc.n_params, modelfunc.n_params + modelfunc.n_frac): #set min/max of volume fraction parameters  
+                # Normalize to make the sum of params[:, i] equal to 1
+                params[:, modelfunc.n_params:modelfunc.n_params + modelfunc.n_frac] /= sum_params
 
 
         
