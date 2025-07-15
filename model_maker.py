@@ -51,14 +51,16 @@ class ModelMaker:
         if len(self.comps) == 1:
             S = self.comps[0](grad, params)
         else:
-            k = self.n_frac  # Number of volume fraction parameters
-            f = params[:, -k:]  # Extracts the volume fraction parameters from the end of the parameter vector
+            #k = self.n_frac  # Number of volume fraction parameters
+            #f = params[:, -k:]  # Extracts the volume fraction parameters from the end of the parameter vector
+            f = params[:, self.n_params:] # Extracts the volume fraction parameters from the end of the parameter vector         
 
             num_comps = len(self.comps)
-            # Sum the signals from each compartment weighted by the volume fractions except for the last compartment
+            # Sum the signals from each compartment weighted by the volume fractions except for the last compartment        
             S = sum(f[:, i:i+1] * self.comps[i](grad, params[:, self.param_ind[i]]) for i in range(num_comps - 1))
             # Add the signal from the last compartment weighted by the remaining volume fraction
             S += (1 - f.sum(dim=1, keepdim=True)) * self.comps[-1](grad, params[:, self.param_ind[-1]])
+
 
         return S
 

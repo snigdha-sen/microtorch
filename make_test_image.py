@@ -24,6 +24,10 @@ def generate_random_params(modelfunc, repeat_interval=10, n_param=100):
     min_vals = np.append(min_vals, np.ones(modelfunc.n_frac))
     max_vals = np.append(max_vals, np.zeros(modelfunc.n_frac))
 
+    #add volume fractions ranges
+    min_vals = np.vstack((min_vals, np.array([[0]]*modelfunc.n_frac)))
+    max_vals = np.vstack((max_vals, np.array([[1]]*modelfunc.n_frac)))
+
     # Generate n_unique sets of parameters with random values within the min and max ranges
     unique_params = (torch.rand(n_param, modelfunc.n_params + modelfunc.n_frac) * (max_vals - min_vals) + min_vals).float()
 
@@ -32,14 +36,19 @@ def generate_random_params(modelfunc, repeat_interval=10, n_param=100):
 
     return params
 
-def generate_smooth_params(modelfunc, nvox=10000):
+def generate_smooth_params(modelfunc, nvox=100000):
     import numpy as np
     import torch
 
-    # Example parameter ranges in the specified format 
+    # Extract parameter ranges of the non-volume fraction parameters
     ranges = modelfunc.parameter_ranges
-
-    nparam = ranges.shape[0]  # Number of parameters
+    #add volume fractions ranges
+    ranges = np.vstack((ranges, np.array([[0, 1]]*modelfunc.n_frac)))
+    # Number of parameters in the model function
+    nparam = modelfunc.n_params + modelfunc.n_frac
+    #check that the number of parameter ranges matches the number of parameters in the model function 
+    if ranges.shape[0] != modelfunc.n_params + modelfunc.n_frac:
+        ValueError("The number of parameter ranges for simulation does not match the number of parameters in the model function.")
 
     num_samples_per_dim = int(np.ceil(np.power(nvox,1/nparam))) #number of samples per dimension
 
@@ -95,7 +104,7 @@ def main():
     parser.add_argument("-TI", "--TI", help="inversion time in ms", default="")
     parser.add_argument("-nparam", "--nparam", help="number of random parameters to sample", default=100)
     parser.add_argument("-repvox", "--repvox", help="number of repeat voxels to do for each parameter", default=10)
-    parser.add_argument("-nvox", "--nvox", help="total number of voxels", default=10000)
+    parser.add_argument("-nvox", "--nvox", help="total number of voxels", default=5000)
     parser.add_argument("-savedir", "--savedir", help="directory to save the images", default="data/test_images/")
 
     args = parser.parse_args()
