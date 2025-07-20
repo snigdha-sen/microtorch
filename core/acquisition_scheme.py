@@ -2,38 +2,47 @@ import numpy as np
 from data.load_data import load_grad
 import torch
 
-class acquisitions_scheme:
+#This file generates acquisition schemes - i.e the parameters which the model runs on.
+#Currently works but could be improved by integrating the methods of loading into the AS class
 
 
+
+
+
+class AcquisitionScheme: #Renamed for better readability
     def __init__(self,
                  bvalues, ##Bvals
                  bvecs, ##bvecs
                  gradient_strengths,
-                 delta,
+                 small_delta,
                  Delta,
                  TE,
                  bdelta):
-        
+
+
+        #Redoing this section for clarity - assuming it operates on a simmilar principle to the grad matrix, where the params should actually be lists which align to each image taken
+
         self.bvalues = torch.from_numpy(bvalues.astype(np.float32))
         self.number_of_measurements = torch.tensor(len(self.bvalues.flatten()))
         self.bvecs = torch.from_numpy(bvecs.astype(np.float32))
 
-        self.gradient_strengths = None
-        if gradient_strengths is not None:
-            self.gradient_strengths = torch.from_numpy(gradient_strengths.astype(np.float32))
-        self.delta = None
-        if delta is not None:
-            self.delta = torch.from_numpy(delta.astype(np.float32))
-        self.Delta = None
-        if Delta is not None:
-            self.Delta = torch.from_numpy(Delta.astype(np.float32))
-        self.TE = None
-        if TE is not None:
-            self.TE = torch.from_numpy(TE.astype(np.float32))
-        self.bdelta = None
-        if bdelta is not None:
-            self.bdelta = torch.from_numpy(bdelta.astype(np.float32))
-        
+        gradient_strengths = gradient_strengths if np.size(gradient_strengths) == self.number_of_measurements else np.repeat(gradient_strengths,self.number_of_measurements)
+        small_delta = small_delta if np.size(small_delta) == self.number_of_measurements else np.repeat(small_delta,self.number_of_measurements)
+        Delta = Delta if np.size(Delta) == self.number_of_measurements else np.repeat(Delta,self.number_of_measurements)
+        TE = TE if np.size(TE) == self.number_of_measurements else np.repeat(TE,self.number_of_measurements)
+        bdelta = bdelta if np.size(bdelta) == self.number_of_measurements else np.repeat(bdelta,self.number_of_measurements)
+
+        #This chunk of code could be redone to be even shorter+elegantly but leaving it like this incase individual variables need to be changed in the future
+        #A better way to do this would probably be a dictionary, but its far too intertwined in everything else to change at this point
+
+
+        self.gradient_strengths = torch.from_numpy(gradient_strengths.astype(np.float32)) if gradient_strengths is not None else None
+        self.small_delta = torch.from_numpy(small_delta.astype(np.float32)) if small_delta is not None else None
+        self.Delta = torch.from_numpy(Delta.astype(np.float32)) if Delta is not None else None
+        self.TE = torch.from_numpy(TE.astype(np.float32)) if TE is not None else None
+        self.bdelta = torch.from_numpy(bdelta.astype(np.float32)) if bdelta is not None else None
+
+
         
 
 
@@ -41,6 +50,8 @@ def acquisition_scheme_loader(filepath_acquisition_scheme):
     r"""
     Creates an acquisition scheme object from bvalues, gradient directions,
     pulse duration $\delta$ and pulse separation time $\Delta$.
+
+    Note: this function as far as i can tell loads an aquisition scheme from a saved file, although theres no where in this code showing how to generate on
 
     """
     acq_scheme = np.loadtxt(filepath_acquisition_scheme)
@@ -83,8 +94,8 @@ def acquisition_scheme_loader(filepath_acquisition_scheme):
     #check_acquisition_scheme(bvalues, bvecs, delta, Delta, TE)
 
 
-    return acquisitions_scheme(bvalues, bvecs, 
-                                gradient_strengths, Delta, delta, TE, bdelta)
+    return AcquisitionScheme(bvalues, bvecs,
+                             gradient_strengths, Delta, delta, TE, bdelta)
 
 
 def check_acquisition_scheme(
@@ -162,7 +173,63 @@ def check_acquisition_scheme(
         )
 
 
-def txt_file_loader(bvals, bvecs, Delta, delta,TE,bdelta):
+def as_auto_loader(bvals, bvecs, delta, small_delta,TE,bdelta): ##Aquisition Scheme Auto Loader -> refined version of txt loader
+
+    if type(bvals) is str:
+        bvals = load_grad(bvals)
+        bvals = np.transpose(bvals)
+
+    else:
+        TypeError("Bvals Should be a path")
+
+    if type(bvecs) is str:
+        bvecs = load_grad(bvecs)
+        bvecs = np.transpose(bvecs)
+    else:
+        TypeError("Bvals Should be a path")#
+
+    if type(delta) is str:
+        delta = load_grad(delta)
+        delta = np.transpose(delta)
+    elif type(delta) is int or type(delta) is float:
+        delta = np.array(delta)
+
+    if type(small_delta) is str:
+        small_delta = load_grad(small_delta)
+        small_delta = np.transpose(small_delta)
+    elif type(small_delta) is int or type(small_delta) is float:
+        small_delta = np.array(small_delta)
+
+    if type(TE) is str:
+        TE = load_grad(TE)
+        TE = np.transpose(TE)
+    elif type(TE) is int or type(TE) is float:
+        TE = np.array(TE)
+
+    if type(bdelta) is str:
+        bdelta = load_grad(bdelta)
+        bdelta = np.transpose(bdelta)
+    elif type(bdelta) is int or type(bdelta) is float:
+        bdelta = np.array(bdelta)
+
+
+    if np.any(bvals < 0):
+        raise ValueError("bvals contains negative values")
+
+    if max(bvals[0,:]) >100:
+        bvals = bvals/1000 # some reduction function
+
+    gradient_strengths = None  # for now just name this none, can be input or calcualted with deltas
+
+    return AcquisitionScheme(bvals, bvecs,
+                             gradient_strengths,
+                             small_delta,
+                             delta,
+                             TE,
+                             bdelta
+                             )
+
+def txt_file_loader(bvals, bvecs, Delta, delta,TE,bdelta): ##Deprecated
 
     bvals = load_grad(bvals)
     bvals = np.transpose(bvals)
@@ -171,7 +238,7 @@ def txt_file_loader(bvals, bvecs, Delta, delta,TE,bdelta):
     Delta = load_grad(Delta)
     Delta = np.transpose(Delta)
     smalldelta = load_grad(delta)
-    smalldeta = np.transpose(smalldelta)
+    smalldelta = np.transpose(smalldelta)
     TE = load_grad(TE)
     TE = np.transpose(TE)
     bdelta = load_grad(bdelta)
@@ -202,7 +269,7 @@ def txt_file_loader(bvals, bvecs, Delta, delta,TE,bdelta):
         grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE,TR,TI),axis=1)
     '''
 
-    return acquisitions_scheme(bvals, bvecs,
-                                  gradient_strengths, smalldelta, Delta, TE, bdelta
-                                    )
+    return AcquisitionScheme(bvals, bvecs,
+                             gradient_strengths, smalldelta, Delta, TE, bdelta
+                             )
 

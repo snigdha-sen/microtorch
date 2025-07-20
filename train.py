@@ -5,12 +5,12 @@ import torch.optim as optim
 import torch.utils.data as utils
 from tqdm import tqdm
 
-def train(net, img, grad, modelfunc, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
+def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
 
     # create batch queues for data
     num_batches = len(img) // batch_size
     trainloader = utils.DataLoader(img,
-                                    batch_size = batch_size, 
+                                    batch_size = batch_size,
                                     shuffle = True,
                                     num_workers = 2,
                                     drop_last = True)
@@ -24,7 +24,7 @@ def train(net, img, grad, modelfunc, lossfunc, lr=1e-3, batch_size=256, num_iter
     num_bad_epochs = 0
     patience = 10
 
-    for epoch in range(num_iters): 
+    for epoch in range(num_iters):
         print("-----------------------------------------------------------------")
         print("epoch: {}; bad epochs: {}".format(epoch, num_bad_epochs))
         net.train()
@@ -33,14 +33,13 @@ def train(net, img, grad, modelfunc, lossfunc, lr=1e-3, batch_size=256, num_iter
         for i, X_batch in enumerate(tqdm(trainloader), 0):
             # zero the parameter gradients
             my_optim.zero_grad()
-
             # forward + backward + optimize
             X_pred, pred_params = net(X_batch)
             loss = lossfunc(X_pred, X_batch)
             loss.backward()
             my_optim.step()
             running_loss += loss.item()
-    
+
         print("loss: {}".format(running_loss))
         # early stopping
         if running_loss < best:

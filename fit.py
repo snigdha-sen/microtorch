@@ -1,6 +1,5 @@
 from multiprocessing import freeze_support
-from utils.preprocessing import *
-from acquisition_scheme import *
+from core.preprocessing import *
 import argparse
 import os
 import random
@@ -8,10 +7,10 @@ import torch
 import numpy as np
 import nibabel as nib
 from train import train
-from model_maker import ModelMaker
-from net_maker import Net
+from core.model_maker import ModelMaker
+from core.net_maker import Net
 import torch.nn as nn
-from acquisition_scheme import txt_file_loader, acquisition_scheme_loader
+from core.acquisition_scheme import acquisition_scheme_loader, as_auto_loader
 import matplotlib.pyplot as plt
 from pathlib import Path
 from utils.util_function import strip_filename 
@@ -39,9 +38,9 @@ def gen_args():
     parser.add_argument("-grad", "--grad", help="acquisition scheme file in FSL format and in [s/mm2]", default=None,
                         type=str)
     parser.add_argument("-d", "--delta", help="txt file with gradient pulse separation (ms)",
-                        default="data/grad_files/delta.txt", type=str)
+                        default="data/grad_files/delta_verdict.txt", type=str)
     parser.add_argument("-sd", "--smalldelta", help="txt file with gradient pulse duration (ms)",
-                        default="data/grad_files/smalldelta.txt", type=str)
+                        default="data/grad_files/smalldelta_verdict.txt", type=str)
     parser.add_argument("-TE", "--TE", help="echo time in ms", default="")
     parser.add_argument("-TR", "--TR", help="repetition time in ms", default="")
     parser.add_argument("-TI", "--TI", help="inversion time in ms", default="")
@@ -77,9 +76,9 @@ def gen_args_freeform(): ### This removes the required flags so we can generate 
     parser.add_argument("-grad", "--grad", help="acquisition scheme file in FSL format and in [s/mm2]", default=None,
                         type=str)
     parser.add_argument("-d", "--delta", help="txt file with gradient pulse separation (ms)",
-                        default="data/grad_files/delta.txt", type=str)
+                        default=23.7)
     parser.add_argument("-sd", "--smalldelta", help="txt file with gradient pulse duration (ms)",
-                        default="data/grad_files/smalldelta.txt", type=str)
+                        default=6)
     parser.add_argument("-TE", "--TE", help="echo time in ms", default="")
     parser.add_argument("-TR", "--TR", help="repetition time in ms", default="")
     parser.add_argument("-TI", "--TI", help="inversion time in ms", default="")
@@ -92,7 +91,7 @@ def gen_args_freeform(): ### This removes the required flags so we can generate 
     args = parser.parse_args()
 
     return args
-def fit(args):
+def fit_model(args):
 
     mlp_activation = {'relu': torch.nn.ReLU(), 'prelu': torch.nn.PReLU(), 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
 
@@ -102,11 +101,11 @@ def fit(args):
 
     # Set the inputs
     model = args.model
-    modelfunc = ModelMaker(model)
+    modelfunc = ModelMaker(model) ##Model Func is the function that generates the qmri model i.e SANDI
 
     # Load acquisition parameters
     if args.bvals is not None:
-        grad = txt_file_loader(args.bvals, args.bvecs, args.delta, args.smalldelta, args.TE, args.bdelta)
+        grad = as_auto_loader(args.bvals, args.bvecs, args.delta, args.smalldelta, args.TE, args.bdelta)
         
     if args.grad is not None:
         grad = acquisition_scheme_loader(args.grad)
@@ -119,7 +118,11 @@ def fit(args):
     else:
         # Load mask from file
         mask = torch.from_numpy(nib.load(os.path.join(args.folder, args.mask)).get_fdata().astype(np.float32))
-    
+
+
+    ##This is a debug step because my test data has NaNs in it (i.e it sucks)
+
+
     # # OPTIONAL: make a smaller mask for testing
     # tmpmask  = torch.zeros_like(mask)
     # zslice   = 5
@@ -133,7 +136,8 @@ def fit(args):
     if modelfunc.spherical_mean:        
         #direction average the data. img, grad now become the direction-averaged versions
         print(grad)
-        img,grad = direction_average(img,grad)
+        img,grad = direction_average(img,grad) ##This function leaves Nan's in the data so will need to be fixed in the future.
+
         
     #convert to "voxel-form" i.e. flatten
     X_train, maskvox = img2voxel(img,mask)
@@ -151,7 +155,7 @@ def fit(args):
     net = Net(grad, modelfunc, dim_hidden=grad.number_of_measurements, num_layers=3, dropout_frac=args.dropout_frac, clipping_method=args.clip, activation=mlp_activation[args.activation])
     print(grad.bvecs.shape)
     # Train network
-    _, params = train(net, X_train, grad, modelfunc, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
+    _, params = train(net, X_train, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
         
 
     # Reconstruct parameter maps from network outputs

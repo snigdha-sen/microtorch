@@ -83,7 +83,7 @@ class Sphere:
     def __call__(self, grad, params):
 
         b_values = grad.bvalues
-        delta = grad.delta
+        delta = grad.small_delta
         Delta = grad.Delta
 
         D = 2 # D_IC
@@ -319,7 +319,7 @@ class NEXI:
     def __call__(self, grad, params):
         bvals = grad.bvalues
         bvals[bvals==0] = 1e-4
-        delta = grad.delta
+        delta = grad.small_delta
         Delta = grad.Delta
 
         tds = (Delta - delta/3)* 1e3 # unit conversion to ms
@@ -382,7 +382,7 @@ class NEXI:
     def __call__(self, grad, params):
         bvals = grad.bvalues
         bvals[bvals==0] = 1e-4
-        delta = grad.delta
+        delta = grad.small_delta
         Delta = grad.Delta
 
         tds = (Delta - delta/3)* 1e3 # unit conversion to ms

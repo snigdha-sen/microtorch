@@ -12,7 +12,9 @@ def load_grad(grad_filename):
             grad = grad[:,None]
         
         return grad #np.transpose(grad)
-    except:
+    except Exception as e:
+        print(e)
+        print(grad_filename)
         return None
 
 

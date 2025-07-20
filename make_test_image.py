@@ -89,7 +89,7 @@ def main():
     import torch
     import os
 
-    from acquisition_scheme import acquisition_scheme_loader, txt_file_loader
+    from core.acquisition_scheme import acquisition_scheme_loader, txt_file_loader
 
     parser = argparse.ArgumentParser()
 
@@ -137,7 +137,7 @@ def main():
 
     # #make the model function that will be incorporated into the net
     
-    from model_maker import ModelMaker    
+    from core.model_maker import ModelMaker
     modelfunc = ModelMaker(args.model)
 
     #load the acquisition scheme in
