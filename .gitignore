@@ -174,3 +174,5 @@ cython_debug/
 #.idea/
 
 
+*.gz
+/cubric_contributions/test_data

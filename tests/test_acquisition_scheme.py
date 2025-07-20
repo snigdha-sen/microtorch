@@ -1,6 +1,5 @@
-import numpy as np
 import pytest
-from acquisition_scheme import acquisition_scheme_loader
+from core.acquisition_scheme import acquisition_scheme_loader
 
 
 

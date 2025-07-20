@@ -74,7 +74,8 @@ class Net(nn.Module):
 
         
         X = self.modelfunc(self.grad, params)
-        return X.to(torch.float32), params
+        X = X.to(torch.float32)
+        return torch.nan_to_num(X,nan=0.5), params
     
 
 

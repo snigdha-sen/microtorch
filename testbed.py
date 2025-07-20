@@ -7,13 +7,11 @@ from fit import *
 
 
 def pull_shapes():
-
-    fit = r"/home/c21025395/PycharmProjects/microtorch/fit.py"
-    parent = r"/cubric/collab/314_wand/diffusion/3TM_updatedSANDI_em/derivatives/preprocessed/sub-31400395/ses-01"
-    bval = os.path.join(parent, "314_00395_CHARMED_denoisedMPPCA_driftCo_TED_gibbsCorrSubVoxShift-preproc_dwi.bval")
-    bvecs = os.path.join(parent,"314_00395_CHARMED_denoisedMPPCA_driftCo_TED_gibbsCorrSubVoxShift-preproc_dwi.bvec")
-    mask = os.path.join(parent,"314_00395_CHARMED_denoisedMPPCA_driftCo_TED_gibbsCorrSubVoxShift-preproc_mask.nii.gz")
-    img = os.path.join(parent,"314_00395_CHARMED_denoisedMPPCA_driftCo_TED_gibbsCorrSubVoxShift-preproc_dwi.nii.gz")
+    parent = r"C:\Users\rajib\Documents\GitHub\microtorch\cubric_contributions\test_data"
+    bval = os.path.join(parent, "test.bval")
+    bvecs = os.path.join(parent, "test.bvec")
+    mask = os.path.join(parent, "test_mask.nii.gz")
+    img = os.path.join(parent, "test_img.nii.gz")
     '''
     bval_data = np.loadtxt(bval)
     bvecs_data = np.loadtxt(bvecs)
@@ -25,6 +23,16 @@ def pull_shapes():
     print(mask_data.shape)
     print(img_data.shape)
     '''
+
+    args = gen_args_freeform()
+    args.image = img
+    args.mask = mask
+    args.bvals = bval
+    args.bvecs = bvecs
+    args.model = "SANDI"
+
+    fit_model(args)
+
 
 
     
