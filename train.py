@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as utils
 from tqdm import tqdm
+from core.acquisition_scheme import AquisitionScheme
 
 def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
 
@@ -34,7 +35,10 @@ def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
             # zero the parameter gradients
             my_optim.zero_grad()
             # forward + backward + optimize
+
+            X_batch = AquisitionScheme.sanitize_tensor(X_batch)
             X_pred, pred_params = net(X_batch)
+            print(X_pred.max(), X_pred.min(), X_batch.max(), X_batch.min())
             loss = lossfunc(X_pred, X_batch)
             loss.backward()
             my_optim.step()
