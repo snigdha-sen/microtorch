@@ -110,7 +110,9 @@ class Sphere:
  
         gamma = 2.675987e2
         print(b_values)
-        gradient_strength   = torch.FloatTensor([np.sqrt(b_values[i])/(gamma*delta[i]*np.sqrt(Delta[i]-delta[i]/3)) for i,_ in enumerate(b_values)]) 
+        gradient_strength   = torch.FloatTensor([np.sqrt(b_values[i])/(gamma*delta[i]*np.sqrt(Delta[i]-delta[i]/3)) for i,_ in enumerate(b_values)])
+        ##This gradient strength line almost definetely introduces some errors if 0s or NaN is here
+
         first_factor        = -2*(gamma*gradient_strength)**2 / 2
                 
         Delta = Delta.unsqueeze(0).unsqueeze(2)

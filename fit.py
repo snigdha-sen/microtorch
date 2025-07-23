@@ -10,7 +10,7 @@ from train import train
 from core.model_maker import ModelMaker
 from core.net_maker import Net
 import torch.nn as nn
-from core.acquisition_scheme import acquisition_scheme_loader, as_auto_loader
+from core.acquisition_scheme import *
 import matplotlib.pyplot as plt
 from pathlib import Path
 from utils.util_function import strip_filename 
@@ -104,12 +104,15 @@ def fit_model(args):
     modelfunc = ModelMaker(model) ##Model Func is the function that generates the qmri model i.e SANDI
 
     # Load acquisition parameters
-    if args.bvals is not None:
-        grad = as_auto_loader(args.bvals, args.bvecs, args.delta, args.smalldelta, args.TE, args.bdelta)
+    #if args.bvals is not None:
+    #    grad = as_auto_loader(args.bvals, args.bvecs, args.delta, args.smalldelta, args.TE, args.bdelta)
         
-    if args.grad is not None:
-        grad = acquisition_scheme_loader(args.grad)
-    
+    #if args.grad is not None:
+    #    grad = acquisition_scheme_loader(args.grad)
+
+    grad = AquisitionScheme().load_scheme_from_args(args)
+
+
     # Load the image and mask
     img  = torch.from_numpy(nib.load(os.path.join(args.folder, args.image)).get_fdata().astype(np.float32))
     if args.mask is None:
@@ -186,7 +189,7 @@ def fit_model(args):
 
 def main():
     args = gen_args()
-    fit(args)
+    fit_model(args)
 
 
     return

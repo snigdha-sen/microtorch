@@ -1,275 +1,250 @@
+import warnings
+
 import numpy as np
 from data.load_data import load_grad
 import torch
+
+#from messy_examples.try_acq_scheme import bvalues
+
 
 #This file generates acquisition schemes - i.e the parameters which the model runs on.
 #Currently works but could be improved by integrating the methods of loading into the AS class
 
 
 
+class AquisitionScheme():
+
+    def __init__(self):
 
 
-class AcquisitionScheme: #Renamed for better readability
-    def __init__(self,
-                 bvalues, ##Bvals
-                 bvecs, ##bvecs
-                 gradient_strengths,
-                 small_delta,
-                 Delta,
-                 TE,
-                 bdelta):
+        self.bvalues = None
+        self.bvecs = None
+        self.gradient_strengths = None
+        self.small_delta = None
+        self.Delta = None #This is only staying this way because a lot of previous code uses capital D
+        self.TE = None
+        self.bdelta = None
+        self.number_of_measurements = None
+
+        self.loaded = False
 
 
-        #Redoing this section for clarity - assuming it operates on a simmilar principle to the grad matrix, where the params should actually be lists which align to each image taken
+    #Setter for scheme info
+    def set_scheme(self,
+                   bvalues = None,
+                   bvecs = None,
+                   small_delta = None,
+                   Delta = None,
+                   TE = None,
+                   bdelta = None,
+                   number_of_measurements = None,
+                   ): #sets a scheme into memory based on params
+        ##This could be done using *kwargs if there are way more params in the future!
+        #Setter should receive exact required data!
 
-        self.bvalues = torch.from_numpy(bvalues.astype(np.float32))
+
+        ##checking if values are torch tensors
+        check_vals = [bvalues,bvecs,small_delta,Delta,TE,bdelta]
+        for val in check_vals:
+            if val is not None:
+                assert isinstance(val,torch.Tensor), "All inputs should be tensors"
+
+
+        #This can definetely be done better but leaving as it works for now and not a huge computational drag
+        self.bvalues = bvalues if bvalues is not None else self.bvalues
+        self.bvecs = bvecs if bvecs is not None else self.bvecs
+        #self.gradient_strengths = gradient_strengths if gradient_strengths is not None else self.gradient_strengths
+        self.small_delta = small_delta if small_delta is not None else self.small_delta
+        self.Delta = Delta if Delta is not None else self.Delta
+        self.TE = TE if TE is not None else self.TE
+        self.bdelta = bdelta if bdelta is not None else self.bdelta
+        self.set_number_measurements()
+
+        return
+
+    def set_number_measurements(self):
+        #num of measurements is based off the bvals
         self.number_of_measurements = torch.tensor(len(self.bvalues.flatten()))
-        self.bvecs = torch.from_numpy(bvecs.astype(np.float32))
 
-        gradient_strengths = gradient_strengths if np.size(gradient_strengths) == self.number_of_measurements else np.repeat(gradient_strengths,self.number_of_measurements)
-        small_delta = small_delta if np.size(small_delta) == self.number_of_measurements else np.repeat(small_delta,self.number_of_measurements)
-        Delta = Delta if np.size(Delta) == self.number_of_measurements else np.repeat(Delta,self.number_of_measurements)
-        TE = TE if np.size(TE) == self.number_of_measurements else np.repeat(TE,self.number_of_measurements)
-        bdelta = bdelta if np.size(bdelta) == self.number_of_measurements else np.repeat(bdelta,self.number_of_measurements)
-
-        #This chunk of code could be redone to be even shorter+elegantly but leaving it like this incase individual variables need to be changed in the future
-        #A better way to do this would probably be a dictionary, but its far too intertwined in everything else to change at this point
+    def set_bvalues(self, bval):
+        self.bvalues = bval
+        self.set_number_measurements()
 
 
-        self.gradient_strengths = torch.from_numpy(gradient_strengths.astype(np.float32)) if gradient_strengths is not None else None
-        self.small_delta = torch.from_numpy(small_delta.astype(np.float32)) if small_delta is not None else None
-        self.Delta = torch.from_numpy(Delta.astype(np.float32)) if Delta is not None else None
-        self.TE = torch.from_numpy(TE.astype(np.float32)) if TE is not None else None
-        self.bdelta = torch.from_numpy(bdelta.astype(np.float32)) if bdelta is not None else None
+
+    ##Save scheme (todo)
+    def save_scheme_to_file(self,filepath_acquisition_scheme): ##future function to save schemes
+
+        return
 
 
-        
+    ##Loaders ==> For loading Schemes from various formats
+    def load_scheme_from_args(self,args): #this loads a scheme if you have an args parser
+        #If the format of args changes pls change this code
+        arg_dict = self.get_aq_dict(args.bvals, args.bvecs, args.smalldelta, args.delta, args.TE, args.bdelta)
+        for key, data in arg_dict.items():
+            arg_dict[key] = self.parse_argument_str_or_num(data)
 
 
-def acquisition_scheme_loader(filepath_acquisition_scheme):
-    r"""
-    Creates an acquisition scheme object from bvalues, gradient directions,
-    pulse duration $\delta$ and pulse separation time $\Delta$.
 
-    Note: this function as far as i can tell loads an aquisition scheme from a saved file, although theres no where in this code showing how to generate on
-
-    """
-    acq_scheme = np.loadtxt(filepath_acquisition_scheme)
-    bvalues = np.reshape(acq_scheme[:,3], (1, len(acq_scheme[:,3])))
-
-    if max(bvalues[0,:]) >100:
-        bvalues = bvalues/1000
-
-    if np.any(bvalues < 0):
-        raise ValueError("bvals contains negative values")
-    
-    bvecs = acq_scheme[:,0:3]
-
-    try:
-        Delta = acq_scheme[:,4]
-
-    except:
-        Delta = None
-        
-    try:
-        delta = acq_scheme[:,5]
-    except:
-        delta = None
-
-    try:
-        gradient_strengths = acq_scheme[:,6]
-    except:
-        gradient_strengths = None
-
-    try:
-        TE = acq_scheme[:,7]
-    except:
-        TE = None
-
-    try:
-        bdelta = acq_scheme[:,8]
-    except:
-        bdelta = None
-    
-    #check_acquisition_scheme(bvalues, bvecs, delta, Delta, TE)
+        ##Checks and alteration
+        #We will check if the array is either a single number, or the at least the size of the number of measurements, if neither throw error
+        #Grab number of measurements
+        num_measurements = self.get_num_measurements(arg_dict["bvalues"])
+        for key, data in arg_dict.items():
+            arg_dict[key] = self.format_array_length(arg_dict[key], num_measurements)
+            arg_dict[key] = self.convert_numpy_to_tensor(arg_dict[key])
+            arg_dict[key] = self.sanitize_tensor(arg_dict[key])
 
 
-    return AcquisitionScheme(bvalues, bvecs,
-                             gradient_strengths, Delta, delta, TE, bdelta)
+
+        #self.set_scheme(bvalues,bvecs,Delta,small_delta,TE,bdelta)
+        self.set_scheme(**arg_dict)
+
+        return self
+
+    def load_scheme_from_file(self,filepath_acquisition_scheme):
+        #Loads a Aq Scheme from a file
+        #This code is using an older grad scheme layout (the matrix one)
+        #Should be deprecated once we stop using that way
+
+        acq_scheme = np.loadtxt(filepath_acquisition_scheme)
+        bvalues = np.reshape(acq_scheme[:, 3], (1, len(acq_scheme[:, 3])))
+
+        if max(bvalues[0, :]) > 100: #Normalisation?
+            bvalues = bvalues / 1000
+
+        if np.any(bvalues < 0):
+            raise ValueError("bvals contains negative values")
+
+        bvecs = acq_scheme[:, 0:3]
+
+        Delta = self.grab_matrix_val_for_grad_matrix_aq(acq_scheme,4)
+        small_delta = self.grab_matrix_val_for_grad_matrix_aq(acq_scheme, 5)
+        gradient_strengths = self.grab_matrix_val_for_grad_matrix_aq(acq_scheme, 6) ##Getting rid of this because it was never used in previous code
+        TE = self.grab_matrix_val_for_grad_matrix_aq(acq_scheme, 7)
+        bdelta = self.grab_matrix_val_for_grad_matrix_aq(acq_scheme, 8)
 
 
-def check_acquisition_scheme(
-        b_values, bvecs, delta, Delta, TE):
-    "function to check the validity of the input parameters."
-    if b_values.ndim > 1:
-        msg = "b/q/G input must be a one-dimensional array. "
-        msg += "Currently its dimensions is {}.".format(
-            b_values.ndim
-        )
-        raise ValueError(msg)
-    if len(b_values) != len(bvecs):
-        msg = "b/q/G input and gradient_directions must have the same length. "
-        msg += "Currently their lengths are {} and {}.".format(
-            len(b_values), len(bvecs)
-        )
-        raise ValueError(msg)
-    if delta is not None:
-        if len(b_values) != len(delta):
-            msg = "b/q/G input and delta must have the same length. "
-            msg += "Currently their lengths are {} and {}.".format(
-                len(b_values), len(delta)
-            )
-            raise ValueError(msg)
-        if delta.ndim > 1:
-            msg = "delta must be one-dimensional array. "
-            msg += "Currently its dimension is {}".format(
-                delta.ndim
-            )
-            raise ValueError(msg)
-        if np.min(delta) < 0:
-            msg = "delta must be zero or positive. "
-            msg += "Currently its minimum value is {}.".format(
-                np.min(delta)
-            )
-            raise ValueError(msg)
-    if Delta is not None:
-        if len(b_values) != len(Delta):
-            msg = "b/q/G input and Delta must have the same length. "
-            msg += "Currently their lengths are {} and {}.".format(
-                len(b_values), len(Delta)
-            )
-            raise ValueError(msg)
-        if Delta.ndim > 1:
-            msg = "Delta must be one-dimensional array. "
-            msg += "Currently its dimension is {}.".format(
-                Delta.ndim
-            )
-            raise ValueError(msg)
-        if np.min(Delta) < 0:
-            msg = "Delta must be zero or positive. "
-            msg += "Currently its minimum value is {}.".format(
-                np.min(Delta)
-            )
-            raise ValueError(msg)
+        # check_acquisition_scheme(bvalues, bvecs, delta, Delta, TE)
 
-    if bvecs.ndim != 2 or bvecs.shape[1] != 3:
-        msg = "gradient_directions n must be two dimensional array of shape "
-        msg += "[N, 3]. Currently its shape is {}.".format(
-            bvecs.shape)
-        raise ValueError(msg)
-    if np.min(b_values) < 0.:
-        msg = "b/q/G input must be zero or positive. "
-        msg += "Minimum value found is {}.".format(b_values.min())
-        raise ValueError(msg)
-    gradient_norms = np.linalg.norm(bvecs, axis=1)
-    zero_norms = gradient_norms == 0.
-    if not np.all(abs(gradient_norms[~zero_norms] - 1.) < 0.001):
-        msg = "gradient orientations n are not unit vectors. "
-        raise ValueError(msg)
-    if TE is not None and len(TE) != len(b_values):
-        msg = "If given, TE must be same length b/q/G input."
-        msg += "Currently their lengths are {} and {}.".format(
-            len(TE), len(bvecs)
-        )
+        self.set_scheme(bvalues, bvecs, Delta, small_delta, TE, bdelta)
 
 
-def as_auto_loader(bvals, bvecs, delta, small_delta,TE,bdelta): ##Aquisition Scheme Auto Loader -> refined version of txt loader
-
-    if type(bvals) is str:
-        bvals = load_grad(bvals)
-        bvals = np.transpose(bvals)
-
-    else:
-        TypeError("Bvals Should be a path")
-
-    if type(bvecs) is str:
-        bvecs = load_grad(bvecs)
-        bvecs = np.transpose(bvecs)
-    else:
-        TypeError("Bvals Should be a path")#
-
-    if type(delta) is str:
-        delta = load_grad(delta)
-        delta = np.transpose(delta)
-    elif type(delta) is int or type(delta) is float:
-        delta = np.array(delta)
-
-    if type(small_delta) is str:
-        small_delta = load_grad(small_delta)
-        small_delta = np.transpose(small_delta)
-    elif type(small_delta) is int or type(small_delta) is float:
-        small_delta = np.array(small_delta)
-
-    if type(TE) is str:
-        TE = load_grad(TE)
-        TE = np.transpose(TE)
-    elif type(TE) is int or type(TE) is float:
-        TE = np.array(TE)
-
-    if type(bdelta) is str:
-        bdelta = load_grad(bdelta)
-        bdelta = np.transpose(bdelta)
-    elif type(bdelta) is int or type(bdelta) is float:
-        bdelta = np.array(bdelta)
 
 
-    if np.any(bvals < 0):
-        raise ValueError("bvals contains negative values")
 
-    if max(bvals[0,:]) >100:
-        bvals = bvals/1000 # some reduction function
 
-    gradient_strengths = None  # for now just name this none, can be input or calcualted with deltas
+    ##Error Checking
+    def format_array_length(self, array, num_measurements):
+        if array is None:
+            warnings.warn("One of the parameters is a Nonetype obj, it may be intentional (i.e gradient strengths) this is just a warning in case things break")
 
-    return AcquisitionScheme(bvals, bvecs,
-                             gradient_strengths,
-                             small_delta,
-                             delta,
-                             TE,
-                             bdelta
-                             )
+        size = np.size(array)
+        if size > 1: #This will almost definetely break if the number of measurements is one, soooo dont do that. I am doing it like this because bvecs is shape 266,3, which messes with np.size
+            return array
+        elif size == 1:
+            return np.repeat(array, num_measurements)
+        else:
+            AttributeError("One of the aquisition parameters is neither a number nor an array equivalent to the number of measurements")
 
-def txt_file_loader(bvals, bvecs, Delta, delta,TE,bdelta): ##Deprecated
+    ##Static methods => for simple ops
+    @staticmethod
+    def get_num_measurements(bvalues): # should be bvalues array
+        return len(bvalues.flatten())
+    @staticmethod
+    def convert_numpy_to_tensor(matrix):
+        return torch.from_numpy(matrix.astype(np.float32))
+    @staticmethod
+    def parse_argument_str_or_num(value):
+        if type(value) is str: #If the arguement is a string
+            ##load the numpy string data
+            ##This numpy array should be for each measurement!
+            data = load_grad(value)
+            data = np.transpose(data)
+        elif type(value) is int or type(value) is float:
+            data = np.array(value)
+        else:
+            TypeError("argument is not a valid type")
+        return data
 
-    bvals = load_grad(bvals)
-    bvals = np.transpose(bvals)
-    bvecs = load_grad(bvecs)
-    bvecs = np.transpose(bvecs)
-    Delta = load_grad(Delta)
-    Delta = np.transpose(Delta)
-    smalldelta = load_grad(delta)
-    smalldelta = np.transpose(smalldelta)
-    TE = load_grad(TE)
-    TE = np.transpose(TE)
-    bdelta = load_grad(bdelta)
-    bdelta = np.transpose(bdelta)
-    gradient_strengths = None #for now just name this none, can be input or calcualted with deltas
+    @staticmethod
+    def grab_matrix_val_for_grad_matrix_aq(matrix, column=int):
+        try:
+            data = matrix[:, column]
+        except:
+            data = None
+        return data
 
-    if np.any(bvals < 0):
-        raise ValueError("bvals contains negative values")
+    @staticmethod
+    def get_aq_dict(
+            bvalues,
+            bvecs,
+            small_delta,
+            Delta,
+            TE,
+            bdelta,
 
-    if max(bvals[0,:]) >100:
-        bvals = bvals/1000
 
-    '''
-    if TE:
-        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE),axis=1)
-    if TR and TI:
-        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE=None,TR,TI),axis=1)
-    if TE and TR and TI:
-        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE,TR,TI),axis=1)
-    '''
+    ):
+        return {
+            "bvalues": bvalues,
+            "bvecs": bvecs,
+            "small_delta": small_delta,
+            "Delta": Delta,
+            "TE": TE,
+            "bdelta": bdelta,
+        }
 
-    '''
-    if TE:
-        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE),axis=1)
-    if TR and TI:
-        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE=None,TR,TI),axis=1)
-    if TE and TR and TI:
-        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE,TR,TI),axis=1)
-    '''
+    @staticmethod
+    def sanitize_tensor(  #This is just a testing function, to remove nans and 0s from my test data
+            input_tensor: torch.Tensor,
+            replace_nan_with_zero: bool = True,
+            clamp_min: bool = True,
+            min_clamp_value: float = 0.0,
+            replace_zeros_with_epsilon: bool = False,
+            epsilon: float = 1e-6
+    ) -> torch.Tensor:
+        """
+        Sanitizes a PyTorch tensor by handling NaNs, zeros, and clamping values.
 
-    return AcquisitionScheme(bvals, bvecs,
-                             gradient_strengths, smalldelta, Delta, TE, bdelta
-                             )
+        Args:
+            input_tensor (torch.Tensor): The input tensor to sanitize.
+            replace_nan_with_zero (bool): If True, replaces NaN (Not a Number) values with 0.0.
+                                          Defaults to True.
+            clamp_min (bool): If True, clamps all values in the tensor to be at least
+                              `min_clamp_value`. This ensures non-negativity or a minimum floor.
+                              Defaults to True.
+            min_clamp_value (float): The minimum value for clamping. Only effective if `clamp_min` is True.
+                                     Defaults to 0.0.
+            replace_zeros_with_epsilon (bool): If True, replaces any exact zero values in the tensor
+                                               with `epsilon`. This is particularly useful for values
+                                               that might appear in denominators (e.g., to prevent division by zero)
+                                               or as arguments to functions like `sqrt` where zero or negative
+                                               values are problematic. Defaults to False.
+            epsilon (float): The small positive value to use when replacing zeros. Only effective if
+                             `replace_zeros_with_epsilon` is True. Defaults to 1e-6.
 
+        Returns:
+            torch.Tensor: A new, sanitized tensor. The original input tensor is not modified.
+        """
+        if not isinstance(input_tensor, torch.Tensor):
+            raise TypeError("Input must be a torch.Tensor.")
+
+        # Create a copy to avoid modifying the original tensor in-place
+        sanitized_tensor = input_tensor.clone()
+
+        # 1. Handle NaNs: Replace NaN values with 0.0
+        if replace_nan_with_zero:
+            sanitized_tensor = torch.nan_to_num(sanitized_tensor, nan=0.0)
+
+        # 2. Clamp minimum values: Ensure values are at least `min_clamp_value`
+        if clamp_min:
+            sanitized_tensor = torch.clamp_min(sanitized_tensor, min_clamp_value)
+
+        # 3. Replace exact zeros with epsilon: For strict positivity requirements
+        if replace_zeros_with_epsilon:
+            # Only replace zeros that are exactly 0.0 after clamping
+            sanitized_tensor[sanitized_tensor == 0.0] = epsilon
+
+        return sanitized_tensor
