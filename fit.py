@@ -6,7 +6,7 @@ import random
 import torch
 import numpy as np
 import nibabel as nib
-from train import train
+from train import train, train_single_with_blocks
 from core.model_maker import ModelMaker
 from core.net_maker import Net
 import torch.nn as nn
@@ -41,7 +41,7 @@ def gen_args():
                         default="data/grad_files/delta_verdict.txt", type=str)
     parser.add_argument("-sd", "--smalldelta", help="txt file with gradient pulse duration (ms)",
                         default="data/grad_files/smalldelta_verdict.txt", type=str)
-    parser.add_argument("-TE", "--TE", help="echo time in ms", default="")
+    parser.add_argument("-TE", "--TE", help="echo time in ms", default=0)
     parser.add_argument("-TR", "--TR", help="repetition time in ms", default="")
     parser.add_argument("-TI", "--TI", help="inversion time in ms", default="")
     parser.add_argument("-df", "--dropout_frac", help="dropout fraction", type=float, default=0.2)
@@ -79,7 +79,7 @@ def gen_args_freeform(): ### This removes the required flags so we can generate 
                         default=23.7)
     parser.add_argument("-sd", "--smalldelta", help="txt file with gradient pulse duration (ms)",
                         default=6)
-    parser.add_argument("-TE", "--TE", help="echo time in ms", default="")
+    parser.add_argument("-TE", "--TE", help="echo time in ms", default=0)
     parser.add_argument("-TR", "--TR", help="repetition time in ms", default="")
     parser.add_argument("-TI", "--TI", help="inversion time in ms", default="")
     parser.add_argument("-df", "--dropout_frac", help="dropout fraction", type=float, default=0.2)
@@ -139,7 +139,7 @@ def fit_model(args):
     if modelfunc.spherical_mean:        
         #direction average the data. img, grad now become the direction-averaged versions
         print(grad)
-        img,grad = direction_average(img,grad) ##This function leaves Nan's in the data so will need to be fixed in the future.
+        img,grad = direction_average(img,grad)
 
         
     #convert to "voxel-form" i.e. flatten
@@ -153,13 +153,13 @@ def fit_model(args):
 
 
     # Define network
-    torch.autograd.set_detect_anomaly(True) 
+    #torch.autograd.set_detect_anomaly(True)
     lossfunc = nn.MSELoss()
     net = Net(grad, modelfunc, dim_hidden=grad.number_of_measurements, num_layers=3, dropout_frac=args.dropout_frac, clipping_method=args.clip, activation=mlp_activation[args.activation])
     print(grad.bvecs.shape)
     # Train network
-    _, params = train(net, X_train, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
-        
+    #_, params = train(net, X_train, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
+    _, params = train_single_with_blocks(net, X_train, lossfunc, lr=args.learning_rate, batch_size=256, epochs = args.num_iters)
 
     # Reconstruct parameter maps from network outputs
     param_map = np.zeros((*np.shape(mask),modelfunc.n_params + modelfunc.n_frac))

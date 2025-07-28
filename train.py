@@ -5,6 +5,65 @@ import torch.optim as optim
 import torch.utils.data as utils
 from tqdm import tqdm
 from core.acquisition_scheme import AquisitionScheme
+from core.torch_blocks import *
+from core.trackers import EarlyStoppage
+
+
+def train_single_with_blocks(net,
+                             img,
+                             criterion,
+                             lr=1e-3,
+                             batch_size=256,
+                             epochs=10,
+                             device = "cpu"
+                      ):
+
+    num_batches = len(img) // batch_size
+    trainloader = utils.DataLoader(img,
+                                   batch_size = batch_size,
+                                   drop_last=True,
+                                   shuffle=True,
+                                   )
+
+    optimizer = optim.Adam(net.parameters(), lr=lr)
+    scaler = torch.amp.GradScaler(device=device)
+    early_stoppage = EarlyStoppage(trigger_epoch=10)
+    # best loss
+    best = 1e16
+    num_bad_epochs = 0
+    patience = 10
+
+    for e in range(epochs):
+        print("-----------------------------------------------------------------")
+        print("epoch: {}; bad epochs: {}".format(e, num_bad_epochs))
+        net, loss_average = train_block(net,
+                                          trainloader,
+                                          criterion,
+                                          optimizer,
+                                          scaler,
+                                          device=device)
+
+        early_stoppage.update(loss_average)
+        if early_stoppage.improved:
+            print("Saving Model")
+            torch.save(net.state_dict(),"model.pth")
+        print(f"Best loss: {early_stoppage.loss_track}")
+
+
+    ##Evaluate
+    net.eval()
+    ##Use the test function from core.torch_blocks if doing a more substantial test
+    with torch.no_grad():
+        X_real_pred, params = net(img)
+    return X_real_pred, params
+
+
+
+
+
+
+
+    return
 
 def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
 
@@ -36,7 +95,7 @@ def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
             my_optim.zero_grad()
             # forward + backward + optimize
 
-            X_batch = AquisitionScheme.sanitize_tensor(X_batch)
+            #X_batch = AquisitionScheme.sanitize_tensor(X_batch)
             X_pred, pred_params = net(X_batch)
             print(X_pred.max(), X_pred.min(), X_batch.max(), X_batch.min())
             loss = lossfunc(X_pred, X_batch)
@@ -64,3 +123,4 @@ def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
     with torch.no_grad():
         X_real_pred, params = net(img)
     return X_real_pred, params
+
