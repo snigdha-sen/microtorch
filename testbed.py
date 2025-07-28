@@ -12,7 +12,7 @@ def pull_shapes():
     bvecs = os.path.join(parent, "test.bvec")
     mask = os.path.join(parent, "test_mask.nii.gz")
     img = os.path.join(parent, "test_img.nii.gz")
-    '''
+
     bval_data = np.loadtxt(bval)
     bvecs_data = np.loadtxt(bvecs)
     mask_data = nib.load(mask).get_fdata()
@@ -22,7 +22,7 @@ def pull_shapes():
     print(bvecs_data.shape)
     print(mask_data.shape)
     print(img_data.shape)
-    '''
+
 
     args = gen_args_freeform()
     args.image = img
@@ -32,10 +32,6 @@ def pull_shapes():
     args.model = "SANDI"
 
     fit_model(args)
-
-
-
-    
 
     return
 

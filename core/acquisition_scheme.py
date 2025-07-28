@@ -1,21 +1,14 @@
 import warnings
-
 import numpy as np
 from data.load_data import load_grad
 import torch
 
-#from messy_examples.try_acq_scheme import bvalues
-
-
 #This file generates acquisition schemes - i.e the parameters which the model runs on.
-#Currently works but could be improved by integrating the methods of loading into the AS class
-
 
 
 class AquisitionScheme():
 
     def __init__(self):
-
 
         self.bvalues = None
         self.bvecs = None
@@ -26,7 +19,10 @@ class AquisitionScheme():
         self.bdelta = None
         self.number_of_measurements = None
 
+
+        self.param_dict = None
         self.loaded = False
+        self.image = None #Future placeholder to store image with params
 
 
     #Setter for scheme info
@@ -43,21 +39,17 @@ class AquisitionScheme():
         #Setter should receive exact required data!
 
 
-        ##checking if values are torch tensors
-        check_vals = [bvalues,bvecs,small_delta,Delta,TE,bdelta]
-        for val in check_vals:
-            if val is not None:
-                assert isinstance(val,torch.Tensor), "All inputs should be tensors"
+        ##Check if all new params are tensors
+        new_params = self.get_aq_dict(bvalues, bvecs, small_delta, Delta, TE, bdelta)
+        for key, data in new_params.items():
+            if data is not None: #If the data is none we just ignore it
+                assert isinstance(data,torch.Tensor), "All inputs should be tensors"
 
+        ## Set the attributes - doing this in a seperate loop so we check params before setting them
+        for key, data in new_params.items():
+            if data is not None:
+                setattr(self,key,data)
 
-        #This can definetely be done better but leaving as it works for now and not a huge computational drag
-        self.bvalues = bvalues if bvalues is not None else self.bvalues
-        self.bvecs = bvecs if bvecs is not None else self.bvecs
-        #self.gradient_strengths = gradient_strengths if gradient_strengths is not None else self.gradient_strengths
-        self.small_delta = small_delta if small_delta is not None else self.small_delta
-        self.Delta = Delta if Delta is not None else self.Delta
-        self.TE = TE if TE is not None else self.TE
-        self.bdelta = bdelta if bdelta is not None else self.bdelta
         self.set_number_measurements()
 
         return
@@ -157,15 +149,19 @@ class AquisitionScheme():
         return torch.from_numpy(matrix.astype(np.float32))
     @staticmethod
     def parse_argument_str_or_num(value):
-        if type(value) is str: #If the arguement is a string
+        if type(value) is str and not "": #If the arguement is a string
             ##load the numpy string data
             ##This numpy array should be for each measurement!
             data = load_grad(value)
             data = np.transpose(data)
+            data = np.add(data, 1)
+
         elif type(value) is int or type(value) is float:
             data = np.array(value)
         else:
             TypeError("argument is not a valid type")
+
+
         return data
 
     @staticmethod
