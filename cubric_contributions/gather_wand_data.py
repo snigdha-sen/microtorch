@@ -1,4 +1,4 @@
-## This file will traverse the WAND dataset and put them into objs
+## This file will traverse the WAND dataset and return organised lists of paths - to be used by anyother func to load/train
 import torch
 from torch.utils.data import Dataset
 import os
