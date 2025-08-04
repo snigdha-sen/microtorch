@@ -1,6 +1,3 @@
-#This script will eventually become
-
-
 from model_code.model_maker import ModelMaker
 from model_code.net_maker import Net
 
@@ -13,7 +10,7 @@ from train import train_single_scan_using_blocks
 
 import torch
 
-###This file will be testing the usage of the newer classes for dataset loading and training
+###file for training a model on multiple images!- under construction
 
 
 mlp_activation = {'relu': torch.nn.ReLU(), 'prelu': torch.nn.PReLU(), 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
