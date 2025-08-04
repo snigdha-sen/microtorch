@@ -176,3 +176,6 @@ cython_debug/
 
 *.gz
 /cubric_contributions/test_data
+
+*.pth
+/results/

@@ -1,10 +1,11 @@
 import numpy as np
 import torch
 import re
-import importlib
+import model_code.signal_models as signal_models_module
 
 # Import the signal models module dynamically
-signal_models_module = importlib.import_module("signal_models")
+#import importlib
+#signal_models_module = importlib.import_module("signal_models")
 
 class ModelMaker:
     """
@@ -21,9 +22,11 @@ class ModelMaker:
     def __init__(self, modelname):
         self.comps = self.model_compartments(modelname)
 
-        # Check that all compartments are either spherical mean or not spherical mean
-        if not (all(comp.spherical_mean for comp in self.comps) or all(not comp.spherical_mean for comp in self.comps)):
-            raise ValueError("Invalid input. All compartments must have the same spherical mean property, either all spherical mean or all not spherical mean.")
+
+        ## Comparments must have the same spherical mean property, if spherical mean isnt relevant for a compartment then it is set to None
+        spherical_means = [comp.spherical_mean for comp in self.comps if comp.spherical_mean is not None]
+        assert all(spherical_means) == True, "All compartments must have the same spherical mean property, either all spherical mean or all not spherical mean."
+
 
         # Initialize the parameter ranges, parameter names, compartment names, and number of parameters
         self.parameter_ranges = []
@@ -31,7 +34,7 @@ class ModelMaker:
         self.comp_names = []
         self.n_params = 0
         print('###########', self.comps)
-        self.spherical_mean = self.comps[0].spherical_mean
+        self.spherical_mean = spherical_means[0]
 
         for comp in self.comps:
             self.parameter_ranges.extend(comp.parameter_ranges)

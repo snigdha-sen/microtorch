@@ -7,7 +7,7 @@ __all__ = [
     'Ball',
     'Stick',
     'MSDKI',
-    't2_adc',  
+    't2_adc',
     't1_smdt',
     'get_model_nparams',
     'StandardWM',
@@ -19,7 +19,10 @@ class Ball:
         self.parameter_ranges   = [[.001, 3]]
         self.param_names        = ['D']
         self.n_params           = 1
-        self.spherical_mean     = True ###Changing this from False to True for SANDI as it doesnt matter for sandi
+
+
+        #spherical mean as None means it isnt relevant for a model!
+        self.spherical_mean     = None ###Changing this attribute to None as Ball can be either and it supposedly doesnt really matter
 
 
     def __call__(self, grad, params):    

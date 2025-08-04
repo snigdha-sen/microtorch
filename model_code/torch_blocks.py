@@ -2,7 +2,9 @@ import torch
 from torchmetrics.aggregation import MeanMetric
 from tqdm import tqdm
 
-def test_block(model, loader, criterion ,adaptive_loss=None,device = "cuda"):
+###This file is like the basic training/testing loop, use these like building blocks in anyway needed
+#
+def test_block(model, loader, criterion,device = "cuda"):
     model.eval()
 
     loss_average = MeanMetric()
@@ -27,17 +29,14 @@ def train_block(model, loader, criterion, optimizer, scaler, device="cuda"):
     loss_average = MeanMetric() #Tracks the loss over the dataset
 
     for i, data in enumerate(tqdm(loader), 0):
-        inputs = data
+        inputs = data["image"] if type(data) is dict else data
         #inputs = inputs.to(device)
 
         with torch.autocast(device_type=device):
             prediction, prediction_parameters = model(inputs)
 
-            #print(torch.unique(prediction))
-            #print(torch.unique(inputs))
 
-
-            ##DEBUGGING LINE - THESE TWO CLAMP LINES ARE NEEDED TO
+            ##DEBUGGING LINE
             #prediction = torch.clamp(prediction,  min=1e-8, max=1e6)
             #inputs = torch.clamp(inputs,  min=1e-8, max=1e6)
 
@@ -45,7 +44,7 @@ def train_block(model, loader, criterion, optimizer, scaler, device="cuda"):
 
         optimizer.zero_grad()
         scaler.scale(loss).backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters())
+        torch.nn.utils.clip_grad_norm_(model.parameters(),1)
         scaler.step(optimizer)
         scaler.update()
         loss_average.update(loss.item())

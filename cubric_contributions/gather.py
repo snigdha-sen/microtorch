@@ -1,1 +1,0 @@
-## This file will traverse the WAND dataset and put them into objs
