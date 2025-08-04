@@ -1,9 +1,6 @@
 ## Just an area to try out stuff
-import os
-import numpy as np
-import nibabel as nib
-import subprocess
 from fit import *
+from core.args import gen_args
 
 
 def pull_shapes():
@@ -24,7 +21,7 @@ def pull_shapes():
     print(img_data.shape)
 
 
-    args = gen_args_freeform()
+    args = gen_args()
     args.image = img
     args.mask = mask
     args.bvals = bval
@@ -32,6 +29,8 @@ def pull_shapes():
     args.model = "SANDI"
 
     fit_model(args)
+
+    #fit_model_single_image_test(img, mask, args)
 
     return
 

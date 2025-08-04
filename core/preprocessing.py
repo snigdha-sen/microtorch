@@ -1,51 +1,59 @@
 
 import numpy as np 
 import torch
-
+import nibabel as nib
+import os
 ### This could use a redo to better use the class for aquisition scheme, but works well as it is right now :)
+class PreProcess(): #creating this specifically for wand data, but hopefully can be used for other things :)
 
-def get_grad_matrix(grad):
-    grad_matrix = torch.zeros(grad.number_of_measurements, 9)
-    grad_matrix[:, :3] = grad.bvecs
+    def __init__(self,
+                 grad_scheme,
+                 spherical_mean=False,
+                 eps = 1e-16,
+                 ):
 
-    # Helper function to process parameters
-    def process_param(param, col_idx):
-        if param is None:
-            return
+        self.eps = eps
+        self.grad_scheme = grad_scheme
+        self.spherical_mean = spherical_mean
 
-        if isinstance(param, (int, float)) or (isinstance(param, torch.Tensor) and param.numel() == 1):
-            # If parameter is a single number, fill the entire column with it
-            grad_matrix[:, col_idx] = float(param)
-        else:
-            # If parameter is an array/tensor
-            param_flat = param.view(-1) if isinstance(param, torch.Tensor) else torch.tensor(param).view(-1)
+        if spherical_mean:
+            self.grad_scheme.compute_direction_averaged_scheme()  # This will compute the direction-averaged scheme if spherical_mean is True
 
-            # Check if the array has enough elements
-            if param_flat.shape[0] < grad.number_of_measurements:
-                raise ValueError(
-                    f"Parameter at column {col_idx} has {param_flat.shape[0]} elements, but {grad.number_of_measurements} are required")
+        return
 
-            # Assign the first n elements where n is number_of_measurements
-            grad_matrix[:, col_idx] = param_flat[:grad.number_of_measurements]
+    def __call__(self, image, mask): #This preprocess function only takes in the image path
 
-    # Process bvalues (column 3)
-    process_param(grad.bvalues, 3)
+        if self.spherical_mean:
+            # If spherical mean is True, we need to direction average the image
+            image = self.direction_average(image)
 
-    # Process optional parameters
-    if grad.Delta is not None:
-        process_param(grad.Delta, 4)
-    if grad.small_delta is not None:
-        process_param(grad.small_delta, 5)
-    if grad.gradient_strengths is not None:
-        process_param(grad.gradient_strengths, 6)
-    if grad.TE is not None:
-        process_param(grad.TE, 7)
-    if grad.bdelta is not None:
-        process_param(grad.bdelta, 8)
+        image_vox, mask_vox = img2voxel(image, mask)
+        image_vox = image_vox + self.eps
+        image_vox = normalise(image_vox, self.grad_scheme)
 
-    grad_matrix = torch.nan_to_num(grad_matrix)
+        return image_vox, mask_vox
 
-    return grad_matrix
+    def direction_average(self, img):
+
+        # Find unique shells - all parameters except gradient directions are the same
+        unique_shells = self.grad_scheme.unique_shells
+        shell_idxs = self.grad_scheme.shell_idxs
+
+        # Preallocate
+        new_img  = torch.zeros(img.shape[0:3] + (unique_shells.shape[0],), dtype=img.dtype)
+
+
+        for i, shell in enumerate(unique_shells):
+            # Indices of grad file for this shell
+            shell_index = shell_idxs[i]
+            # Calculate the spherical mean of this shell - average along final axis
+            new_img[..., i] = torch.squeeze(torch.mean(img[..., shell_index], axis=img.ndim-1))
+
+
+        return new_img
+
+
+
 
 def update_grad_class(grad, grad_matrix, new_num_measurements):
     grad.bvecs   = grad_matrix[:,:3]
@@ -55,12 +63,12 @@ def update_grad_class(grad, grad_matrix, new_num_measurements):
         grad.Delta = grad_matrix[:,4]
     if grad.small_delta is not None:
         grad.small_delta = grad_matrix[:, 5]
-    if grad.gradient_strengths is not None:
-        grad.gradient_strengths = grad_matrix[:,6]
+    #if grad.gradient_strengths is not None:
+    #    grad.gradient_strengths = grad_matrix[:,6]
     if grad.TE is not None:
-        grad.TE = grad_matrix[:,7]
+        grad.TE = grad_matrix[:,6]
     if grad.bdelta is not None:
-        grad.bdelta = grad_matrix[:,8]
+        grad.bdelta = grad_matrix[:,7]
 
     grad.number_of_measurements = new_num_measurements
 
@@ -68,7 +76,11 @@ def update_grad_class(grad, grad_matrix, new_num_measurements):
 
 def direction_average(img, grad):
     # Find unique shells - all parameters except gradient directions are the same
-    grad_matrix   = get_grad_matrix(grad)
+    grad_matrix = grad.get_scheme_as_matrix()
+
+    #debug line
+    #print(np.array_equal(np.array(grad_matrix), np.array(grad_matrix2)))
+
     unique_shells = torch.unique(grad_matrix[:, 3:], dim=0)
 
     # Preallocate
@@ -83,7 +95,9 @@ def direction_average(img, grad):
         # Fill in this row of the direction-averaged grad file       
         da_grad[i, 3:] = shell
 
-    return da_img, update_grad_class(grad, da_grad, unique_shells.shape[0])
+    grad.set_scheme_from_matrix(da_grad)
+
+    return da_img
          
 
 def img2voxel(img, mask):
@@ -100,9 +114,6 @@ def img2voxel(img, mask):
     X_train = imgvox[maskvox == 1]
 
     return X_train, maskvox
-
-
-
 
 
 def voxel2img(params, maskvox, shape):
@@ -130,8 +141,6 @@ def normalise(X_train, grad):
         X_train = X_train / X_train[:, normvol].repeat(1, nvol)
 
     return X_train
-
-
 
 
 

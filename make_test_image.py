@@ -1,5 +1,9 @@
 from multiprocessing import freeze_support
+import nibabel as nib
 
+from core.args import gen_args
+from core.acquisition_scheme import AquisitionScheme
+from model_code.model_maker import ModelMaker
 
 def generate_random_params(modelfunc, repeat_interval=10, n_param=100):
     import numpy as np
@@ -84,30 +88,11 @@ def factorize_close(n):
 
 
 def main():
-    import argparse
     import numpy as np
     import torch
     import os
 
-    from core.acquisition_scheme import acquisition_scheme_loader, txt_file_loader
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("-m", "--model", type=str, help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="verdict")
-    parser.add_argument("-bvals", "--bvals", help="bval file in FSL format and in [s/mm2]", default=None)
-    parser.add_argument("-bvecs", "--bvecs", help="bvec file in FSL format", default=None)
-    parser.add_argument("-g", "--grad", help="grad file in mrtrix format", default="")
-    parser.add_argument("-d", "--delta", help="gradient pulse separation in ms", default=24, type=float)
-    parser.add_argument("-sd", "--smalldelta", help="gradient pulse duration in ms", default=8, type=float)
-    parser.add_argument("-TE", "--TE", help="echo time in ms", default="")
-    parser.add_argument("-TR", "--TR", help="repetition time in ms", default="")
-    parser.add_argument("-TI", "--TI", help="inversion time in ms", default="")
-    parser.add_argument("-nparam", "--nparam", help="number of random parameters to sample", default=100)
-    parser.add_argument("-repvox", "--repvox", help="number of repeat voxels to do for each parameter", default=10)
-    parser.add_argument("-nvox", "--nvox", help="total number of voxels", default=5000)
-    parser.add_argument("-savedir", "--savedir", help="directory to save the images", default="data/test_images/")
-
-    args = parser.parse_args()
+    args = gen_args()
 
     model = args.model
 
@@ -136,15 +121,15 @@ def main():
     #     comps_classes += (this_class(),)
 
     # #make the model function that will be incorporated into the net
-    
-    from core.model_maker import ModelMaker
+
     modelfunc = ModelMaker(args.model)
+    grad = AquisitionScheme()
 
     #load the acquisition scheme in
     if args.bvals is not None:
-        grad = txt_file_loader(args.bvals, args.bvecs, args.delta, args.smalldelta, args.TE, args.bdelta)
+        grad.load_scheme_from_args(args)
     if args.grad is not None:
-        grad = acquisition_scheme_loader(args.grad)
+        grad.load_scheme_from_file(args.grad)
 
     #params = generate_random_params(modelfunc, repeat_interval=args.repvox, n_param=args.nparam)
 
@@ -169,7 +154,6 @@ def main():
     mask = torch.ones_like(Simg[:, :, :, 0])
 
     #save the image using nibabel
-    import nibabel as nib
     img = nib.Nifti1Image(Simg.numpy(), np.eye(4))
     nib.save(img, os.path.join(args.savedir, ''.join(modelfunc.comp_names) + '.nii.gz'))
 

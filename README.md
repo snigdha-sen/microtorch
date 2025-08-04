@@ -26,7 +26,7 @@ Run the following in bash
 ```bash
 git clone https://github.com/snigdha-sen/microtorch.git
 
-pip install torch numpy nibabel tqdm scipy matplotlib
+pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
 
 ```
 And the code might work!
@@ -55,7 +55,7 @@ source <MICROTORCH_DIR>/microtorch_env/bin/activate
 Then run 
 
 ```bash
-pip install torch numpy nibabel tqdm scipy matplotlib
+pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
 
 ```
 And the code should work!

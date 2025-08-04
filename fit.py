@@ -1,96 +1,20 @@
 from multiprocessing import freeze_support
-from core.preprocessing import *
-import argparse
 import os
-import random
-import torch
-import numpy as np
 import nibabel as nib
-from train import train, train_single_with_blocks
-from core.model_maker import ModelMaker
-from core.net_maker import Net
+from train import train_single_scan_using_blocks
 import torch.nn as nn
-from core.acquisition_scheme import *
+
 import matplotlib.pyplot as plt
 from pathlib import Path
 from utils.util_function import strip_filename 
 
 
+from core.args import gen_args, gen_args
+from model_code.model_maker import ModelMaker
+from model_code.net_maker import Net
+from core.acquisition_scheme import *
+from core.preprocessing import *
 
-def gen_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-ni", "--num_iters", help="Number of iterations to train for", type=int, default=20)
-    parser.add_argument("-lr", "--learning_rate", help="Learning rate", type=float, default=3e-4)
-    parser.add_argument("-se", "--seed", help="Random seed", type=int, default=random.randint(1, int(1e6)))
-    parser.add_argument("-f", "--folder", help="Folder where image & mask are stored", default=os.getcwd())
-    parser.add_argument("-img", "--image", help="Path of the image to train on", required=True)
-    parser.add_argument("-ma", "--mask", help="Path of the mask to apply to image", default=None, type=str)
-    parser.add_argument("-lss", "--layer_size", help="Layer sizes as list of ints", type=int, default=256)
-    parser.add_argument("-nl", "--num_layers", help="Number of layers", type=int, default=3)
-    parser.add_argument("-m", "--model", type=str,
-                        help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.",
-                        default="verdict")
-    parser.add_argument("-a", "--activation", type=str,
-                        help="Activation function to use with mlp: elu, relu, prelu or tanh.", default="prelu")
-    parser.add_argument("-op", "--operation", help="Operation to perform (train+fit, train, fit).", default="train+fit")
-    parser.add_argument("-bvals", "--bvals", help="bvals file in FSL format and in [s/mm2]", default=None, type=str)
-    parser.add_argument("-bvecs", "--bvecs", help="bvecs file in FSL format", default=None, type=str)
-    parser.add_argument("-grad", "--grad", help="acquisition scheme file in FSL format and in [s/mm2]", default=None,
-                        type=str)
-    parser.add_argument("-d", "--delta", help="txt file with gradient pulse separation (ms)",
-                        default="data/grad_files/delta_verdict.txt", type=str)
-    parser.add_argument("-sd", "--smalldelta", help="txt file with gradient pulse duration (ms)",
-                        default="data/grad_files/smalldelta_verdict.txt", type=str)
-    parser.add_argument("-TE", "--TE", help="echo time in ms", default=0)
-    parser.add_argument("-TR", "--TR", help="repetition time in ms", default="")
-    parser.add_argument("-TI", "--TI", help="inversion time in ms", default="")
-    parser.add_argument("-df", "--dropout_frac", help="dropout fraction", type=float, default=0.2)
-    parser.add_argument("-lmax", "--lmax", help="max order used for spherical harmonics", default=2)
-    parser.add_argument("-bd", "--bdelta", help="shape of gradient pulse", default=1, type=float)
-    parser.add_argument("-c", "--clip", type=str,
-                        help="Clipping method to go to parameter space. Options are clamp and sigmoid", default="clamp")
-
-    args = parser.parse_args()
-
-    return args
-
-
-def gen_args_freeform(): ### This removes the required flags so we can generate this and add arguements during run time
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-ni", "--num_iters", help="Number of iterations to train for", type=int, default=20)
-    parser.add_argument("-lr", "--learning_rate", help="Learning rate", type=float, default=3e-4)
-    parser.add_argument("-se", "--seed", help="Random seed", type=int, default=random.randint(1, int(1e6)))
-    parser.add_argument("-f", "--folder", help="Folder where image & mask are stored", default=os.getcwd())
-    parser.add_argument("-img", "--image", help="Path of the image to train on")
-    parser.add_argument("-ma", "--mask", help="Path of the mask to apply to image", default=None, type=str)
-    parser.add_argument("-lss", "--layer_size", help="Layer sizes as list of ints", type=int, default=256)
-    parser.add_argument("-nl", "--num_layers", help="Number of layers", type=int, default=3)
-    parser.add_argument("-m", "--model", type=str,
-                        help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.",
-                        default="verdict")
-    parser.add_argument("-a", "--activation", type=str,
-                        help="Activation function to use with mlp: elu, relu, prelu or tanh.", default="prelu")
-    parser.add_argument("-op", "--operation", help="Operation to perform (train+fit, train, fit).", default="train+fit")
-    parser.add_argument("-bvals", "--bvals", help="bvals file in FSL format and in [s/mm2]", default=None, type=str)
-    parser.add_argument("-bvecs", "--bvecs", help="bvecs file in FSL format", default=None, type=str)
-    parser.add_argument("-grad", "--grad", help="acquisition scheme file in FSL format and in [s/mm2]", default=None,
-                        type=str)
-    parser.add_argument("-d", "--delta", help="txt file with gradient pulse separation (ms)",
-                        default=23.7)
-    parser.add_argument("-sd", "--smalldelta", help="txt file with gradient pulse duration (ms)",
-                        default=6)
-    parser.add_argument("-TE", "--TE", help="echo time in ms", default=0)
-    parser.add_argument("-TR", "--TR", help="repetition time in ms", default="")
-    parser.add_argument("-TI", "--TI", help="inversion time in ms", default="")
-    parser.add_argument("-df", "--dropout_frac", help="dropout fraction", type=float, default=0.2)
-    parser.add_argument("-lmax", "--lmax", help="max order used for spherical harmonics", default=2)
-    parser.add_argument("-bd", "--bdelta", help="shape of gradient pulse", default=1, type=float)
-    parser.add_argument("-c", "--clip", type=str,
-                        help="Clipping method to go to parameter space. Options are clamp and sigmoid", default="clamp")
-
-    args = parser.parse_args()
-
-    return args
 def fit_model(args):
 
     mlp_activation = {'relu': torch.nn.ReLU(), 'prelu': torch.nn.PReLU(), 'tanh': torch.nn.Tanh(), 'elu': torch.nn.ELU()}
@@ -139,7 +63,8 @@ def fit_model(args):
     if modelfunc.spherical_mean:        
         #direction average the data. img, grad now become the direction-averaged versions
         print(grad)
-        img,grad = direction_average(img,grad)
+        #grad.compute_direction_averaged_scheme()
+        img = direction_average(img,grad) ##This function leaves Nan's in the data so will need to be fixed in the future.
 
         
     #convert to "voxel-form" i.e. flatten
@@ -158,8 +83,8 @@ def fit_model(args):
     net = Net(grad, modelfunc, dim_hidden=grad.number_of_measurements, num_layers=3, dropout_frac=args.dropout_frac, clipping_method=args.clip, activation=mlp_activation[args.activation])
     print(grad.bvecs.shape)
     # Train network
-    #_, params = train(net, X_train, lossfunc, lr=args.learning_rate, batch_size=256, num_iters=args.num_iters)
-    _, params = train_single_with_blocks(net, X_train, lossfunc, lr=args.learning_rate, batch_size=256, epochs = args.num_iters)
+    _, params, __ = train_single_scan_using_blocks(net, X_train, lossfunc, lr=args.learning_rate, batch_size=256, epochs=args.num_iters)
+        
 
     # Reconstruct parameter maps from network outputs
     param_map = np.zeros((*np.shape(mask),modelfunc.n_params + modelfunc.n_frac))
