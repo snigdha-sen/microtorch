@@ -1,4 +1,6 @@
 ###Taken from messy_examples.simulated_data.ipynb
+##Separated because importing from ipynb sometimes caused issues
+
 import numpy as np
 
 #simulate some data from a "cluster model"
