@@ -214,6 +214,25 @@ class AquisitionScheme():
             return data
         else:
             TypeError("argument is not a valid type")
+
+    def apply_direction_average_to_image(self, img):
+
+        # Find unique shells - all parameters except gradient directions are the same
+        unique_shells = self.unique_shells
+        shell_idxs = self.shell_idxs
+
+        # Preallocate
+        new_img  = torch.zeros(img.shape[0:3] + (unique_shells.shape[0],), dtype=img.dtype)
+
+        for i, shell in enumerate(unique_shells):
+            # Indices of grad file for this shell
+            shell_index = shell_idxs[i]
+            # Calculate the spherical mean of this shell - average along final axis
+            new_img[..., i] = torch.squeeze(torch.mean(img[..., shell_index], axis=img.ndim-1))
+
+
+        return new_img
+
     ##Static methods => for simple ops
     @staticmethod
     def get_num_measurements(bvalues): # should be bvalues array

@@ -25,7 +25,8 @@ class PreProcess(): #creating this specifically for wand data, but hopefully can
 
         if self.spherical_mean:
             # If spherical mean is True, we need to direction average the image
-            image = self.direction_average(image)
+            #image = self.direction_average(image)
+            image = self.grad_scheme.apply_direction_average_to_image(image)
 
         image_vox, mask_vox = img2voxel(image, mask)
         image_vox = image_vox + self.eps
@@ -74,6 +75,8 @@ def update_grad_class(grad, grad_matrix, new_num_measurements):
 
     return grad
 
+
+#Old function - could deprecate in future if not needed
 def direction_average(img, grad):
     # Find unique shells - all parameters except gradient directions are the same
     grad_matrix = grad.get_scheme_as_matrix()
