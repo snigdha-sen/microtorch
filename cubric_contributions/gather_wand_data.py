@@ -93,4 +93,3 @@ if __name__ == "__main__":
     print("Bvecs:", bvecs)
     print("Bvals:", bvals)
 
-    
