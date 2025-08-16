@@ -80,3 +80,17 @@ def load_wand(path):
 
 
     return images, masks,bvecs,bvals
+
+
+if __name__ == "__main__":
+    # Example usage
+    path = r""
+    images, masks, bvecs, bvals = load_wand(path)
+
+    # Print the first few entries to verify
+    print("Images:", images)
+    print("Masks:", masks)
+    print("Bvecs:", bvecs)
+    print("Bvals:", bvals)
+
+    
