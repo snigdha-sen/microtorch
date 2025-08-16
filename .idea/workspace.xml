@@ -5,12 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="16cc9cf0-1c87-4362-a716-68bd9e6d1405" name="Changes" comment="Changes Made:&#10;- Changed file structure a little for better readability &#10;- Added some test data based on shapes expected in SANDI WAND dataset&#10;- Rewrote Aquisition Scheme class - also changed the direction averaging code as it wasnt that elegant and added complexity through merging all the params into one model&#10;- Seperated the Args capture and fit function in fit.py so fit.py can be run from both command line and through other scripts if needed&#10;- Changed the args code so that some arguements can either be a string linking to a text file OR just a straight value depending on what you fancy&#10;- Fixed a bug with SANDI model which used the wrong signal models&#10;-">
-      <change afterPath="$PROJECT_DIR$/utils/eval.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dataset.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cubric_contributions/batch_fit.py" beforeDir="false" afterPath="$PROJECT_DIR$/cubric_contributions/batch_fit.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cubric_contributions/slurm_job.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cubric_contributions/gather_wand_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/cubric_contributions/gather_wand_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testbed.py" beforeDir="false" afterPath="$PROJECT_DIR$/testbed.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/params.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/params.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,28 +32,29 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.acquisition_scheme.executor": "Run",
-    "Python.generate_test_data.executor": "Run",
-    "Python.model_maker.executor": "Debug",
-    "Python.testbed.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "rajib",
-    "junie.onboarding.icon.badge.shown": "true",
-    "last_opened_file_path": "C:/Users/rajib/Documents/GitHub/microtorch",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "run.code.analysis.last.selected.profile": "aDefault",
-    "settings.editor.selected.configurable": "reference.settingsdialog.project.grazie",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.acquisition_scheme.executor&quot;: &quot;Run&quot;,
+    &quot;Python.generate_test_data.executor&quot;: &quot;Run&quot;,
+    &quot;Python.model_maker.executor&quot;: &quot;Debug&quot;,
+    &quot;Python.testbed.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHELLCHECK.PATH&quot;: &quot;C:\\Users\\rajib\\AppData\\Roaming\\JetBrains\\PyCharm2025.1\\plugins\\Shell Script\\shellcheck.exe&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;rajib&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/rajib/Documents/GitHub/microtorch&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;aDefault&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settingsdialog.project.grazie&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\rajib\Documents\GitHub\microtorch\cubric_contributions" />
@@ -126,6 +124,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/model_code/model_maker.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
