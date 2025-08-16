@@ -1,7 +1,7 @@
 ## Just an area to try out stuff
 from fit import *
 from core.args import gen_args
-
+from cubric_contributions.batch_fit import fit_model_wand
 
 def pull_shapes():
     parent = r"C:\Users\rajib\Documents\GitHub\microtorch\cubric_contributions\test_data"
@@ -28,9 +28,12 @@ def pull_shapes():
     args.bvecs = bvecs
     args.model = "SANDI"
 
-    fit_model(args)
+    #fit_model(args)
 
     #fit_model_single_image_test(img, mask, args)
+
+    fit_model_wand([img], [mask], args)
+
 
     return
 
