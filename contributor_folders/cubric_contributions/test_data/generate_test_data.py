@@ -8,7 +8,7 @@ mask_shape = (110, 110, 66)
 img_shape = (110, 110, 66,266)
 
 def pull_shapes():
-    parent = r"C:\Users\rajib\Documents\GitHub\microtorch\cubric_contributions\test_data"
+    parent = r""
     bval = os.path.join(parent, "test.bval")
     bvecs = os.path.join(parent, "test.bvec")
     mask = os.path.join(parent, "test_mask.nii.gz")
