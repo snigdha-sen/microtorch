@@ -1,7 +1,7 @@
 # microTorch: microstructure model fitting with PyTorch
 
 
-<img align="left" width="250" height="250" src="logo.jpeg" > 
+<img align="left" width="250" height="250" src="microtorch/files/logo.jpeg" > 
 The microTorch software package is designed to flexibly fit diffusion MRI microstructure models, using a self-supervised deep learning approach. 
 
 This work is by members of the UCL Centre for Medical Image Computing and the Cardiff University Brain Research Imaging Centre. Please contact snigdha.sen.20@ucl.ac.uk with any questions.  
@@ -14,7 +14,7 @@ This work is by members of the UCL Centre for Medical Image Computing and the Ca
 &nbsp;  
 &nbsp;  
 
-<img align="left" src="torch.png" alt="icon" width="45" height="45">
+<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
 
 ## Installation
 
@@ -26,7 +26,7 @@ Run the following in bash
 ```bash
 git clone https://github.com/snigdha-sen/microtorch.git
 
-pip install torch numpy nibabel tqdm scipy matplotlib
+pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
 
 ```
 And the code might work!
@@ -49,13 +49,13 @@ where ```<MICROTORCH_DIR>``` is the location where you cloned the repo.
 Activate the virtual environment
 
 ```bash
-source <MICROTORCH_DIR>/microtorch_env/bin/activate
+files <MICROTORCH_DIR>/microtorch_env/bin/activate
 ```
 
 Then run 
 
 ```bash
-pip install torch numpy nibabel tqdm scipy matplotlib
+pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
 
 ```
 And the code should work!
@@ -63,7 +63,7 @@ And the code should work!
 &nbsp;  
 &nbsp;  
 
-<img align="left" src="torch.png" alt="icon" width="45" height="45">
+<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
 
 ## Command line examples
 
@@ -104,7 +104,7 @@ python fit.py -m BallStick -img data/test_images/BallStick.nii.gz  -grad data/gr
 &nbsp;  
 &nbsp;  
 
-<img align="left" src="torch.png" alt="icon" width="45" height="45">
+<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
 
 ## Choosing a model
 
@@ -133,7 +133,7 @@ There are also a number of predefined models to be used as ```-m <model_name>```
 &nbsp;  
 &nbsp;  
 
-<img align="left" src="torch.png" alt="icon" width="45" height="45">
+<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
 
 ## Adding a new compartment
 
