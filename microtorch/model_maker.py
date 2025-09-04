@@ -1,6 +1,6 @@
 import numpy as np
 import re
-from model_code import signal_models as signal_models_module
+import signal_models as signal_models_module
 
 class ModelMaker:
     """

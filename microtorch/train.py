@@ -2,8 +2,8 @@ import torch.optim as optim
 import torch.utils.data as utils
 
 
-from microtorch.model_code.torch_blocks import *
-from microtorch.utils.trackers import EarlyStoppage
+from torch_blocks import *
+from utils.trackers import EarlyStoppage
 
 
 def train_single_scan_using_blocks(net,  ##Training off a single iamge using the blocks from core.torch_blocks
