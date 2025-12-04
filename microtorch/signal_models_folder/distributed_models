@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from utils.utils_wm import WM_model, spherical_harmonics_directions
 
-class Standard_WM:
+class Standard_WM: ## check with leon
     """
     Standard White Matter model for diffusion MRI signal
     
@@ -57,7 +57,7 @@ class Standard_WM:
         return S
     
 
-class t1_smdt:
+class t1_smdt: ##again, do we want this in the first iteration?
     """
     T1-weighted SMDT model for diffusion MRI signal.
     

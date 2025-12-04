@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from scipy.special import sph_harm,erf
-from microtorch.utils.util_function import cart2sphere
+from utils.util_function import cart2sphere
 
 
 ##check if matlab model and python model correspond. Take bvalues from hcp. order 2, random sample Di,De,Dp [0,3]. Di>De>Dp. fODF: use watson distribution to sample from. Simulate one voxel first

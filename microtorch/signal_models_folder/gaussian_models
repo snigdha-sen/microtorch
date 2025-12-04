@@ -31,7 +31,7 @@ class Ball:
 
         return S
     
-class Msdki:
+class Msdki: ## are we keeping this in for the first iteration?
     """ 
     A class representing a MSDKI model for diffusion MRI.
     This model computes the signal based on the diffusion parameters and gradient directions. 
@@ -48,7 +48,7 @@ class Msdki:
     """
     def __init__(self):        
         self.parameter_ranges   = [[0.001, 3], [0.001, 2]]        
-        self.paraeter_names        = ['D', 'K']        
+        self.parameter_names        = ['D', 'K']        
         self.n_parameters           = 2
         self.spherical_mean     = True
     
