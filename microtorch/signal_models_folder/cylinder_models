@@ -40,7 +40,7 @@ class Stick:
         return S
     
 '''
-    class Cylinder:
+    class Cylinder: ## would be good to have a working version of this
 
         def __init__(self, grad, parameters):
 

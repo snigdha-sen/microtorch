@@ -6,7 +6,7 @@ from torch_blocks import *
 from utils.trackers import EarlyStoppage
 
 
-def train_single_scan_using_blocks(net,  ##Training off a single iamge using the blocks from core.torch_blocks
+def train_single_scan_using_blocks(net,  ##Training off a single iamge using the blocks from core.torch_blocks -- shall we keep this?
                                    data,
                                    criterion,
                                    lr=1e-3,
@@ -14,6 +14,7 @@ def train_single_scan_using_blocks(net,  ##Training off a single iamge using the
                                    epochs=10,
                                    device = "cpu"
                                    ):
+    
 
     num_batches = len(data) // batch_size
     trainloader = utils.DataLoader(data,

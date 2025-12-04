@@ -1,6 +1,6 @@
 import torch
 
-class NEXI:
+class NEXI: ## i'm assuming this doesn't work
     """
     NEXI (Neurite Exchange Imaging) model for diffusion MRI.
 

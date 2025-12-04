@@ -1,8 +1,9 @@
 import numpy as np
 import torch
-from microtorch.utils.util_function import sphere2cart
-from microtorch.utils.utils_wm import WM_model, spherical_harmonics_directions
+from utils.util_function import sphere2cart
+from utils.utils_wm import WM_model, spherical_harmonics_directions
 
+__all__ = ['Ball', 'Stick', 'Msdki', 'Sphere', 'Astrosticks', 'Astrosticks_fixed', 'Zeppelin', 'Standard_WM', 't1_smdt', 'NEXI']
 
 class Ball:
     def __init__(self):
@@ -11,7 +12,7 @@ class Ball:
         self.n_params = 1
 
         # spherical mean as None means it isnt relevant for a model!
-        self.spherical_mean = None  ###Changing this attribute to None as Ball can be either and it supposedly doesnt really matter
+        self.spherical_mean = False ###Changing this attribute to None as Ball can be either and it supposedly doesnt really matter
 
     def __call__(self, grad, params):
         D = params[:, 0].unsqueeze(1)

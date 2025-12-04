@@ -1,9 +1,5 @@
 from multiprocessing import freeze_support
-import nibabel as nib
 
-from microtorch.utils.args import gen_args
-from microtorch.utils.acquisition_scheme import AquisitionScheme
-from microtorch.model_code.model_maker import ModelMaker
 
 def generate_random_params(modelfunc, repeat_interval=10, n_param=100):
     import numpy as np
@@ -13,27 +9,28 @@ def generate_random_params(modelfunc, repeat_interval=10, n_param=100):
     Generate random parameters with an option to repeat every `repeat_interval` elements in a row.
     
     Args:
-        modelfunc: The model function with `parameter_ranges` and `n_frac` attributes.
+        modelfunc: The model function with `parameter_ranges` and `n_fractions` attributes.
         repeat_interval: Number of elements to repeat. Default is 1 (no repetition).
         n_unique: Number of unique sets of parameters to generate.
         
     Returns:
-        params: Tensor of shape [n_unique * repeat_interval, modelfunc.n_params + modelfunc.n_frac] with random parameters.
+        params: Tensor of shape [n_unique * repeat_interval, modelfunc.n_parameters + modelfunc.n_fractions] with random parameters.
     """
     # Extract min and max values from the columns
     min_vals = modelfunc.parameter_ranges[:, 0]
     max_vals = modelfunc.parameter_ranges[:, 1]
 
     # Add the volume fraction min/max values
-    min_vals = np.append(min_vals, np.ones(modelfunc.n_frac))
-    max_vals = np.append(max_vals, np.zeros(modelfunc.n_frac))
+    min_vals = np.append(min_vals, np.ones(modelfunc.n_fractions))
+    max_vals = np.append(max_vals, np.zeros(modelfunc.n_fractions))
 
     #add volume fractions ranges
-    min_vals = np.vstack((min_vals, np.array([[0]]*modelfunc.n_frac)))
-    max_vals = np.vstack((max_vals, np.array([[1]]*modelfunc.n_frac)))
+    min_vals = np.concatenate((modelfunc.parameter_ranges[:, 0], np.zeros(modelfunc.n_fractions)))
+    max_vals = np.concatenate((modelfunc.parameter_ranges[:, 1], np.ones(modelfunc.n_fractions)))
+
 
     # Generate n_unique sets of parameters with random values within the min and max ranges
-    unique_params = (torch.rand(n_param, modelfunc.n_params + modelfunc.n_frac) * (max_vals - min_vals) + min_vals).float()
+    unique_params = (torch.rand(n_param, modelfunc.n_parameters + modelfunc.n_fractions) * (max_vals - min_vals) + min_vals).float()
 
     # Repeat each set of parameters `repeat_interval` times
     params = unique_params.repeat_interleave(repeat_interval, dim=0)
@@ -47,11 +44,11 @@ def generate_smooth_params(modelfunc, nvox=100000):
     # Extract parameter ranges of the non-volume fraction parameters
     ranges = modelfunc.parameter_ranges
     #add volume fractions ranges
-    ranges = np.vstack((ranges, np.array([[0, 1]]*modelfunc.n_frac)))
+    ranges = np.vstack((ranges, np.array([[0, 1]]*modelfunc.n_fractions)))
     # Number of parameters in the model function
-    nparam = modelfunc.n_params + modelfunc.n_frac
+    nparam = modelfunc.n_parameters + modelfunc.n_fractions
     #check that the number of parameter ranges matches the number of parameters in the model function 
-    if ranges.shape[0] != modelfunc.n_params + modelfunc.n_frac:
+    if ranges.shape[0] != modelfunc.n_parameters + modelfunc.n_fractions:
         ValueError("The number of parameter ranges for simulation does not match the number of parameters in the model function.")
 
     num_samples_per_dim = int(np.ceil(np.power(nvox,1/nparam))) #number of samples per dimension
@@ -88,11 +85,31 @@ def factorize_close(n):
 
 
 def main():
+    import argparse
     import numpy as np
     import torch
     import os
 
-    args = gen_args()
+    from acquisition_scheme import acquisition_scheme_loader, txt_file_loader
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-m", "--model", type=str, help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="verdict")
+    parser.add_argument("-bvals", "--bvals", help="bval file in FSL format and in [s/mm2]", default=None)
+    parser.add_argument("-bvecs", "--bvecs", help="bvec file in FSL format", default=None)
+    parser.add_argument("-g", "--grad", help="grad file in mrtrix format", default="")
+    parser.add_argument("-d", "--delta", help="gradient pulse separation in ms", default=24, type=float)
+    parser.add_argument("-sd", "--smalldelta", help="gradient pulse duration in ms", default=8, type=float)
+    parser.add_argument("-TE", "--TE", help="echo time in ms", default="")
+    parser.add_argument("-TR", "--TR", help="repetition time in ms", default="")
+    parser.add_argument("-TI", "--TI", help="inversion time in ms", default="")
+    parser.add_argument("-nparam", "--nparam", help="number of random parameters to sample", default=100)
+    parser.add_argument("-repvox", "--repvox", help="number of repeat voxels to do for each parameter", default=10)
+    parser.add_argument("-nvox", "--nvox", help="total number of voxels", default=5000)
+    parser.add_argument("-savedir", "--savedir", help="directory to save the images", default="../contributor_folders/snigdha/data/test_images/")
+    parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", default=1, type=float)
+
+    args = parser.parse_args()
 
     model = args.model
 
@@ -121,19 +138,24 @@ def main():
     #     comps_classes += (this_class(),)
 
     # #make the model function that will be incorporated into the net
+    import sys
+    from pathlib import Path
 
+    # Add parent directory to Python path
+    sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+    from model_maker import ModelMaker    
     modelfunc = ModelMaker(args.model)
-    grad = AquisitionScheme()
 
     #load the acquisition scheme in
     if args.bvals is not None:
-        grad.load_scheme_from_args(args)
+        grad = txt_file_loader(args.bvals, args.bvecs, args.delta, args.smalldelta, args.TE, args.bdelta)
     if args.grad is not None:
-        grad.load_scheme_from_file(args.grad)
+        grad = acquisition_scheme_loader(args.grad)
 
-    #params = generate_random_params(modelfunc, repeat_interval=args.repvox, n_param=args.nparam)
+    params = generate_random_params(modelfunc, repeat_interval=args.repvox, n_param=args.nparam)
 
-    params = generate_smooth_params(modelfunc, args.nvox)
+    #params = generate_smooth_params(modelfunc, args.nvox)
 
     # params_ball = generate_random_params(ball_modelfunc, repeat_interval=10)
     # params_stick = generate_random_params(stick_modelfunc, repeat_interval=10)
@@ -154,14 +176,15 @@ def main():
     mask = torch.ones_like(Simg[:, :, :, 0])
 
     #save the image using nibabel
+    import nibabel as nib
     img = nib.Nifti1Image(Simg.numpy(), np.eye(4))
-    nib.save(img, os.path.join(args.savedir, ''.join(modelfunc.comp_names) + '.nii.gz'))
+    nib.save(img, os.path.join(args.savedir, ''.join(modelfunc.compartment_names) + '.nii.gz'))
 
     paramsnii = nib.Nifti1Image(paramsimg.numpy(), np.eye(4))
-    nib.save(paramsnii, os.path.join(args.savedir, ''.join(modelfunc.comp_names) + '_params.nii.gz'))
+    nib.save(paramsnii, os.path.join(args.savedir, ''.join(modelfunc.compartment_names) + '_params.nii.gz'))
 
     maskimg = nib.Nifti1Image(mask.numpy(), np.eye(4))
-    nib.save(maskimg, os.path.join(args.savedir, ''.join(modelfunc.comp_names) + '_mask.nii.gz'))
+    nib.save(maskimg, os.path.join(args.savedir, ''.join(modelfunc.compartment_names) + '_mask.nii.gz'))
 
 
 
