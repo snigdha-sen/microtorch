@@ -1,6 +1,7 @@
 import numpy as np
 import re
-import signal_models as signal_models_module
+import microtorch.signal_models_folder as signal_models_module
+
 
 class ModelMaker:
     """
@@ -58,9 +59,9 @@ class ModelMaker:
 
         for comp in self.compartments:
             self.parameter_ranges.extend(comp.parameter_ranges)
-            self.parameter_names.extend(comp.param_names)
+            self.parameter_names.extend(comp.parameter_names)
             self.compartment_names.append(comp.__class__.__name__)
-            self.n_parameters += comp.n_params
+            self.n_parameters += comp.n_parameters
 
         self.parameter_ranges = np.array(self.parameter_ranges)  # Convert to numpy array
 
@@ -128,12 +129,12 @@ class ModelMaker:
 
     def get_parameter_indices(self):
         #calculate a tuple of indices of where the parameters for each compartment are in the parameter vector
-        param_ind = (list(range(0,self.compartments[0].n_params)) ,) #initialise tuple from the first compartment
+        param_ind = (list(range(0,self.compartments[0].n_parameters)) ,) #initialise tuple from the first compartment
         for i in range(1,len(self.compartments)):
             #get the index of the last compartment's last parameter
             last_param_ind = 1 + param_ind[i-1][-1]
             #add the indices of the parameters for the next compartment to the tuple
-            param_ind += (list(range(last_param_ind, last_param_ind + self.compartments[i].n_params)), )
+            param_ind += (list(range(last_param_ind, last_param_ind + self.compartments[i].n_parameters)), )
 
         return param_ind
 

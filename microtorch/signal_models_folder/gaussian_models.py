@@ -1,5 +1,5 @@
 import torch
-from utils.util_function import sphere2cart
+from ..utils.util_function import sphere2cart
 
 class Ball:
     """

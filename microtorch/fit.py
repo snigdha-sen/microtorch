@@ -122,22 +122,21 @@ if __name__ == '__main__':
     main()
 '''
 from multiprocessing import freeze_support
-from utils.preprocessing import *
-from utils.acquisition_scheme import *
+from microtorch.utils.preprocessing import *
+from microtorch.utils.acquisition_scheme import *
 import argparse
 import os
 import random
 import torch
 import numpy as np
 import nibabel as nib
-from train import train
-from model_maker import ModelMaker
-from net_maker import Net
+from microtorch.train import train
+from microtorch.model_maker import ModelMaker
+from microtorch.net_maker import Net
 import torch.nn as nn
-from utils.acquisition_scheme import txt_file_loader, acquisition_scheme_loader
 import matplotlib.pyplot as plt
 from pathlib import Path
-from utils.util_function import strip_filename 
+from microtorch.utils.util_function import strip_filename 
 
 def main():
     parser = argparse.ArgumentParser()
@@ -149,7 +148,7 @@ def main():
     parser.add_argument("-ma",  "--mask",       help="Path of the mask to apply to image", default=None, type=str)
     parser.add_argument("-lss", "--layer_size", help="Layer sizes as list of ints", type=int,  default=256)
     parser.add_argument("-nl",  "--num_layers", help="Number of layers", type=int, default=3)
-    parser.add_argument("-m",   "--model", type=str, help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="verdict")
+    parser.add_argument("-mod",   "--model", type=str, help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="verdict")
     parser.add_argument("-a",   "--activation", type=str, help="Activation function to use with mlp: elu, relu, prelu or tanh.", default="prelu")
     parser.add_argument("-op",  "--operation",  help="Operation to perform (train+fit, train, fit).", default="train+fit")
     parser.add_argument("-bvals", "--bvals",    help="bvals file in FSL format and in [s/mm2]",      default=None,      type=str)
