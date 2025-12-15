@@ -1,6 +1,6 @@
 import numpy as np
 import re
-import microtorch.signal_models_folder as signal_models_module
+import microtorch.signal_models as signal_models_module
 
 
 class ModelMaker:

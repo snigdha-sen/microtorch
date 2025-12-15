@@ -76,6 +76,10 @@ class Zeppelin:
     Methods:
         __init__(): Initializes the Zeppelin model with parameter ranges and names.
         __call__(grad, parameters): Computes the signal based on the gradient and parameters.
+
+        def _attenuation_zeppelin(bvals, lambda_par, lambda_perp, n, mu):
+    "Signal attenuation for Zeppelin model."
+    
     """
     def __init__(self):
         self.parameter_ranges = [[.001, 3], [.001, 1], [0, torch.pi], [-torch.pi, torch.pi]]
@@ -94,8 +98,27 @@ class Zeppelin:
         theta = parameters[:, 2].unsqueeze(1)
         phi = parameters[:, 3].unsqueeze(1)
 
-        n = sphere2cart(theta, phi)
+        mu = sphere2cart(theta, phi)        # (N, 3)
+        mu = mu / torch.norm(mu, dim=1, keepdim=True)
 
-        S = torch.exp(1/3.0 * b_values * (Dpar - Dper) - b_values/3.0 * (Dper + 2*Dpar) - b_values * (torch.mm(b_vectors),n)**2) * (Dpar - Dper)
-             
+        # Gradient direction n
+        n = b_vectors                            # (M, 3)
+
+        # Parallel component
+        mag_par = torch.sum(n * mu, dim=1, keepdim=True)
+
+        # Perpendicular projection
+        I = torch.eye(3, device=mu.device)
+        mu_perp = I - mu.unsqueeze(2) @ mu.unsqueeze(1)
+        proj = torch.matmul(mu_perp, n.unsqueeze(2)).squeeze(2)
+
+        mag_perp = torch.norm(proj, dim=1, keepdim=True)
+
+        S = torch.exp(
+            -b_values * (
+                Dpar * mag_par**2 +
+                Dper * mag_perp**2
+            )
+        )
+
         return S
