@@ -43,11 +43,11 @@ class Stick:
 
     class Cylinder: ## would be good to have a working version of this
     
-        def __init__(self, grad, parameters):
+        def __init__(self):
 
             self.parameter_ranges = [[0, torch.pi], [-torch.pi, torch.pi], [.001, 3], [.001, 10]] 
             self.parameter_names = ['theta', 'phi', 'D_par', 'radius']
-            self.n_parameters = 3
+            self.n_parameters = 4
             self.spherical_mean = False
 
         def __call__(self, grad, parameters):
@@ -66,8 +66,8 @@ class Stick:
             diameter = 2*radius
             gamma = 2.67e8
 
-            _CYLINDER_TRASCENDENTAL_ROOTS = torch.sort(special.jnp_zeros(1, 100))
-            lambda_perp = 2 # check this
+            _CYLINDER_TRASCENDENTAL_ROOTS = torch.sort(special.jnp_zeros(1, 100)) ## store this somewhere
+            lambda_perp = 2e-9 # check this
 
             mu = sphere2cart(theta, phi)
             mu = mu / torch.norm(mu, dim=1, keepdim=True)
@@ -86,7 +86,7 @@ class Stick:
             mask = g_perp > 0
 
             def perpendicular_attenuation(
-                self, g, delta, Delta, diameter, D, gamma, roots
+                g, delta, Delta, diameter, D, gamma, roots
             ):
                 R = diameter / 2
                 first_factor = -2 * (g * gamma) ** 2
@@ -96,13 +96,15 @@ class Stick:
 
                 summands = (
                     2 * alpha2D * delta - 2 +
-                    2 * np.exp(-alpha2D * delta) +
-                    2 * np.exp(-alpha2D * Delta) -
-                    np.exp(-alpha2D * (Delta - delta)) -
-                    np.exp(-alpha2D * (Delta + delta))
+                    2 * torch.exp(-alpha2D * delta) +
+                    2 * torch.exp(-alpha2D * Delta) -
+                    torch.exp(-alpha2D * (Delta - delta)) -
+                    torch.exp(-alpha2D * (Delta + delta))
                 ) / (D ** 2 * alpha ** 6 * (radius ** 2 * alpha2 - 1))
 
-                E = np.exp(first_factor * summands.sum())
+                S = summands.sum()
+
+                E = torch.exp(first_factor * S)
                 return E
             
 
@@ -113,7 +115,7 @@ class Stick:
             diameter,
             lambda_perp,
             gamma,
-             _CYLINDER_TRASCENDENTAL_ROOTS
+             _CYLINDER_TRASCENDENTAL_ROOTS.to(g_perp.device)
             )
 
             return E_parallel * E_perpendicular
