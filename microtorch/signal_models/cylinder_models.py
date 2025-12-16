@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import scipy.special as special
 from ..utils.util_function import sphere2cart
 
 class Stick:
@@ -39,9 +40,9 @@ class Stick:
      
         return S
     
-'''
-    class Cylinder: ## would be good to have a working version of this
 
+    class Cylinder: ## would be good to have a working version of this
+    
         def __init__(self, grad, parameters):
 
             self.parameter_ranges = [[0, torch.pi], [-torch.pi, torch.pi], [.001, 3], [.001, 10]] 
@@ -51,120 +52,72 @@ class Stick:
 
         def __call__(self, grad, parameters):
 
-            b_vectors    = grad.bvecs
+            b_vectors = grad.bvecs
             b_values = grad.bvalues
             delta = grad.delta
             Delta = grad.Delta
+            g = grad.gradient_strengths
 
-            _CYLINDER_TRASCENDENTAL_ROOTS = np.sort(special.jnp_zeros(1, 100))
+            theta      = parameters[:, 0]
+            phi        = parameters[:, 1]
+            lambda_par = parameters[:, 2].unsqueeze(1)
+            radius   = parameters[:, 3].unsqueeze(1)
+            
+            diameter = 2*radius
+            gamma = 2.67e8
 
-        
-        
-    DMIPY 
-    class C4CylinderGaussianPhaseApproximation(
-        ModelProperties, AnisotropicSignalModelProperties):
-    r""" The Gaussian phase model [1]_ - a cylinder with finite radius -
-    typically used for intra-axonal diffusion. The perpendicular diffusion is
-    modelled after Van Gelderen's solution for the disk. It is dependent on
-    gradient strength, pulse separation and pulse length.
+            _CYLINDER_TRASCENDENTAL_ROOTS = torch.sort(special.jnp_zeros(1, 100))
+            lambda_perp = 2 # check this
 
-    Parameters
-    ----------
-    mu : array, shape(2),
-        angles [theta, phi] representing main orientation on the sphere.
-        theta is inclination of polar angle of main angle mu [0, pi].
-        phi is polar angle of main angle mu [-pi, pi].
-    lambda_par : float,
-        parallel diffusivity in 10^9 m^2/s.
-    diameter : float,
-        cylinder (axon) diameter in meters.
+            mu = sphere2cart(theta, phi)
+            mu = mu / torch.norm(mu, dim=1, keepdim=True)
 
+            dot = torch.sum(b_vectors * mu, dim=1, keepdim=True)
+            I = torch.eye(3, device=mu.device)
+            mu_perp = I - mu.unsqueeze(2) @ mu.unsqueeze(1)
+            proj = torch.matmul(mu_perp, b_vectors.unsqueeze(2)).squeeze(2)
+            mag_perp = torch.norm(proj, dim=1, keepdim=True)
 
-    References
-    ----------
-    .. [1] Van Gelderen et al. "Evaluation of Restricted Diffusion in
-            Cylinders. Phosphocreatine in Rabbit Leg Muscle"
-            Journal of Magnetic Resonance Series B (1994)
-    """
+            E_parallel = torch.exp(-b_values * lambda_par * dot**2)
 
-    _required_acquisition_parameters = [
-        'bvalues', 'gradient_directions',
-        'gradient_strengths', 'delta', 'Delta']
+            g_perp = g * mag_perp
+            E_perpendicular = torch.ones_like(g)
 
-    _parameter_ranges = {
-        'mu': ([0, np.pi], [-np.pi, np.pi]),
-        'lambda_par': (.1, 3),
-        'diameter': (1e-2, 20)
-    }
-    _parameter_scales = {
-        'mu': np.r_[1., 1.],
-        'lambda_par': DIFFUSIVITY_SCALING,
-        'diameter': DIAMETER_SCALING
-    }
-    _parameter_types = {
-        'mu': 'orientation',
-        'lambda_par': 'normal',
-        'diameter': 'cylinder'
-    }
-    _model_type = 'CompartmentModel'
-    _CYLINDER_TRASCENDENTAL_ROOTS = np.sort(special.jnp_zeros(1, 100))
+            mask = g_perp > 0
 
-    def __init__(
-        self,
-        mu=None, lambda_par=None,
-        diameter=None,
-        diffusion_perpendicular=CONSTANTS['water_in_axons_diffusion_constant']
-    ):
-        self.mu = mu
-        self.lambda_par = lambda_par
-        self.diffusion_perpendicular = diffusion_perpendicular
-        self.gyromagnetic_ratio = CONSTANTS['water_gyromagnetic_ratio']
-        self.diameter = diameter
+            def perpendicular_attenuation(
+                self, g, delta, Delta, diameter, D, gamma, roots
+            ):
+                R = diameter / 2
+                first_factor = -2 * (g * gamma) ** 2
+                alpha = roots / R
+                alpha2 = alpha ** 2
+                alpha2D = alpha2 * D
 
-    def perpendicular_attenuation(
-        self, gradient_strength, delta, Delta, diameter
-    ):
-        "Calculates the cylinder's perpendicular signal attenuation."
-        D = self.diffusion_perpendicular
-        gamma = self.gyromagnetic_ratio
-        return _attenuation_perpendicular_gaussian_phase(
-            diameter, gradient_strength, delta, Delta,
-            D, gamma, self._CYLINDER_TRASCENDENTAL_ROOTS)
+                summands = (
+                    2 * alpha2D * delta - 2 +
+                    2 * np.exp(-alpha2D * delta) +
+                    2 * np.exp(-alpha2D * Delta) -
+                    np.exp(-alpha2D * (Delta - delta)) -
+                    np.exp(-alpha2D * (Delta + delta))
+                ) / (D ** 2 * alpha ** 6 * (radius ** 2 * alpha2 - 1))
 
-    def __call__(self, acquisition_scheme, **kwargs):
-        r
-        bvals = acquisition_scheme.bvalues
-        n = acquisition_scheme.gradient_directions
-        g = acquisition_scheme.gradient_strengths
-        delta = acquisition_scheme.delta
-        Delta = acquisition_scheme.Delta
+                E = np.exp(first_factor * summands.sum())
+                return E
+            
 
-        diameter = kwargs.get('diameter', self.diameter)
-        lambda_par = kwargs.get('lambda_par', self.lambda_par)
-        mu = kwargs.get('mu', self.mu)
-        mu = utils.unitsphere2cart_1d(mu)
-        mu_perpendicular_plane = np.eye(3) - np.outer(mu, mu)
-        magnitude_perpendicular = np.linalg.norm(
-            np.dot(mu_perpendicular_plane, n.T),
-            axis=0
-        )
-        E_parallel = _attenuation_parallel_stick(bvals, lambda_par, n, mu)
-        E_perpendicular = np.ones_like(g)
-        g_perp = g * magnitude_perpendicular
-
-        g_nonzero = g_perp > 0
-        # for every unique combination get the perpendicular attenuation
-        unique_deltas = np.unique([acquisition_scheme.shell_delta,
-                                   acquisition_scheme.shell_Delta], axis=1)
-        for delta_, Delta_ in zip(*unique_deltas):
-            mask = np.all([g_nonzero, delta == delta_, Delta == Delta_],
-                          axis=0)
-            E_perpendicular[mask] = self.perpendicular_attenuation(
-                g_perp[mask], delta_, Delta_, diameter
+            E_perpendicular[mask] = perpendicular_attenuation(
+            g_perp[mask],
+            delta[mask],
+            Delta[mask],
+            diameter,
+            lambda_perp,
+            gamma,
+             _CYLINDER_TRASCENDENTAL_ROOTS
             )
-        return E_parallel * E_perpendicular
 
-    '''
+            return E_parallel * E_perpendicular
+
     
 class Astrosticks:
     '''
