@@ -34,8 +34,15 @@ class Standard_wm: ## check with leon
         b_values = grad.bvalues
         b_vectors = grad.bvecs
 
-        if b_vectors.shape[1] != 3:
-            b_vectors = b_vectors.swapaxes(0, 1)
+        if b_vectors.ndim != 2:
+            raise ValueError(f"b_vectors must be 2D, got shape {b_vectors.shape}")
+
+        if b_vectors.shape[1] == 3:
+            pass  # already correct (N, 3)
+        elif b_vectors.shape[0] == 3:
+            b_vectors = b_vectors.T  # (3, N) → (N, 3)
+        else:
+            raise ValueError(f"Invalid b_vectors shape: {b_vectors.shape}")
 
         # is not really delta 
         if grad.bdelta == None:
