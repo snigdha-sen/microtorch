@@ -121,7 +121,7 @@ def main():
     # elif model == "StickBall":
     #     comps = ("Stick","Ball")
     # elif model == "StandardWM":
-    #     comps = ("Standard_WM",)
+    #     comps = ("Standard_wm",)
     # elif model == "VERDICT":
     #     comps = ("Ball", "Sphere", "Astrosticks")
 
