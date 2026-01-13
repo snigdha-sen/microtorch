@@ -32,7 +32,7 @@ def gen_args(): ### This removes the required flags so we can generate this and 
     parser.add_argument("-TI", "--TI", help="inversion time in ms", default=None)
     parser.add_argument("-df", "--dropout_frac", help="dropout fraction", type=float, default=0.2)
     parser.add_argument("-lmax", "--lmax", help="max order used for spherical harmonics", default=2)
-    parser.add_argument("-bd", "--bdelta", help="shape of gradient pulse", default=1, type=float)
+    parser.add_argument("-bd", "--bdelta", help="shape of gradient pulse", default=None, type=str)
     parser.add_argument("-c", "--clip", type=str,
                         help="Clipping method to go to parameter space. Options are clamp and sigmoid", default="clamp")
 

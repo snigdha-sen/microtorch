@@ -163,6 +163,8 @@ class ModelMaker:
             compartment_list = ["Ball", "Ball"]
         elif modelname == "NEXI":
             compartment_list = ["NEXI",]
+        elif modelname == "Standard_wm":
+            compartment_list = ["Standard_wm",]
         else:
             compartment_list = re.findall('([A-Z][a-z]+)', modelname)
         for comp in compartment_list:
