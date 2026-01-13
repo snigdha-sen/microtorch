@@ -34,6 +34,9 @@ class Standard_wm: ## check with leon
         b_values = grad.bvalues
         b_vectors = grad.bvecs
 
+        if b_vectors.shape[1] != 3:
+            b_vectors = b_vectors.swapaxes(0, 1)
+
         # is not really delta 
         if grad.bdelta == None:
             bdelta = 1
@@ -42,7 +45,6 @@ class Standard_wm: ## check with leon
 
         b_values = b_values.ravel()
         bdelta = bdelta.ravel()
-        b_vectors = b_vectors.swapaxes(0, 1)
 
         p00 = 1/torch.sqrt(torch.tensor(4)*torch.pi)*torch.ones_like(params[:,4].unsqueeze(1))
 
