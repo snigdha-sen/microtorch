@@ -14,19 +14,6 @@ This work is by members of the UCL Centre for Medical Image Computing and the Ca
 
 ## Installation
 
-
-### Without virtual enviroment (not recommended)
-
-Run the following in bash
-
-```bash
-git clone https://github.com/snigdha-sen/microtorch.git
-
-pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
-
-```
-And the code might work!
-
 ### With virtual environment (recommended)
 
 Clone the directory
@@ -54,10 +41,19 @@ Then run
 pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
 
 ```
-And the code should work!
 
-&nbsp;  
-&nbsp;  
+### Without virtual enviroment (not recommended)
+
+Run the following in bash
+
+```bash
+git clone https://github.com/snigdha-sen/microtorch.git
+
+pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
+
+```
+
+&nbsp;   
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
