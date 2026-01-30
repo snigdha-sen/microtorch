@@ -2,9 +2,9 @@
 
 
 <img align="left" width="250" height="250" src="files/logo.jpeg" > 
-The microTorch software package is designed to flexibly fit diffusion MRI microstructure models, using a self-supervised deep learning approach. 
+The microTorch software package is designed to flexibly fit diffusion MRI (dMRI) microstructure models, using a self-supervised deep learning approach. The framework is designed to work with a variety of established dMRI multicompartment models, such as Ball-and-Stick, VERDICT and SANDI, but also allows users to combine compartment models as they wish.
 
-This work is by members of the UCL Centre for Medical Image Computing and the Cardiff University Brain Research Imaging Centre. Please contact snigdha.sen.20@ucl.ac.uk with any questions.  
+This work is by members of the UCL Centre for Medical Image Computing and the Cardiff University Brain Research Imaging Centre. We encourage contributions from the wider diffusion MRI community, and welcome requests for new features. Please contact snigdha.sen.20@ucl.ac.uk with any questions.  
 
 &nbsp;  
 &nbsp;  
