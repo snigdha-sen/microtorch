@@ -1,7 +1,7 @@
 
 #This file generates acquisition schemes - i.e the parameters which the model runs on.
 import numpy as np
-from microtorch.utils.load_data import load_grad
+from src.utils.load_data import load_grad
 import torch
 
 class acquisitions_scheme:

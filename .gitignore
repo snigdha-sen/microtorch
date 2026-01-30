@@ -1,6 +1,7 @@
 #Results folder
 contributor_folders/
 ./results/*
+outputs/
 
 
 data/.DS_Store

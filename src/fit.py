@@ -122,21 +122,21 @@ if __name__ == '__main__':
     main()
 '''
 from multiprocessing import freeze_support
-from microtorch.utils.preprocessing import *
-from microtorch.utils.acquisition_scheme import *
+from src.utils.preprocessing import *
+from src.utils.acquisition_scheme import *
 import argparse
 import os
 import random
 import torch
 import numpy as np
 import nibabel as nib
-from microtorch.train import train
-from microtorch.model_maker import ModelMaker
-from microtorch.net_maker import Net
+from src.train import train
+from src.model_maker import ModelMaker
+from src.net_maker import Net
 import torch.nn as nn
 import matplotlib.pyplot as plt
 from pathlib import Path
-from microtorch.utils.util_function import strip_filename 
+from src.utils.util_function import strip_filename 
 
 def main():
     parser = argparse.ArgumentParser()
