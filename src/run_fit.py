@@ -1,0 +1,152 @@
+import os
+import random
+from pathlib import Path
+from hydra.core.hydra_config import HydraConfig
+
+import numpy as np
+import torch
+import torch.nn as nn
+import nibabel as nib
+
+from src.train import train
+from src.model_maker import ModelMaker
+from src.net_maker import Net
+from src.utils import (
+    txt_file_loader,
+    acquisition_scheme_loader,
+    direction_average,
+    img2voxel,
+    voxel2img,
+    normalise,
+    strip_filename,
+)
+
+def run_fit(cfg):
+    """
+    Core fitting routine.
+    Expects a Hydra config (DictConfig).
+    """
+
+    mlp_activation = {
+        'relu': torch.nn.ReLU(),
+        'prelu': torch.nn.PReLU(),
+        'tanh': torch.nn.Tanh(),
+        'elu': torch.nn.ELU(),
+    }
+
+    # -----------------------
+    # Seeding
+    # -----------------------
+    if cfg.training.seed is None:
+        cfg.training.seed = random.randint(1, int(1e6))
+
+    torch.manual_seed(cfg.training.seed)
+    torch.cuda.manual_seed_all(cfg.training.seed)
+
+    # -----------------------
+    # Model setup
+    # -----------------------
+    modelfunc = ModelMaker(cfg.model.name)
+
+    # -----------------------
+    # Acquisition
+    # -----------------------
+    if cfg.acquisition.bvals is not None:
+        grad = txt_file_loader(
+            cfg.acquisition.bvals,
+            cfg.acquisition.bvecs,
+            cfg.acquisition.delta,
+            cfg.acquisition.smalldelta,
+            cfg.acquisition.TE,
+            cfg.acquisition.bdelta,
+        )
+    elif cfg.acquisition.grad is not None:
+        grad = acquisition_scheme_loader(cfg.acquisition.grad)
+    else:
+        raise ValueError("Either bvals/bvecs or grad must be provided")
+
+    # -----------------------
+    # Load image & mask
+    # -----------------------
+    img = torch.from_numpy(
+        nib.load(os.path.join(cfg.data.folder, cfg.data.image))
+        .get_fdata()
+        .astype(np.float32)
+    )
+
+    if cfg.data.mask is None:
+        mask = torch.ones(img.shape[:3], dtype=torch.float32)
+    else:
+        mask = torch.from_numpy(
+            nib.load(os.path.join(cfg.data.folder, cfg.data.mask))
+            .get_fdata()
+            .astype(np.float32)
+        )
+
+    # -----------------------
+    # Direction averaging
+    # -----------------------
+    if modelfunc.spherical_mean:
+        img, grad = direction_average(img, grad)
+
+    # -----------------------
+    # Preprocessing
+    # -----------------------
+    X_train, maskvox = img2voxel(img, mask)
+    X_train = X_train + 1e-16
+    X_train = normalise(X_train, grad)
+
+    # -----------------------
+    # Network
+    # -----------------------
+    lossfunc = nn.MSELoss()
+
+    net = Net(
+        grad,
+        modelfunc,
+        layer_dims=grad.number_of_measurements,
+        n_layers=cfg.training.num_layers,
+        dropout_fraction=cfg.training.dropout_frac,
+        clipping_method=cfg.training.clip,
+        activation=mlp_activation[cfg.training.activation],
+    )
+
+    # -----------------------
+    # Train
+    # -----------------------
+    _, params = train(
+        net,
+        X_train,
+        lossfunc,
+        lr=cfg.training.learning_rate,
+        batch_size=256,
+        num_iters=cfg.training.num_iters,
+    )
+
+    # -----------------------
+    # Reconstruct parameter maps
+    # -----------------------
+    param_map = np.zeros(
+        (*mask.shape, modelfunc.n_parameters + modelfunc.n_fractions)
+    )
+
+    for i in range(param_map.shape[-1]):
+        param_map[..., i] = voxel2img(
+            params[:, i], maskvox, mask.shape
+        )
+
+    # -----------------------
+    # Save output
+    # -----------------------
+    output_folder = Path(HydraConfig.get().run.dir)
+    output_folder.mkdir(parents=True, exist_ok=True)
+
+    img_nii = nib.load(os.path.join(cfg.data.folder, cfg.data.image))
+    new_img = nib.Nifti1Image(param_map, img_nii.affine, img_nii.header)
+
+    out_file = output_folder / (
+        strip_filename(cfg.data.image) + "_param_maps.nii.gz"
+    )
+    nib.save(new_img, out_file)
+
+    return param_map, modelfunc, out_file

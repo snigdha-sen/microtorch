@@ -2,7 +2,7 @@
 ##Separated because importing from ipynb sometimes caused issues
 import torch
 import numpy as np
-from microtorch.utils.preprocessing import voxel2img
+from src.utils.preprocessing import voxel2img
 
 #simulate some data from a "cluster model"
 nvox = 1024

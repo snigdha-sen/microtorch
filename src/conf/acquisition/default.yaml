@@ -1,0 +1,9 @@
+bvals: null                   # -bvals / --bvals
+bvecs: null                   # -bvecs / --bvecs
+grad: null                    # -grad / --grad
+delta: data/grad_files/delta.txt        # -d / --delta
+smalldelta: data/grad_files/smalldelta.txt  # -sd / --smalldelta
+TE: ""                        # -TE
+TR: ""                        # -TR
+TI: ""                        # -TI
+bdelta: null                  # -bd / --bdelta

@@ -22,10 +22,10 @@ class Standard_wm: ## check with leon
         order = 2 # for now only lmax = 2
         self.order = order 
         nSH = int((order + 1) * (order + 2) / 2)
-        self.parameter_ranges = [[0,1], [0, 3], [0, 3], [0, 3], [0, 1],[-1, 1],[-1, 1], [-1, 1], [-1, 1], [-1, 1] ]  # pas ranges aan      
+        self.parameter_ranges = [[0,1], [0, 3], [0, 3], [0, 3], [0, 1],[-1, 1],[-1, 1], [-1, 1], [-1, 1], [-1, 1] ]  # pas ranges aan - adjust ranges
         self.parameter_names = ['S0', 'Di', 'De', 'Dp', 'f', 'p2_2', 'p2_1', 'p20', 'p21', 'p22' ]  #consider order 2 for now
         self.n_parameters = 10
-        self.spherical_mean = False ##output afhankelijk van gradient richting
+        self.spherical_mean = False ##output afhankelijk van gradient richting - output dependent on gradient direction
 
     
     def __call__(self, grad, params):
