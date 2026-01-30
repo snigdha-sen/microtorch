@@ -3,6 +3,7 @@ contributor_folders/
 ./results/*
 outputs/
 
+generate_utils.py
 
 data/.DS_Store
 
