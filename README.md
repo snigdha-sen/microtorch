@@ -57,32 +57,37 @@ pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
-## Command line examples
+## Run from command line
 
-The command line input takes in a number of parameters that allow personalisation of file paths, model type and network parameters. 
+The command line input takes in a number of parameters that allow personalisation of file paths, model type and network parameters. The package makes use of hydra for configuration management - defaults are set in src/conf and can be changed by the user or via the command line.
 
 **Model type**
 ```
-python3 fit.py -m <model name>
+python3 -m src.main model.name=
 ```
+
+Add the name of the model you wish to use after the equals - either a widely-used model such as VERDICT, SANDI or compartments in Pascal case e.g. BallStick or BallSphere.
 
 **Folders and paths**
 
-Set the right paths to the input images
+Add the paths to the image (and mask, if using) after the equals.
 ```
-python3 fit.py -f <data folder> -img <image file name> -ma <mask file name> 
+data.image= data.mask=
 ```
-Set the path to the gradient file, containing all the acquisition parameters...
+In the same way, set the path  to the gradient file, containing all the acquisition parameters...
 ```
-python3 fit.py -grad <grad file path>
+acquisition.grad=
 ```
-... or specify individual file paths for each acquisition parameter
+... or specify individual file paths for each acquisition parameter (b/delta/Delta/TE/TR/TI/bdelta)
 ```
-python3 fit.py -bvals <bvals path> -bvecs <bvecs path> -d <Deltas path> -sd <deltas path> -TE <TEs path> -bd <bdelta path>
+acquisition.bvals= acquisition.bvecs= acquisition.delta= acquisition.smalldelta= acquisition.TE= acquisition.TR= acquisition.TI= acquisition.bdelta= 
 ```
 **Network parameters**
+
+To set the network training parameters, the same approach applies
+
 ```
-python3 fit.py -lr <learning rate> -se <seed> -lss <layer size> -nl <number of layers> -a <activation function> -df <dropout fraction> -ni <number of iterations>
+training.num_iters= training.learning_rate= training.activation= training.seed= training.dropout_frac= training.layer_size= training.num_layers= training.clip= training.operation= 
 
 ```
 
