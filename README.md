@@ -1,17 +1,13 @@
 # microTorch: microstructure model fitting with PyTorch
 
 
-<img align="left" width="250" height="250" src="files/logo.jpeg" > 
+<img align="left" width="295" height="295" src="files/logo.jpeg" > 
+
 The microTorch software package is designed to flexibly fit diffusion MRI (dMRI) microstructure models, using a self-supervised deep learning approach. The framework is designed to work with a variety of established dMRI multicompartment models, such as Ball-and-Stick, VERDICT and SANDI, but also allows users to combine compartment models as they wish.
 
-This work is by members of the UCL Centre for Medical Image Computing and the Cardiff University Brain Research Imaging Centre. We encourage contributions from the wider diffusion MRI community, and welcome requests for new features. Please contact snigdha.sen.20@ucl.ac.uk with any questions.  
+We designed this framework to leverage the inference time gains of deep learning, whilst removing the requirement for explicit training data. Training and inference is performed simultaneously, for each dataset at a time, mimicking a traditional model fitting approach and reducing bias in the parameter estimates. Please see [1,2] for the theoretical underpinnings of this approach.
 
-&nbsp;  
-&nbsp;  
-&nbsp;  
-&nbsp;  
-&nbsp;  
-&nbsp;  
+This work is by members of the UCL Centre for Medical Image Computing and the Cardiff University Brain Research Imaging Centre. We encourage contributions from the wider diffusion MRI community, and welcome requests for new features. Please contact snigdha.sen.20@ucl.ac.uk with any questions.  
 &nbsp;  
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
