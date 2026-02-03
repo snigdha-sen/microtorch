@@ -1,35 +1,18 @@
 # microTorch: microstructure model fitting with PyTorch
 
 
-<img align="left" width="250" height="250" src="microtorch/files/logo.jpeg" > 
-The microTorch software package is designed to flexibly fit diffusion MRI microstructure models, using a self-supervised deep learning approach. 
+<img align="left" width="295" height="295" src="files/logo.jpeg" > 
 
-This work is by members of the UCL Centre for Medical Image Computing and the Cardiff University Brain Research Imaging Centre. Please contact snigdha.sen.20@ucl.ac.uk with any questions.  
+The microTorch software package is designed to flexibly fit diffusion MRI (dMRI) microstructure models, using a self-supervised deep learning approach. The framework is designed to work with a variety of established dMRI multicompartment models, such as Ball-and-Stick, VERDICT and SANDI, but also allows users to combine compartment models as they wish.
 
-&nbsp;  
-&nbsp;  
-&nbsp;  
-&nbsp;  
-&nbsp;  
-&nbsp;  
+We designed this framework to leverage the inference time gains of deep learning, whilst removing the requirement for explicit training data. Training and inference is performed simultaneously, for each dataset at a time, mimicking a traditional model fitting approach and reducing bias in the parameter estimates. Please see [1,2] for the theoretical underpinnings of this approach.
+
+This work is by members of the UCL Centre for Medical Image Computing and the Cardiff University Brain Research Imaging Centre. We encourage contributions from the wider diffusion MRI community, and welcome requests for new features. Please contact snigdha.sen.20@ucl.ac.uk with any questions.  
 &nbsp;  
 
-<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
+<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
 ## Installation
-
-
-### Without virtual enviroment (not recommended)
-
-Run the following in bash
-
-```bash
-git clone https://github.com/snigdha-sen/microtorch.git
-
-pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
-
-```
-And the code might work!
 
 ### With virtual environment (recommended)
 
@@ -58,39 +41,53 @@ Then run
 pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
 
 ```
-And the code should work!
 
-&nbsp;  
-&nbsp;  
+### Without virtual enviroment (not recommended)
 
-<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
+Run the following in bash
 
-## Command line examples
+```bash
+git clone https://github.com/snigdha-sen/microtorch.git
 
-The command line input takes in a number of parameters that allow personalisation of file paths, model type and network parameters. 
+pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
+
+```
+
+&nbsp;   
+
+<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
+
+## Run from command line
+
+The command line input takes in a number of parameters that allow personalisation of file paths, model type and network parameters. The package makes use of hydra for configuration management - defaults are set in src/conf and can be changed by the user or via the command line.
 
 **Model type**
 ```
-python3 fit.py -m <model name>
+python3 -m src.main model.name=
 ```
+
+Add the name of the model you wish to use after the equals - either a widely-used model such as VERDICT, SANDI or compartments in Pascal case e.g. BallStick or BallSphere.
 
 **Folders and paths**
 
-Set the right paths to the input images
+Add the paths to the image (and mask, if using) after the equals.
 ```
-python3 fit.py -f <data folder> -img <image file name> -ma <mask file name> 
+data.image= data.mask=
 ```
-Set the path to the gradient file, containing all the acquisition parameters...
+In the same way, set the path  to the gradient file, containing all the acquisition parameters...
 ```
-python3 fit.py -grad <grad file path>
+acquisition.grad=
 ```
-... or specify individual file paths for each acquisition parameter
+... or specify individual file paths for each acquisition parameter (b/delta/Delta/TE/TR/TI/bdelta)
 ```
-python3 fit.py -bvals <bvals path> -bvecs <bvecs path> -d <Deltas path> -sd <deltas path> -TE <TEs path> -bd <bdelta path>
+acquisition.bvals= acquisition.bvecs= acquisition.delta= acquisition.smalldelta= acquisition.TE= acquisition.TR= acquisition.TI= acquisition.bdelta= 
 ```
 **Network parameters**
+
+To set the network training parameters, the same approach applies
+
 ```
-python3 fit.py -lr <learning rate> -se <seed> -lss <layer size> -nl <number of layers> -a <activation function> -df <dropout fraction> -ni <number of iterations>
+training.num_iters= training.learning_rate= training.activation= training.seed= training.dropout_frac= training.layer_size= training.num_layers= training.clip= training.operation= 
 
 ```
 
@@ -104,7 +101,7 @@ python fit.py -m BallStick -img data/test_images/BallStick.nii.gz  -grad data/gr
 &nbsp;  
 &nbsp;  
 
-<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
+<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
 ## Choosing a model
 
@@ -133,7 +130,7 @@ There are also a number of predefined models to be used as ```-m <model_name>```
 &nbsp;  
 &nbsp;  
 
-<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
+<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
 ## Adding a new compartment
 
