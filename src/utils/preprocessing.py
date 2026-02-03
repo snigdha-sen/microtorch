@@ -1,82 +1,8 @@
 
 import numpy as np 
 import torch
-import nibabel as nib
-import os
-### This could use a redo to better use the class for aquisition scheme, but works well as it is right now :)
-class PreProcess(): #creating this specifically for wand data, but hopefully can be used for other things :)
-
-    def __init__(self,
-                 grad_scheme,
-                 spherical_mean=False,
-                 eps = 1e-16,
-                 ):
-
-        self.eps = eps
-        self.grad_scheme = grad_scheme
-        self.spherical_mean = spherical_mean
-
-        if spherical_mean:
-            self.grad_scheme.compute_direction_averaged_scheme()  # This will compute the direction-averaged scheme if spherical_mean is True
-
-        return
-
-    def __call__(self, image, mask): #This preprocess function only takes in the image path
-
-        if self.spherical_mean:
-            # If spherical mean is True, we need to direction average the image
-            #image = self.direction_average(image)
-            image = self.grad_scheme.apply_direction_average_to_image(image)
-
-        image_vox, mask_vox = img2voxel(image, mask)
-        image_vox = image_vox + self.eps
-        image_vox = normalise(image_vox, self.grad_scheme)
-
-        return image_vox, mask_vox
-
-    def direction_average(self, img):
-
-        # Find unique shells - all parameters except gradient directions are the same
-        unique_shells = self.grad_scheme.unique_shells
-        shell_idxs = self.grad_scheme.shell_idxs
-
-        # Preallocate
-        new_img  = torch.zeros(img.shape[0:3] + (unique_shells.shape[0],), dtype=img.dtype)
 
 
-        for i, shell in enumerate(unique_shells):
-            # Indices of grad file for this shell
-            shell_index = shell_idxs[i]
-            # Calculate the spherical mean of this shell - average along final axis
-            new_img[..., i] = torch.squeeze(torch.mean(img[..., shell_index], axis=img.ndim-1))
-
-
-        return new_img
-
-
-
-
-def update_grad_class(grad, grad_matrix, new_num_measurements):
-    grad.bvecs   = grad_matrix[:,:3]
-    grad.bvalues = grad_matrix[:,3]
-
-    if grad.Delta is not None:
-        grad.Delta = grad_matrix[:,4]
-    if grad.small_delta is not None:
-        grad.small_delta = grad_matrix[:, 5]
-    #if grad.gradient_strengths is not None:
-    #    grad.gradient_strengths = grad_matrix[:,6]
-    if grad.TE is not None:
-        grad.TE = grad_matrix[:,6]
-    if grad.bdelta is not None:
-        grad.bdelta = grad_matrix[:,7]
-
-    grad.number_of_measurements = new_num_measurements
-
-    return grad
-
-
-#Old function - could deprecate in future if not needed
 def direction_average(img, grad):
     # Find unique shells - all parameters except gradient directions are the same
     grad_matrix = grad.get_scheme_as_matrix()
