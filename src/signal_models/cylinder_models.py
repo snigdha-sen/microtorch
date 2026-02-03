@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import scipy.special as special
-from ..utils.util_function import sphere2cart
+from ..utils.geometry import sphere2cart
 
 class Stick:
     """
