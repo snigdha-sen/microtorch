@@ -98,9 +98,6 @@ We have provided some test images to allow you to test if you have correctly set
 python fit.py -m BallStick -img data/test_images/BallStick.nii.gz  -grad data/grad_files/grad_HCP.txt -a relu -lr 0.0001 -ni 20
 ```
 
-&nbsp;  
-&nbsp;  
-
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
 ## Choosing a model
@@ -110,11 +107,9 @@ To create a model comprising a single compartment, set
 - Ball
 - Stick
 - Sphere
-- MSDKI
 - Astrosticks (option to fix D)
 - Zeppelin
 - Standard WM
-- T1 SMDT
 - Cylinder
 
 To create a model comprising **multiple** compartments, set ```-m <compartment_name1 compartment_name2...>``` 
@@ -125,10 +120,6 @@ There are also a number of predefined models to be used as ```-m <model_name>```
 - VERDICT (Ball, Sphere, Astrosticks - fixed)
 - SANDI (Ball, Zeppelin, Astrosticks)
 - IVIM (Ball, Ball)
-
-
-&nbsp;  
-&nbsp;  
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
