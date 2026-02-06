@@ -1,202 +1,142 @@
-
-#This file generates acquisition schemes - i.e the parameters which the model runs on.
 import numpy as np
-from src.utils.load_data import load_grad
 import torch
-
-class acquisitions_scheme:
-
-
-    def __init__(self, bvalues, bvecs, 
-                 gradient_strengths, delta, Delta, TE, bdelta):
-        
-        self.bvalues = torch.from_numpy(bvalues.astype(np.float32))
-        self.number_of_measurements = torch.tensor(len(self.bvalues.flatten()))
-        self.bvecs = torch.from_numpy(bvecs.astype(np.float32))
-
-        self.gradient_strengths = None
-        if gradient_strengths is not None:
-            self.gradient_strengths = torch.from_numpy(gradient_strengths.astype(np.float32))
-        self.delta = None
-        if delta is not None:
-            self.delta = torch.from_numpy(delta.astype(np.float32))
-        self.Delta = None
-        if Delta is not None:
-            self.Delta = torch.from_numpy(Delta.astype(np.float32))
-        self.TE = None
-        if TE is not None:
-            self.TE = torch.from_numpy(TE.astype(np.float32))
-        self.bdelta = None
-        if bdelta is not None:
-            self.bdelta = torch.from_numpy(bdelta.astype(np.float32))
-        
-        
+from utils.load_data import load_grad
 
 
-def acquisition_scheme_loader(filepath_acquisition_scheme):
-    r"""
-    Creates an acquisition scheme object from bvalues, gradient directions,
-    pulse duration $\delta$ and pulse separation time $\Delta$.
+# -----------------------------
+# Core data container
+# -----------------------------
 
-    """
-    acq_scheme = np.loadtxt(filepath_acquisition_scheme)
-    bvalues = np.reshape(acq_scheme[:,3], (1, len(acq_scheme[:,3])))
+class AcquisitionScheme:
+    def __init__(
+        self,
+        bvalues,
+        bvecs,
+        gradient_strengths=None,
+        delta=None,
+        Delta=None,
+        TE=None,
+        bdelta=None,
+    ):
+        self.bvalues = torch.as_tensor(bvalues, dtype=torch.float32)
+        self.bvecs = torch.as_tensor(bvecs, dtype=torch.float32)
 
-    if max(bvalues[0,:]) >100:
-        bvalues = bvalues/1000
+        self.number_of_measurements = int(self.bvalues.size(-1))
 
-    if np.any(bvalues < 0):
-        raise ValueError("bvals contains negative values")
-    
-    bvecs = acq_scheme[:,0:3]
-
-    try:
-        Delta = acq_scheme[:,4]
-
-    except:
-        Delta = None
-        
-    try:
-        delta = acq_scheme[:,5]
-    except:
-        delta = None
-
-    try:
-        gradient_strengths = acq_scheme[:,6]
-    except:
-        gradient_strengths = None
-
-    try:
-        TE = acq_scheme[:,7]
-    except:
-        TE = None
-
-    try:
-        bdelta = acq_scheme[:,8]
-    except:
-        bdelta = None
-    
-    #check_acquisition_scheme(bvalues, bvecs, delta, Delta, TE)
+        self.gradient_strengths = _to_tensor_or_none(gradient_strengths)
+        self.delta = _to_tensor_or_none(delta)
+        self.Delta = _to_tensor_or_none(Delta)
+        self.TE = _to_tensor_or_none(TE)
+        self.bdelta = _to_tensor_or_none(bdelta)
 
 
-    return acquisitions_scheme(bvalues, bvecs, 
-                                gradient_strengths, Delta, delta, TE, bdelta)
+def _to_tensor_or_none(x):
+    if x is None:
+        return None
+    return torch.as_tensor(x, dtype=torch.float32)
 
 
-def check_acquisition_scheme(
-        b_values, bvecs, delta, Delta, TE):
-    "function to check the validity of the input parameters."
-    if b_values.ndim > 1:
-        msg = "b/q/G input must be a one-dimensional array. "
-        msg += "Currently its dimensions is {}.".format(
-            b_values.ndim
-        )
-        raise ValueError(msg)
-    if len(b_values) != len(bvecs):
-        msg = "b/q/G input and gradient_directions must have the same length. "
-        msg += "Currently their lengths are {} and {}.".format(
-            len(b_values), len(bvecs)
-        )
-        raise ValueError(msg)
-    if delta is not None:
-        if len(b_values) != len(delta):
-            msg = "b/q/G input and delta must have the same length. "
-            msg += "Currently their lengths are {} and {}.".format(
-                len(b_values), len(delta)
-            )
-            raise ValueError(msg)
-        if delta.ndim > 1:
-            msg = "delta must be one-dimensional array. "
-            msg += "Currently its dimension is {}".format(
-                delta.ndim
-            )
-            raise ValueError(msg)
-        if np.min(delta) < 0:
-            msg = "delta must be zero or positive. "
-            msg += "Currently its minimum value is {}.".format(
-                np.min(delta)
-            )
-            raise ValueError(msg)
-    if Delta is not None:
-        if len(b_values) != len(Delta):
-            msg = "b/q/G input and Delta must have the same length. "
-            msg += "Currently their lengths are {} and {}.".format(
-                len(b_values), len(Delta)
-            )
-            raise ValueError(msg)
-        if Delta.ndim > 1:
-            msg = "Delta must be one-dimensional array. "
-            msg += "Currently its dimension is {}.".format(
-                Delta.ndim
-            )
-            raise ValueError(msg)
-        if np.min(Delta) < 0:
-            msg = "Delta must be zero or positive. "
-            msg += "Currently its minimum value is {}.".format(
-                np.min(Delta)
-            )
-            raise ValueError(msg)
+# -----------------------------
+# Shared helpers
+# -----------------------------
 
-    if bvecs.ndim != 2 or bvecs.shape[1] != 3:
-        msg = "gradient_directions n must be two dimensional array of shape "
-        msg += "[N, 3]. Currently its shape is {}.".format(
-            bvecs.shape)
-        raise ValueError(msg)
-    if np.min(b_values) < 0.:
-        msg = "b/q/G input must be zero or positive. "
-        msg += "Minimum value found is {}.".format(b_values.min())
-        raise ValueError(msg)
-    gradient_norms = np.linalg.norm(bvecs, axis=1)
-    zero_norms = gradient_norms == 0.
-    if not np.all(abs(gradient_norms[~zero_norms] - 1.) < 0.001):
-        msg = "gradient orientations n are not unit vectors. "
-        raise ValueError(msg)
-    if TE is not None and len(TE) != len(b_values):
-        msg = "If given, TE must be same length b/q/G input."
-        msg += "Currently their lengths are {} and {}.".format(
-            len(TE), len(bvecs)
-        )
+def _process_bvalues(bvals):
+    bvals = np.asarray(bvals, dtype=np.float32)
 
-
-def txt_file_loader(bvals, bvecs, Delta, delta, TE, bdelta):
-
-    bvals = load_grad(bvals)
-    bvals = np.transpose(bvals)
-    bvecs = load_grad(bvecs)
-    bvecs = np.transpose(bvecs)
-    Delta = load_grad(Delta)
-    Delta = np.transpose(Delta)
-    smalldelta = load_grad(delta)
-    smalldeta = np.transpose(smalldelta)
-    TE = load_grad(TE)
-    TE = np.transpose(TE)
-    bdelta = load_grad(bdelta)
-    bdelta = np.transpose(bdelta)
-    gradient_strengths = None #for now just name this none, can be input or calcualted with deltas
     if np.any(bvals < 0):
         raise ValueError("bvals contains negative values")
 
-    if max(bvals[0,:]) >100:
-        bvals = bvals/1000
+    if np.max(bvals) > 100:
+        bvals = bvals / 1000.0
 
-    '''
-    if TE:
-        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE),axis=1)
-    if TR and TI:
-        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE=None,TR,TI),axis=1)
-    if TE and TR and TI:
-        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE,TR,TI),axis=1)
-    '''
+    return bvals
 
-    '''
-    if TE:
-        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE),axis=1)
-    if TR and TI:
-        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE=None,TR,TI),axis=1)
-    if TE and TR and TI:
-        grad = np.concatenate((bvecs,bvals[:,None],delta,smalldel,G,TE,TR,TI),axis=1)
-    '''
 
-    return acquisitions_scheme(bvals, bvecs,
-                                  gradient_strengths, smalldelta, Delta, TE, bdelta
-                                    )
+def check_acquisition_scheme(bvalues, bvecs, delta=None, Delta=None, TE=None):
+    if bvalues.ndim != 1:
+        raise ValueError("bvalues must be one-dimensional")
+
+    if bvecs.ndim != 2 or bvecs.shape[1] != 3:
+        raise ValueError("bvecs must have shape (N, 3)")
+
+    if len(bvalues) != len(bvecs):
+        raise ValueError("bvalues and bvecs must have the same length")
+
+    if np.any(bvalues < 0):
+        raise ValueError("bvalues must be non-negative")
+
+    norms = np.linalg.norm(bvecs, axis=1)
+    nonzero = norms > 0
+    if not np.allclose(norms[nonzero], 1.0, atol=1e-3):
+        raise ValueError("bvecs must be unit vectors")
+
+    for name, arr in [("delta", delta), ("Delta", Delta), ("TE", TE)]:
+        if arr is not None:
+            if arr.ndim != 1:
+                raise ValueError(f"{name} must be one-dimensional")
+            if len(arr) != len(bvalues):
+                raise ValueError(f"{name} must match bvalues length")
+            if np.any(arr < 0):
+                raise ValueError(f"{name} must be non-negative")
+
+
+# -----------------------------
+# Loaders
+# -----------------------------
+
+def acquisition_scheme_loader(filepath):
+    """
+    Load acquisition scheme from a single text file.
+    Expected columns:
+        0-2: bvecs
+        3:   bvalues
+        4+:  optional timing parameters
+    """
+    data = np.loadtxt(filepath)
+
+    bvecs = data[:, 0:3]
+    bvalues = _process_bvalues(data[:, 3])
+
+    Delta = data[:, 4] if data.shape[1] > 4 else None
+    delta = data[:, 5] if data.shape[1] > 5 else None
+    gradient_strengths = data[:, 6] if data.shape[1] > 6 else None
+    TE = data[:, 7] if data.shape[1] > 7 else None
+    bdelta = data[:, 8] if data.shape[1] > 8 else None
+
+    check_acquisition_scheme(bvalues, bvecs, delta, Delta, TE)
+
+    return AcquisitionScheme(
+        bvalues=bvalues,
+        bvecs=bvecs,
+        gradient_strengths=gradient_strengths,
+        delta=delta,
+        Delta=Delta,
+        TE=TE,
+        bdelta=bdelta,
+    )
+
+
+def txt_file_loader(bvals, bvecs, Delta=None, delta=None, TE=None, bdelta=None):
+    """
+    Load acquisition scheme from separate text files.
+    """
+    bvals = _process_bvalues(load_grad(bvals).T.squeeze())
+    bvecs = load_grad(bvecs).T
+
+    Delta = load_grad(Delta).T.squeeze() if Delta else None
+    delta = load_grad(delta).T.squeeze() if delta else None
+    TE = load_grad(TE).T.squeeze() if TE else None
+    bdelta = load_grad(bdelta).T.squeeze() if bdelta else None
+
+    check_acquisition_scheme(bvals, bvecs, delta, Delta, TE)
+
+    return AcquisitionScheme(
+        bvalues=bvals,
+        bvecs=bvecs,
+        gradient_strengths=None,
+        delta=delta,
+        Delta=Delta,
+        TE=TE,
+        bdelta=bdelta,
+    )
+
