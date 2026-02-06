@@ -1,5 +1,5 @@
 import torch
-from src.utils.geometry import sphere2cart
+from utils.geometry import sphere2cart
 
 class Ball:
     """
@@ -88,37 +88,27 @@ class Zeppelin:
         self.spherical_mean   = False
 
 
-    def __call__(self, grad, parameters):                   
-        b_vectors = grad.bvecs
-        b_values = grad.bvalues
+    def __call__(self, grad, parameters):
+        n = grad.bvecs                      #
+        b = grad.bvalues                    
 
-        Dpar = parameters[:, 0].unsqueeze(1)
-        k = parameters[:, 1].unsqueeze(1)
-        Dper = k*Dpar
-        theta = parameters[:, 2].unsqueeze(1)
-        phi = parameters[:, 3].unsqueeze(1)
+        Dpar = parameters[:, 0:1]           
+        k    = parameters[:, 1:2]           
+        Dper = k * Dpar                     
 
-        mu = sphere2cart(theta, phi)        # (N, 3)
+        theta = parameters[:, 2]            
+        phi   = parameters[:, 3]            
+
+        mu = sphere2cart(theta, phi).T      # (B, 3)
         mu = mu / torch.norm(mu, dim=1, keepdim=True)
 
-        # Gradient direction n
-        n = b_vectors                            # (M, 3)
+        mag_par = (mu @ n.T) 
 
-        # Parallel component
-        mag_par = torch.sum(n * mu, dim=1, keepdim=True)
+        # Clamp to avoid tiny negatives from numerical error
+        mag_perp = torch.sqrt(torch.clamp(1.0 - mag_par**2, min=0.0))
 
-        # Perpendicular projection
-        I = torch.eye(3, device=mu.device)
-        mu_perp = I - mu.unsqueeze(2) @ mu.unsqueeze(1)
-        proj = torch.matmul(mu_perp, n.unsqueeze(2)).squeeze(2)
+        b = b.unsqueeze(0)                  
 
-        mag_perp = torch.norm(proj, dim=1, keepdim=True)
-
-        S = torch.exp(
-            -b_values * (
-                Dpar * mag_par**2 +
-                Dper * mag_perp**2
-            )
-        )
+        S = torch.exp(-b * (Dpar * mag_par**2 + Dper * mag_perp**2))   
 
         return S
