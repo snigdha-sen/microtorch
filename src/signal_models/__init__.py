@@ -4,7 +4,7 @@ from .gaussian_models import Ball, Msdki, Zeppelin
 __all__ += ["Ball", "Msdki", "Zeppelin"]
 from .sphere_models import Sphere
 __all__ += ["Sphere"]
-from .distributed_models import Standard_wm, t1_smdt
-__all__ += ["Standard_WM", "t1_smdt"]
+from .distributed_models import Standard_wm
+__all__ += ["Standard_wm"]
 from .cylinder_models import Stick, Astrosticks
 __all__ += ["Stick", "Astrosticks"]
