@@ -51,7 +51,7 @@ class Sphere:
         alpha2D = alpha2D.unsqueeze(1)
  
         gamma = 2.675987e2
-        gradient_strength   = torch.FloatTensor([np.sqrt(b_values[i])/(gamma*delta[i]*np.sqrt(Delta[i]-delta[i]/3)) for i,_ in enumerate(b_values)]) 
+        gradient_strength = torch.sqrt(b_values) / (gamma * delta * torch.sqrt(Delta - delta / 3))
         first_factor        = -2*(gamma*gradient_strength)**2 / 2
                 
         Delta = Delta.unsqueeze(0).unsqueeze(2)
@@ -67,10 +67,10 @@ class Sphere:
                         ) / (alpha2D)
                     )
                 )
-        
+                
         S = torch.exp(
             first_factor *
-            summands.sum()
+            summands.sum(dim=2)
         )
 
         return S
