@@ -1,5 +1,7 @@
 import numpy as np
 import re
+
+import torch
 import src.signal_models as signal_models_module
 
 
@@ -45,9 +47,17 @@ class ModelMaker:
         self.compartments = self.model_compartments(modelname)
 
         ## Comparments must have the same spherical mean property, if spherical mean isnt relevant for a compartment then it is set to None
-        if not (all(c.spherical_mean for c in self.compartments) or all(not c.spherical_mean for c in self.compartments)):
-            raise ValueError("Invalid input: either all compartments are spherically averaged, or none of them should be.")
+        spherical_flags = [
+            c.spherical_mean for c in self.compartments
+            if c.spherical_mean is not None
+        ]
 
+        if spherical_flags: 
+            if not (all(spherical_flags) or all(not f for f in spherical_flags)):
+                raise ValueError(
+                    "Invalid input: either all compartments are spherically averaged, "
+                    "or none of them should be."
+        )
 
         # Initialize the parameter ranges, parameter names, compartment names, and number of parameters
         self.parameter_ranges = []
@@ -76,27 +86,39 @@ class ModelMaker:
         Computes the model signal for given gradients and parameters.
 
         Args:
-            gradients (torch.Tensor): Gradient directions.
-            parameters (torch.Tensor): Parameter vector.
+            grad (torch.Tensor): Gradient directions.
+            parameters (torch.Tensor): Parameter vector of shape [num_samples, n_parameters + n_fractions - 1].
 
         Returns:
-            torch.Tensor: The computed signal.
+            torch.Tensor: The computed signal of shape [num_samples, num_measurements].
         """
-        
+    
         if len(self.compartments) == 1:
-            S = self.compartments[0](grad, parameters)
-        else:
-            #k = self.n_frac  # Number of volume fraction parameters
-            #f = params[:, -k:]  # Extracts the volume fraction parameters from the end of the parameter vector
-            f = parameters[:, self.n_parameters:] # Extracts the volume fraction parameters from the end of the parameter vector
+            return self.compartments[0](grad, parameters)
+        
+        # Extract volume fractions
+        f = parameters[:, self.n_parameters:]  # shape [num_samples, n_fractions-1]
+        last_fraction = 1 - f.sum(dim=1, keepdim=True)  # shape [num_samples, 1]
 
-            num_comps = len(self.compartments)
-            # Sum the signals from each compartment weighted by the volume fractions except for the last compartment
-            S = sum(f[:, i:i+1] * self.compartments[i](grad, parameters[:, self.parameter_indices[i]]) for i in range(num_comps - 1))
-            # Add the signal from the last compartment weighted by the remaining volume fraction
-            S += (1 - f.sum(dim=1, keepdim=True)) * self.compartments[-1](grad, parameters[:, self.parameter_indices[-1]])
+        num_comps = len(self.compartments)
+        
+        # Initialize signal to zeros
+        S = torch.zeros(
+            parameters.size(0),
+            grad.number_of_measurements,  # assumes grad has this attribute
+            dtype=parameters.dtype,
+            device=parameters.device
+        )
+        
+        # Add contributions from all compartments except last
+        for i in range(num_comps - 1):
+            fraction = f[:, i:i+1]
+            S += fraction * self.compartments[i](grad, parameters[:, self.parameter_indices[i]])
 
-
+        # Add last compartment
+        S += last_fraction * self.compartments[-1](grad, parameters[:, self.parameter_indices[-1]])
+        
+                
         return S
 
 

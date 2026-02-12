@@ -138,7 +138,7 @@ class Astrosticks:
     '''
     def __init__(self):
         self.parameter_ranges = [[0.5, 3]]
-        self.param_names      = ['D_par']
+        self.parameter_names      = ['D_par']
         self.n_parameters         = 1
         self.spherical_mean   = True
 
@@ -158,7 +158,7 @@ class Astrosticks:
 class Astrosticks_fixed:
     def __init__(self):
         self.parameter_ranges = [[2, 2]]
-        self.param_names      = ['D_par']
+        self.parameter_names      = ['D_par']
         self.n_parameters         = 1
         self.spherical_mean   = True
 

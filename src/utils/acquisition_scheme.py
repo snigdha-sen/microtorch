@@ -8,7 +8,7 @@ class acquisitions_scheme:
 
 
     def __init__(self, bvalues, bvecs, 
-                 gradient_strengths, delta, Delta, TE, bdelta):
+                 gradient_strengths, Delta, delta, TE, bdelta):
         
         self.bvalues = torch.from_numpy(bvalues.astype(np.float32))
         self.number_of_measurements = torch.tensor(len(self.bvalues.flatten()))
@@ -52,7 +52,6 @@ def acquisition_scheme_loader(filepath_acquisition_scheme):
 
     try:
         Delta = acq_scheme[:,4]
-
     except:
         Delta = None
         
@@ -64,7 +63,7 @@ def acquisition_scheme_loader(filepath_acquisition_scheme):
     try:
         gradient_strengths = acq_scheme[:,6]
     except:
-        gradient_strengths = None
+        gradient_strengths = None   
 
     try:
         TE = acq_scheme[:,7]
