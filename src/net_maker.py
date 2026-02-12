@@ -67,7 +67,7 @@ class Net(nn.Module):
                 params[:, frac_start].clone().unsqueeze(1),
                 clipping_method,
                 0, 1
-            ).squeeze(1)
+            )
         else:
             # extract free fractions and make sure in [0,1]
             f_free = torch.relu(params[:, frac_start:frac_end])
