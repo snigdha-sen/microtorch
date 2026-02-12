@@ -57,19 +57,39 @@ class Net(nn.Module):
         for i in range(modelfunc.n_parameters): #set min/max of non-volume fraction parameters       
             params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
          
-        #set min/max of volume fraction parameters  
-        if modelfunc.n_fractions == 1: #if just two compartments, then constraining one volume fraction to [0,1] also constrains the other to [0,1]
-            params[:, modelfunc.n_parameters] = Net.squash(params[:, modelfunc.n_parameters].clone().unsqueeze(1), clipping_method, 0, 1)
-        else:    
-            params[:, modelfunc.n_parameters:modelfunc.n_parameters + modelfunc.n_fractions] = \
-                torch.relu(params[:, modelfunc.n_parameters:modelfunc.n_parameters + modelfunc.n_fractions])
-            sum_params = torch.sum(
-                params[:, modelfunc.n_parameters:modelfunc.n_parameters + modelfunc.n_fractions],
-                dim=1,
-                keepdim=True
-            )
-            sum_params = torch.clamp(sum_params, min=1e-8)
-            params[:, modelfunc.n_parameters:modelfunc.n_parameters + modelfunc.n_fractions] /= sum_params
+       # Enforce volume fraction parameters 
+        frac_start = modelfunc.n_parameters
+        frac_end   = frac_start + modelfunc.n_fractions  # only the free fractions
+
+        if modelfunc.n_fractions == 1:
+            # Two compartments: clip the single free fraction to [0,1]
+            params[:, frac_start] = Net.squash(
+                params[:, frac_start].clone().unsqueeze(1),
+                clipping_method,
+                0, 1
+            ).squeeze(1)
+        else:
+            # extract free fractions and make sure in [0,1]
+            f_free = torch.relu(params[:, frac_start:frac_end])
+
+            # Compute implicit last fraction
+            final_f = 1 - f_free.sum(dim=1, keepdim=True)
+            final_f = torch.clamp(final_f, min=1e-8)  # prevent negative last fraction
+
+            # Concatenate free fractions + last fraction
+            all_f = torch.cat([f_free, final_f], dim=1)
+
+            # Normalize all fractions so sum = 1 
+            sum_all = all_f.sum(dim=1, keepdim=True)
+            all_f = all_f / torch.clamp(sum_all, min=1e-8)
+
+            # Store back only the free fractions
+            params[:, frac_start:frac_end] = all_f[:, :-1]
+
+
+
+
+
 
         
         X = self.modelfunc(self.grad, params)
