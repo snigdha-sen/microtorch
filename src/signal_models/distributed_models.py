@@ -1,8 +1,8 @@
 import numpy as np
 import torch
-from ..utils.utils_wm import WM_model, spherical_harmonics_directions
+from utils.utils_wm import WM_model, spherical_harmonics_directions
 
-class Standard_wm: ## check with leon
+class Standard_wm: ## check with leon -- add unit tests?
     """
     Standard White Matter model for diffusion MRI signal
     
@@ -71,7 +71,7 @@ class Standard_wm: ## check with leon
         return S
     
 
-class t1_smdt: ##again, do we want this in the first iteration?
+class t1_smdt: ##again, do we want this in the first iteration? -- i think its broken, refactor
     """
     T1-weighted SMDT model for diffusion MRI signal.
     

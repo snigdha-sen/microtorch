@@ -2,7 +2,7 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 
 from src.run_fit import run_fit
-from src.plot_results import plot_param_maps
+from src.utils.plot_results import plot_param_maps
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg: DictConfig):
