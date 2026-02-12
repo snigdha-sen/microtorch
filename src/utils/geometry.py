@@ -1,0 +1,30 @@
+
+import numpy as np
+import torch
+from pathlib import Path
+
+def sphere2cart(theta,phi):   
+    n = torch.zeros(3,theta.size(0))
+            
+    n[0,:] = torch.squeeze(torch.sin(theta) * torch.cos(phi))
+    n[1,:] = torch.squeeze(torch.sin(theta) * torch.sin(phi))
+    n[2,:] = torch.squeeze(torch.cos(theta))   
+    
+    return n
+    
+    
+def cart2sphere(xyz):
+    shape = xyz.shape[:-1]
+    mu = np.zeros(np.r_[shape, 2])
+
+    r = np.linalg.norm(xyz, axis=-1)
+
+    safe = r > 0
+
+    mu[safe, 0] = np.arccos(xyz[safe, 2] / r[safe])
+    mu[safe, 1] = np.arctan2(xyz[safe, 1], xyz[safe, 0])
+
+    return mu
+
+
+

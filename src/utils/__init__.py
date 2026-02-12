@@ -1,17 +1,13 @@
-from .simulation import add_noise
-from .params import reconstruct_parameter_maps, reconstruct_parameter_maps_with_torch
 from .make_test_image import generate_random_params, generate_smooth_params, factorize_close, main
 from .acquisition_scheme import acquisition_scheme_loader, check_acquisition_scheme, txt_file_loader
 from .utils_wm import WM_model, K2comp_fast, analytical_sol, spherical_harmonics_directions, real_spherical_harmonics, cart2sph, erf_torch
-from .util_function import sphere2cart, cart2sphere, strip_filename
-from .preprocessing import update_grad_class, direction_average, img2voxel, voxel2img, normalise
-from .args import gen_args
+from .preprocessing import direction_average, img2voxel, voxel2img, normalise
+from .geometry import sphere2cart, cart2sphere
+from .plot_results import plot_param_maps
 from .load_data import load_grad
+from .helpers import strip_filename
 
 __all__ = [
-    "add_noise",
-    "reconstruct_parameter_maps",
-    "reconstruct_parameter_maps_with_torch",
     "generate_random_params",
     "generate_smooth_params",
     "factorize_close",
@@ -26,14 +22,13 @@ __all__ = [
     "real_spherical_harmonics",
     "cart2sph",
     "erf_torch",
-    "sphere2cart",
-    "cart2sphere",
-    "strip_filename",
-    "update_grad_class",
     "direction_average",
     "img2voxel",
     "voxel2img",
     "normalise",
-    "gen_args",
+    "sphere2cart",
+    "cart2sphere",
+    "plot_param_maps",
     "load_grad",
+    "strip_filename",
 ]
