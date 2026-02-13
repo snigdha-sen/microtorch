@@ -75,7 +75,7 @@ class ModelMaker:
 
         self.parameter_ranges = np.array(self.parameter_ranges)  # Convert to numpy array
 
-        self.n_fractions = len(self.compartments) - 1  # The number of volume fractions
+        self.n_fractions = len(self.compartments) # The number of ALL volume fractions
         self.parameter_names.extend([f'f_{i}' for i in range(self.n_fractions)])
 
         self.parameter_indices = self.get_parameter_indices()  # Get the indices of the parameters in the parameter vector for each compartment
@@ -97,8 +97,8 @@ class ModelMaker:
             return self.compartments[0](grad, parameters)
         
         # Extract volume fractions
-        f = parameters[:, self.n_parameters:]  # shape [num_samples, n_fractions-1]
-        last_fraction = 1 - f.sum(dim=1, keepdim=True)  # shape [num_samples, 1]
+        f = parameters[:, self.n_parameters:]  # shape [num_samples, n_fractions]
+        #last_fraction = 1 - f.sum(dim=1, keepdim=True)  # shape [num_samples, 1]
 
         num_comps = len(self.compartments)
         
@@ -110,13 +110,13 @@ class ModelMaker:
             device=parameters.device
         )
         
-        # Add contributions from all compartments except last
-        for i in range(num_comps - 1):
+        # Add contributions from all compartments 
+        for i in range(num_comps):
             fraction = f[:, i:i+1]
             S += fraction * self.compartments[i](grad, parameters[:, self.parameter_indices[i]])
 
         # Add last compartment
-        S += last_fraction * self.compartments[-1](grad, parameters[:, self.parameter_indices[-1]])
+        #S += last_fraction * self.compartments[-1](grad, parameters[:, self.parameter_indices[-1]])
         
                 
         return S
