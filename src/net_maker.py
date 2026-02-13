@@ -46,53 +46,36 @@ class Net(nn.Module):
         if self.dropout_fraction > 0:
             X = self.dropout(X)
 
-        #params = self.encoder(X)              
-        params = F.softplus(self.encoder(X))
-        #params = abs(self.encoder(X))
-        #get the signal model function        
-        #modelfunc = getattr(models, model)
+        params = self.encoder(X)
+
+        #get the signal model function               
         modelfunc = self.modelfunc
         clipping_method = self.clipping_method
                                
         for i in range(modelfunc.n_parameters): #set min/max of non-volume fraction parameters       
             params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
          
-       # Enforce volume fraction parameters 
+        # Enforce volume fraction parameters 
         frac_start = modelfunc.n_parameters
         frac_end   = frac_start + modelfunc.n_fractions  # only the free fractions
-
-        if modelfunc.n_fractions == 1:
-            # Two compartments: clip the single free fraction to [0,1]
-            params[:, frac_start] = Net.squash(
-                params[:, frac_start].clone().unsqueeze(1),
-                clipping_method,
-                0, 1
-            )
-        else:
-            # extract free fractions and make sure in [0,1]
-            f_free = torch.relu(params[:, frac_start:frac_end])
-
-            # Compute implicit last fraction
-            final_f = 1 - f_free.sum(dim=1, keepdim=True)
-            final_f = torch.clamp(final_f, min=1e-8)  # prevent negative last fraction
-
-            # Concatenate free fractions + last fraction
-            all_f = torch.cat([f_free, final_f], dim=1)
-
-            # Normalize all fractions so sum = 1 
-            sum_all = all_f.sum(dim=1, keepdim=True)
-            all_f = all_f / torch.clamp(sum_all, min=1e-8)
-
-            # Store back only the free fractions
-            params[:, frac_start:frac_end] = all_f[:, :-1]
-
-
-
-
-
-
+              
+        logits_free = params[:, frac_start:frac_end]
+        
+        #add 0 for the implicit last fraction 
+        zeros = torch.zeros_like(logits_free[:, :1])
+        logits_all = torch.cat([logits_free, zeros], dim=1)
+        
+        #centre the logits
+        logits_all = logits_all - logits_all.mean(dim=1, keepdim=True)
+        
+        #softmax across the fractions to get valid fractions that sum to 1
+        fractions = torch.softmax(logits_all, dim=1)
+        
+        #store only the K-1 fractions 
+        params[:, frac_start:frac_end] = fractions[:, :-1]
         
         X = self.modelfunc(self.grad, params)
+        
         return X.to(torch.float32), params
     
 
