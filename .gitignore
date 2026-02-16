@@ -7,6 +7,8 @@ generate_utils.py
 
 data/.DS_Store
 
+#simulation data folder
+simulation_data/
 
 #Everything below is from a template .gitignore file
 

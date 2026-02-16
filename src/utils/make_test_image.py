@@ -1,41 +1,45 @@
 from multiprocessing import freeze_support
 
 
-def generate_random_params(modelfunc, repeat_interval=10, n_param=100):
-    import numpy as np
-    import torch
+import torch
 
+def generate_random_params(modelfunc, num_samples, alpha=None):
     """
-    Generate random parameters with an option to repeat every `repeat_interval` elements in a row.
-    
+    Generate random parameters for a given model as a tensor, with volume fractions sampled
+    from a Dirichlet distribution.
+
     Args:
-        modelfunc: The model function with `parameter_ranges` and `n_fractions` attributes.
-        repeat_interval: Number of elements to repeat. Default is 1 (no repetition).
-        n_unique: Number of unique sets of parameters to generate.
-        
+        modelfunc: Model function with `parameter_ranges` and `n_fractions` attributes.
+        num_samples: Number of parameter sets to generate.
+        alpha: Optional Dirichlet concentration parameters (1D tensor of length n_fractions).
+               Defaults to all ones (uniform Dirichlet).
+
     Returns:
-        params: Tensor of shape [n_unique * repeat_interval, modelfunc.n_parameters + modelfunc.n_fractions] with random parameters.
+        params: Tensor of shape [num_samples, num_model_params + num_fractions - 1]
+                with random parameters. The last volume fraction is implicit
+                (1 - sum of the others).
     """
-    # Extract min and max values from the columns
-    min_vals = modelfunc.parameter_ranges[:, 0]
-    max_vals = modelfunc.parameter_ranges[:, 1]
 
-    # Add the volume fraction min/max values
-    min_vals = np.append(min_vals, np.ones(modelfunc.n_fractions))
-    max_vals = np.append(max_vals, np.zeros(modelfunc.n_fractions))
+    # Convert parameter ranges to tensors
+    min_vals = torch.tensor(modelfunc.parameter_ranges[:, 0], dtype=torch.float32)
+    max_vals = torch.tensor(modelfunc.parameter_ranges[:, 1], dtype=torch.float32)
 
-    #add volume fractions ranges
-    min_vals = np.concatenate((modelfunc.parameter_ranges[:, 0], np.zeros(modelfunc.n_fractions)))
-    max_vals = np.concatenate((modelfunc.parameter_ranges[:, 1], np.ones(modelfunc.n_fractions)))
+    # Generate random values for non-fraction parameters
+    model_params = torch.rand(num_samples, modelfunc.n_parameters) * (max_vals - min_vals) + min_vals
 
+    # Generate volume fractions from Dirichlet
+    if alpha is None:
+        alpha = torch.ones(modelfunc.n_fractions + 1) # +1 for the implicit last fraction
+    dirichlet_samples = torch.distributions.Dirichlet(alpha).sample((num_samples,))  # shape [num_samples, num_fractions]
 
-    # Generate n_unique sets of parameters with random values within the min and max ranges
-    unique_params = (torch.rand(n_param, modelfunc.n_parameters + modelfunc.n_fractions) * (max_vals - min_vals) + min_vals).float()
+    # Keep only first num_fractions - 1 fractions
+    fractions = dirichlet_samples[:, :-1]
 
-    # Repeat each set of parameters `repeat_interval` times
-    params = unique_params.repeat_interleave(repeat_interval, dim=0)
+    # Concatenate model parameters + fractions
+    params = torch.cat([model_params, fractions], dim=1)
 
-    return params
+    return params.float()
+
 
 def generate_smooth_params(modelfunc, nvox=100000):
     import numpy as np
@@ -94,19 +98,20 @@ def main():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-m", "--model", type=str, help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="verdict")
+    parser.add_argument("-m", "--model", type=str, help="Compartmental Model to use. Implemented are verdict, sandi, or user defined ones form combinations of ball; sphere, stick; astrosticks; cylinder; astrocylinders; zeppelin; astrozeppelins; dot.", default="BallStick")
     parser.add_argument("-bvals", "--bvals", help="bval file in FSL format and in [s/mm2]", default=None)
     parser.add_argument("-bvecs", "--bvecs", help="bvec file in FSL format", default=None)
-    parser.add_argument("-g", "--grad", help="grad file in mrtrix format", default="")
+    parser.add_argument("-g", "--grad", help="grad file in mrtrix format", default="simulation_data/grad/grad_HCP.txt")
     parser.add_argument("-d", "--delta", help="gradient pulse separation in ms", default=24, type=float)
     parser.add_argument("-sd", "--smalldelta", help="gradient pulse duration in ms", default=8, type=float)
     parser.add_argument("-TE", "--TE", help="echo time in ms", default="")
     parser.add_argument("-TR", "--TR", help="repetition time in ms", default="")
     parser.add_argument("-TI", "--TI", help="inversion time in ms", default="")
-    parser.add_argument("-nparam", "--nparam", help="number of random parameters to sample", default=100)
-    parser.add_argument("-repvox", "--repvox", help="number of repeat voxels to do for each parameter", default=10)
-    parser.add_argument("-nvox", "--nvox", help="total number of voxels", default=5000)
-    parser.add_argument("-savedir", "--savedir", help="directory to save the images", default="../contributor_folders/snigdha/data/test_images/")
+    parser.add_argument("-nparam", "--nparam", help="number of random parameters to sample", type=int, default=100)
+    parser.add_argument("-nx", "--nx", help="number of voxels in x dimension", type=int, default=128)
+    parser.add_argument("-ny", "--ny", help="number of voxels in y dimension", type=int, default=128)
+    parser.add_argument("-nz", "--nz", help="number of voxels in z dimension", type=int, default=2)
+    parser.add_argument("-savedir", "--savedir", help="directory to save the images", default="simulation_data/data")
     parser.add_argument("-bd",  "--bdelta",     help="shape of gradient pulse", default=1, type=float)
 
     args = parser.parse_args()
@@ -144,16 +149,38 @@ def main():
     # Add parent directory to Python path
     sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-    from model_maker import ModelMaker    
+    from model_maker import ModelMaker
     modelfunc = ModelMaker(args.model)
+    # SOMETHING LIKE THIS INSTEAD!
+    # modelfunc = ModelMaker(cfg.model.name)
+
 
     #load the acquisition scheme in
     if args.bvals is not None:
         grad = txt_file_loader(args.bvals, args.bvecs, args.delta, args.smalldelta, args.TE, args.bdelta)
-    if args.grad is not None:
+    if args.grad is not None:       
         grad = acquisition_scheme_loader(args.grad)
-
-    params = generate_random_params(modelfunc, repeat_interval=args.repvox, n_param=args.nparam)
+        
+        # Add delta and smalldelta to the grad object if they are not already there 
+        
+    #     # Ensure grad.delta is a tensor of correct length
+    #     if grad.delta is None:                            
+    #         if isinstance(args.smalldelta, (int, float)):  # single number (like 22.8)
+    #             grad.delta = torch.full((len(grad.bvalues),), args.smalldelta, dtype=torch.float32)
+    #         else:
+    #             grad.delta = torch.tensor(args.smalldelta, dtype=torch.float32)
+       
+    #    # Ensure grad.Delta is a tensor of correct length
+    #     if grad.Delta is None:
+    #         if isinstance(args.delta, (int, float)):  # single number
+    #             grad.Delta = torch.full((len(grad.bvalues),), args.delta, dtype=torch.float32)
+    #         else:
+    #             grad.Delta = torch.tensor(args.delta, dtype=torch.float32)
+                
+       
+                
+    #generate random parameters for the model function
+    params = generate_random_params(modelfunc, num_samples=args.nx * args.ny * args.nz)
 
     #params = generate_smooth_params(modelfunc, args.nvox)
 
@@ -161,31 +188,34 @@ def main():
     # params_stick = generate_random_params(stick_modelfunc, repeat_interval=10)
 
     S = modelfunc(grad, params)
+    
     # S_ball = ball_modelfunc(grad, params_ball)
     # S_stick = stick_modelfunc(grad, params_stick)
 
     # Reshape the signal tensor and parameters tensor into the desired image format
 
     # make the image dimensions as close to a square as possible
-    dimx, dimy = factorize_close(params.shape[0])   
-
-    dim = (dimx, dimy, 1)
+    #dimx, dimy = factorize_close(params.shape[0])   
+    
+    dim = (args.nx, args.ny , args.nz) #set the dimensions of the image based on the command line arguments
 
     Simg = S.view(*dim, grad.number_of_measurements)
     paramsimg = params.view(*dim, params.size(-1))
     mask = torch.ones_like(Simg[:, :, :, 0])
 
+    #make a directory for saving the simulated images
+    os.makedirs(os.path.join(args.savedir,args.model), exist_ok=True )
+    
     #save the image using nibabel
     import nibabel as nib
     img = nib.Nifti1Image(Simg.numpy(), np.eye(4))
-    nib.save(img, os.path.join(args.savedir, ''.join(modelfunc.compartment_names) + '.nii.gz'))
+    nib.save(img, os.path.join(args.savedir, args.model, args.model + '_' + ''.join(modelfunc.compartment_names) + '_data.nii.gz'))
 
     paramsnii = nib.Nifti1Image(paramsimg.numpy(), np.eye(4))
-    nib.save(paramsnii, os.path.join(args.savedir, ''.join(modelfunc.compartment_names) + '_params.nii.gz'))
+    nib.save(paramsnii, os.path.join(args.savedir, args.model, args.model + '_' + ''.join(modelfunc.compartment_names) + '_params.nii.gz'))
 
     maskimg = nib.Nifti1Image(mask.numpy(), np.eye(4))
-    nib.save(maskimg, os.path.join(args.savedir, ''.join(modelfunc.compartment_names) + '_mask.nii.gz'))
-
+    nib.save(maskimg, os.path.join(args.savedir, args.model, args.model + '_' + ''.join(modelfunc.compartment_names) + '_mask.nii.gz'))
 
 
 if __name__ == '__main__':

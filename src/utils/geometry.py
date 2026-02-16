@@ -4,6 +4,16 @@ import torch
 from pathlib import Path
 
 def sphere2cart(theta,phi):   
+    """
+    Converts spherical coordinates (theta, phi) to Cartesian coordinates (x, y, z).
+
+    Args:
+        theta (torch.Tensor): A tensor of shape (B,) containing the polar angles in radians.
+        phi (torch.Tensor): A tensor of shape (B,) containing the azimuthal angles in radians.
+    Returns:
+        n (torch.Tensor): A tensor of shape (3, B) containing the Cartesian coordinates corresponding to the input spherical coordinates.
+    """
+
     n = torch.zeros(3,theta.size(0))
             
     n[0,:] = torch.squeeze(torch.sin(theta) * torch.cos(phi))
@@ -14,6 +24,15 @@ def sphere2cart(theta,phi):
     
     
 def cart2sphere(xyz):
+    """
+    Converts Cartesian coordinates (x, y, z) to spherical coordinates (theta, phi).
+    
+    Args:
+        xyz (torch.Tensor): A tensor of shape (..., 3) containing the Cartesian coordinates"
+    Returns:
+        mu (torch.Tensor): A tensor of shape (..., 2) containing the spherical coordinates (theta, phi) corresponding to the input Cartesian coordinates.
+    """
+
     shape = xyz.shape[:-1]
     mu = np.zeros(np.r_[shape, 2])
 
