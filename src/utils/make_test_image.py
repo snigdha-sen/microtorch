@@ -94,7 +94,7 @@ def main():
     import torch
     import os
 
-    from acquisition_scheme import acquisition_scheme_loader, txt_file_loader
+    from src.utils.acquisition_scheme import acquisition_scheme_loader, txt_file_loader
 
     parser = argparse.ArgumentParser()
 
