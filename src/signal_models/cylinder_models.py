@@ -3,7 +3,7 @@ import torch
 import scipy.special as special
 from typing import Optional
 
-from utils.geometry import sphere2cart
+from src.utils.geometry import sphere2cart
 
 # Precompute cylinder roots ONCE (order=1, first N roots)
 # SciPy returns a NumPy array
@@ -11,6 +11,20 @@ _CYLINDER_ROOTS = torch.tensor(special.jnp_zeros(1, 100), dtype=torch.float32)
 
 
 class Stick:
+    """
+    Restricted diffusion in a stick (parallel free, perpendicular zero).
+    
+    Attributes:
+        parameter_ranges (list): Ranges for the parameters.
+        parameter_names (list): Names of the parameters.
+        n_parameters (int): Number of parameters.
+        spherical_mean (bool): Indicates if the model is spherically averaged.  
+    
+    Methods:
+        __init__(): Initializes the stick model with parameter ranges and names.
+        __call__(grad, parameters): Computes the signal based on the gradient and parameters.
+
+    """
     def __init__(self):
         self.parameter_ranges = [[0.001, 3], [0, torch.pi], [-torch.pi, torch.pi]]
         self.parameter_names = ["Dpar", "theta", "phi"]
@@ -43,12 +57,16 @@ class Cylinder:
     Restricted diffusion in a cylinder (parallel free, perpendicular restricted).
     Uses a series expansion with Bessel roots (van Gelderen-style form).
 
-    Expected grad fields:
-        grad.bvecs (M,3) unit vectors
-        grad.bvalues (M,)
-        grad.delta (M,)
-        grad.Delta (M,)
-        grad.gradient_strengths (M,)  # in T/m, consistent with your acquisition scheme
+    Attributes:
+        parameter_ranges (list): Ranges for the parameters.
+        parameter_names (list): Names of the parameters.
+        n_parameters (int): Number of parameters.
+        spherical_mean (bool): Indicates if the model is spherically averaged.
+
+    Methods:
+        __init__(n_roots, lambda_perp): Initializes the cylinder model with parameter ranges and names.
+        __call__(grad, parameters): Computes the signal based on the gradient and parameters.
+
     """
 
     def __init__(self, n_roots: int = 50, lambda_perp: float = 2e-9):
@@ -132,6 +150,20 @@ class Cylinder:
 
 
 class Astrosticks:
+    """
+    Spherical mean of sticks (diffusion only parallel to the stick, but sticks are randomly oriented).
+
+    Attributes:
+        parameter_ranges (list): Ranges for the parameters.
+        parameter_names (list): Names of the parameters.
+        n_parameters (int): Number of parameters.
+        spherical_mean (bool): Indicates if the model is spherically averaged.
+
+    Methods:
+        __init__(fixed_D_par): Initializes the astrosticks model with parameter ranges and names, optionally fixing D_par.
+        __call__(grad, parameters): Computes the signal based on the gradient and parameters.
+        
+    """
     def __init__(self, fixed_D_par: Optional[float] = None):
         self.fixed_D_par = fixed_D_par
         self.parameter_ranges = [[0.5, 3.0]] if fixed_D_par is None else [[fixed_D_par, fixed_D_par]]

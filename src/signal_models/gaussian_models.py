@@ -1,5 +1,5 @@
 import torch
-from utils.geometry import sphere2cart
+from src.utils.geometry import sphere2cart
 
 class Ball:
     """
@@ -20,7 +20,7 @@ class Ball:
         self.parameter_ranges   = [[.001, 3]]
         self.parameter_names        = ['D']
         self.n_parameters           = 1
-        self.spherical_mean     = False
+        self.spherical_mean     = None
 
     def __call__(self, grad, parameters):    
         
@@ -76,9 +76,6 @@ class Zeppelin:
     Methods:
         __init__(): Initializes the Zeppelin model with parameter ranges and names.
         __call__(grad, parameters): Computes the signal based on the gradient and parameters.
-
-        def _attenuation_zeppelin(bvals, lambda_par, lambda_perp, n, mu):
-    "Signal attenuation for Zeppelin model."
     
     """
     def __init__(self):

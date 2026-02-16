@@ -6,5 +6,5 @@ from .sphere_models import Sphere
 __all__ += ["Sphere"]
 from .distributed_models import Standard_wm
 __all__ += ["Standard_wm"]
-from .cylinder_models import Stick, Astrosticks
-__all__ += ["Stick", "Astrosticks"]
+from .cylinder_models import Stick, Cylinder, Astrosticks
+__all__ += ["Stick", "Cylinder", "Astrosticks"]

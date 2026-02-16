@@ -2,6 +2,15 @@ import nibabel as nib
 import matplotlib.pyplot as plt
 
 def plot_param_maps(nifti_file, modelfunc, zslice=0):
+    """
+    Plots the parameter maps from a NIfTI file.
+    
+    Args:
+        nifti_file (str): Path to the NIfTI file containing the parameter maps.
+        modelfunc (ModelFunction): The model function object containing parameter and compartment information.
+        zslice (int): The z-slice index to plot (default is 0).
+    """
+
     img = nib.load(nifti_file).get_fdata()
 
     n_maps = img.shape[-1]
