@@ -115,7 +115,7 @@ def acquisition_scheme_loader(filepath):
         0-2: bvecs
         3:   bvalues
         4+:  optional timing parameters
-        
+
     Args:
         filepath (str): Path to the text file containing the acquisition scheme.
     Returns:
