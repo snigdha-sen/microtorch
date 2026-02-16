@@ -5,6 +5,6 @@ __all__ += ["Ball", "Msdki", "Zeppelin"]
 from .sphere_models import Sphere
 __all__ += ["Sphere"]
 from .distributed_models import Standard_wm, t1_smdt
-__all__ += ["Standard_WM", "t1_smdt"]
-from .cylinder_models import Stick, Astrosticks
-__all__ += ["Stick", "Astrosticks"]
+__all__ += ["Standard_wm", "t1_smdt"]
+from .cylinder_models import Stick, Astrosticks, Astrosticks_fixed
+__all__ += ["Stick", "Astrosticks", "Astrosticks_fixed"]

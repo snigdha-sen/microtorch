@@ -187,6 +187,8 @@ class ModelMaker:
             compartment_list = ["NEXI",]
         elif modelname == "Standard_wm":
             compartment_list = ["Standard_wm",]
+        elif modelname == "t1_smdt":
+            compartment_list = ["t1_smdt",]
         else:
             compartment_list = re.findall('([A-Z][a-z]+)', modelname)
         for comp in compartment_list:

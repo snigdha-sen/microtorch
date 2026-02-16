@@ -1,7 +1,6 @@
 import numpy as np
 import torch
-from utils.load_data import load_grad
-
+from src.utils.load_data import load_grad
 
 # -----------------------------
 # Core data container
