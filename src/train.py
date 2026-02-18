@@ -4,6 +4,22 @@ from tqdm import tqdm
 import torch
 
 def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
+    """
+    A function to train a MLP neural network on the image data, using 
+    the specified loss function and training parameters.
+
+    Args:
+        net (torch.nn.Module): The neural network model to be trained.
+        img (torch.Tensor): The input image data for training.
+        lossfunc (torch.nn.Module): The loss function to optimize.
+        lr (float): Learning rate for the optimizer.
+        batch_size (int): The size of each training batch.
+        num_iters (int): The number of training iterations (epochs).
+
+    Returns:
+        X_real_pred (torch.Tensor): The predicted image after training.
+        params (torch.Tensor): The predicted parameters from the network.
+    """
 
     # create batch queues for data
     num_batches = len(img) // batch_size

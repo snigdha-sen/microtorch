@@ -1,7 +1,7 @@
 import numpy as np 
 import torch
 
-from utils.preprocessing import direction_average, img2voxel, voxel2img, normalise
+from src.utils.preprocessing import direction_average, img2voxel, voxel2img, normalise
 
 class DummyGrad:
     def __init__(self, scheme_matrix, bvalues=None):
