@@ -153,62 +153,44 @@ class Astrosticks:
     """
     Spherical mean of sticks (diffusion only parallel to the stick, but sticks are randomly oriented).
 
+    If fixed_D_par is provided, the model ignores the parameter input value and uses the fixed value.
+    Otherwise, D_par is taken from parameters[:, 0].
+
     Attributes:
         parameter_ranges (list): Ranges for the parameters.
         parameter_names (list): Names of the parameters.
         n_parameters (int): Number of parameters.
         spherical_mean (bool): Indicates if the model is spherically averaged.
-
-    Methods:
-        __init__(fixed_D_par): Initializes the astrosticks model with parameter ranges and names, optionally fixing D_par.
-        __call__(grad, parameters): Computes the signal based on the gradient and parameters.
-        
     """
-    def __init__(self, fixed_D_par: Optional[float] = None):
+    def __init__(self, fixed_D_par: Optional[float] = None, default_range=(0.5, 3.0)):
         self.fixed_D_par = fixed_D_par
-        self.parameter_ranges = [[0.5, 3.0]] if fixed_D_par is None else [[fixed_D_par, fixed_D_par]]
         self.parameter_names = ["D_par"]
         self.n_parameters = 1
         self.spherical_mean = True
 
+        if fixed_D_par is None:
+            self.parameter_ranges = [list(default_range)]
+        else:
+            self.parameter_ranges = [[float(fixed_D_par), float(fixed_D_par)]]
+
     def __call__(self, grad, parameters):
         b = grad.bvalues
         if b.ndim == 1:
-            b = b.unsqueeze(0)  # (1,M)
+            b = b.unsqueeze(0)  # (1, M)
+
+        B = parameters.shape[0]
 
         if self.fixed_D_par is None:
-            D_par = parameters[:, 0:1]  # (B,1)
+            D_par = parameters[:, 0:1]  # (B, 1)
         else:
-            D_par = torch.full((parameters.shape[0], 1), float(self.fixed_D_par),
-                               dtype=b.dtype, device=b.device)
+            D_par = torch.full((B, 1), float(self.fixed_D_par), dtype=b.dtype, device=b.device)
 
-        x = b * D_par  # (B,M)
+        x = b * D_par  # broadcast -> (B, M) if b is (1, M)
+
+        # Compute S = sqrt(pi) * erf(sqrt(x)) / (2*sqrt(x)), with safe handling at x=0
         sqrt_x = torch.sqrt(torch.clamp(x, min=0.0))
-
         numer = torch.sqrt(torch.tensor(torch.pi, dtype=b.dtype, device=b.device)) * torch.erf(sqrt_x)
         denom = 2.0 * sqrt_x
 
         S = torch.where(x > 0, numer / denom, torch.ones_like(x))
-        return S
-    
-
-class Astrosticks_fixed:
-    def __init__(self):
-        self.parameter_ranges = [[2, 2]]
-        self.parameter_names      = ['D_par']
-        self.n_parameters         = 1
-        self.spherical_mean   = True
-
-
-    def __call__(self, grad, parameters):
-        b_values = grad.bvalues
-        D_par    = parameters[:, 0].unsqueeze(1)
-    
-        pi_tensor = torch.tensor(torch.pi)
-
-        S = np.ones_like(b_values)
-        S = ((torch.sqrt(pi_tensor) * torch.erf(torch.sqrt(b_values * D_par))) /
-                    (2 * torch.sqrt(b_values * D_par)))
-
-
         return S
