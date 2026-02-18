@@ -2,10 +2,6 @@ import numpy as np
 import torch
 from src.utils.load_data import load_grad
 
-# -----------------------------
-# Core data container
-# -----------------------------
-
 class AcquisitionScheme:
     def __init__(
         self,
@@ -17,6 +13,19 @@ class AcquisitionScheme:
         TE=None,
         bdelta=None,
     ):
+        """
+        Container for acquisition scheme details.
+
+        Args:
+            bvalues (array-like): 1D array of b-values
+            bvecs (array-like): 2D array of shape (N, 3) containing the gradient directions as unit vectors
+            gradient_strengths (array-like, optional): 1D array of gradient strengths in T/m
+            delta (array-like, optional): 1D array of gradient pulse durations in seconds
+            Delta (array-like, optional): 1D array of diffusion times in seconds
+            TE (array-like, optional): 1D array of echo times in seconds
+            bdelta (array-like, optional): 1D array of bdelta values (for advanced models)
+        """
+
         self.bvalues = torch.as_tensor(bvalues, dtype=torch.float32)
         self.bvecs = torch.as_tensor(bvecs, dtype=torch.float32)
 
@@ -30,16 +39,27 @@ class AcquisitionScheme:
 
 
 def _to_tensor_or_none(x):
+    """
+    Helper function to convert input to a PyTorch tensor or return None if input is None.
+
+    Args:
+        x (array-like or None): The input to convert to a tensor, or None.
+    """
+
     if x is None:
         return None
     return torch.as_tensor(x, dtype=torch.float32)
 
 
-# -----------------------------
-# Shared helpers
-# -----------------------------
-
 def _process_bvalues(bvals):
+    """
+    Process b-values to ensure they are in the correct format and units.
+    Args:
+        bvals (array-like): The input b-values, which may be in various formats (e.g., 1D array, list) and units (e.g., s/mm^2 or s/m^2).
+    Returns:
+        bvals (numpy.ndarray): The processed b-values as a 1D array in s/mm^2.
+    """
+
     bvals = np.asarray(bvals, dtype=np.float32)
 
     if np.any(bvals < 0):
@@ -52,6 +72,16 @@ def _process_bvalues(bvals):
 
 
 def check_acquisition_scheme(bvalues, bvecs, delta=None, Delta=None, TE=None):
+    """
+    Validates the acquisition scheme parameters.
+    Args:
+        bvalues (array-like): 1D array of b-values
+        bvecs (array-like): 2D array of shape (N, 3) containing the gradient directions as unit vectors
+        delta (array-like, optional): 1D array of gradient pulse durations in seconds
+        Delta (array-like, optional): 1D array of diffusion times in seconds
+        TE (array-like, optional): 1D array of echo times in seconds
+    Raises:
+        ValueError: If any of the validation checks fail."""
     if bvalues.ndim != 1:
         raise ValueError("bvalues must be one-dimensional")
 
@@ -78,11 +108,6 @@ def check_acquisition_scheme(bvalues, bvecs, delta=None, Delta=None, TE=None):
             if np.any(arr < 0):
                 raise ValueError(f"{name} must be non-negative")
 
-
-# -----------------------------
-# Loaders
-# -----------------------------
-
 def acquisition_scheme_loader(filepath):
     """
     Load acquisition scheme from a single text file.
@@ -90,6 +115,11 @@ def acquisition_scheme_loader(filepath):
         0-2: bvecs
         3:   bvalues
         4+:  optional timing parameters
+
+    Args:
+        filepath (str): Path to the text file containing the acquisition scheme.
+    Returns:
+        AcquisitionScheme: An instance of the AcquisitionScheme class containing the loaded acquisition parameters.
     """
     data = np.loadtxt(filepath)
 
@@ -118,6 +148,16 @@ def acquisition_scheme_loader(filepath):
 def txt_file_loader(bvals, bvecs, Delta=None, delta=None, TE=None, bdelta=None):
     """
     Load acquisition scheme from separate text files.
+
+    Args:
+        bvals (str): Path to the text file containing b-values.
+        bvecs (str): Path to the text file containing b-vectors.
+        Delta (str, optional): Path to the text file containing diffusion times. Default is None.
+        delta (str, optional): Path to the text file containing gradient pulse durations. Default is None.
+        TE (str, optional): Path to the text file containing echo times. Default is None.
+        bdelta (str, optional): Path to the text file containing bdelta values.
+    Returns:
+        AcquisitionScheme: An instance of the AcquisitionScheme class containing the loaded acquisition parameters.
     """
     bvals = _process_bvalues(load_grad(bvals).T.squeeze())
     bvecs = load_grad(bvecs).T

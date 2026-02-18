@@ -4,6 +4,16 @@ import torch.nn as nn
 
 # Rician Loss Function
 class RicianLoss(nn.Module):
+    """
+    Rician Loss Function for diffusion MRI signal fitting.
+    This loss function is designed to handle the Rician noise distribution commonly encountered in diffusion MRI data
+    
+    Attributes:
+        sigma (float): The standard deviation of the Rician noise. Default is 0.05.
+
+    Methods:
+        __init__(sigma): Initializes the RicianLoss with the specified noise standard deviation.
+        forward(predictions, inputs): Computes the Rician loss between the predicted and input signals."""
     def __init__(self, sigma=0.05):
         super(RicianLoss, self).__init__()
         self.sigma = sigma
@@ -27,6 +37,19 @@ class RicianLoss(nn.Module):
 
 
 class RicianLossStable(nn.Module):  #New Rician Loss with added stability
+    """
+    Rician Loss Function with numerical stability enhancements for diffusion MRI signal fitting.
+    This loss function is designed to handle the Rician noise distribution commonly encountered in diffusion MRI data
+    
+    Attributes:
+        sigma (float): The standard deviation of the Rician noise. Default is 0.05.
+        eps (float): A small constant added for numerical stability to prevent log(0) and division by zero. Default is 1e-8.    
+        
+    Methods:
+        __init__(sigma, eps): Initializes the RicianLossStable with the specified noise standard deviation and stability constant.
+        forward(predictions, inputs): Computes the Rician loss between the predicted and input signals with enhanced numerical stability.
+    
+    """    
     def __init__(self, sigma=0.05, eps=1e-8):
         super(RicianLossStable, self).__init__()
         self.sigma = sigma

@@ -7,7 +7,7 @@ class Net(nn.Module):
     def __init__(self,grad, modelfunc, layer_dims, n_layers, dropout_fraction, clipping_method = 'clamp', activation=nn.PReLU()):  
 
         """
-        Define the network architecture
+        Define the network architecture.
         
         Args:
             grad: gradient table/sequence details
@@ -85,12 +85,6 @@ class Net(nn.Module):
 
             # Store back only the free fractions
             params[:, frac_start:frac_end] = all_f[:, :-1]
-
-
-
-
-
-
         
         X = self.modelfunc(self.grad, params)
         return X.to(torch.float32), params
@@ -98,6 +92,21 @@ class Net(nn.Module):
 
 
     def squash(param, method, p_min, p_max):
+        """
+        Constrain the parameter values to be within the specified range 
+        [p_min, p_max] using the specified method.
+
+        Args:
+            param (torch.Tensor): The parameter tensor to be constrained.
+            method (str): The method to use for constraining the parameters. 
+            Options are 'clamp' (simple clipping) or 'sigmoid' (sigmoid squashing).
+            p_min (float): The minimum value for the parameter.
+            p_max (float): The maximum value for the parameter.
+
+        Returns:
+            unsqueezed_param (torch.Tensor): The constrained parameter tensor, 
+            with the same shape as the input param but squeezed to remove the extra dimension.
+        """
 
         if method == 'clamp':
 

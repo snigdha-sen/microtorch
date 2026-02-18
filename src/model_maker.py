@@ -122,35 +122,13 @@ class ModelMaker:
         return S
 
 
-
-    def convert_model_string_to_compartments(model):
-        #converts the model string to a tuple of compartment strings for input to
-        if model == "MSDKI":
-            compartments = ("MSDKI",)
-        elif model == "NEXI":
-            compartments = ("NEXI",)
-        elif model == "BallStick":
-            compartments = ("Ball","Stick")
-        elif model == "StickBall":
-            compartments = ("Stick","Ball")
-        return compartments
-
-
-    def import_compartments(compartments):
-        #given tuple of compartment strings import compartment classes dynamically based on the chosen model
-
-        comps_classes = ()
-        for comp in compartments:
-            #get the class
-            this_class = getattr(signal_models_module, comp) #add to the tuple
-            #create an instance of the class and add to the tuple
-            comps_classes += (this_class(),)
-
-        return comps_classes
-
-
     def get_parameter_indices(self):
-        #calculate a tuple of indices of where the parameters for each compartment are in the parameter vector
+        """
+         Computes the indices of the parameters in the parameter vector for each compartment.
+         Returns:
+             param_ind (tuple): A tuple of lists, where each list contains the indices of the parameters for a specific compartment.
+         """
+        
         param_ind = (list(range(0,self.compartments[0].n_parameters)) ,) #initialise tuple from the first compartment
         for i in range(1,len(self.compartments)):
             #get the index of the last compartment's last parameter
@@ -162,7 +140,12 @@ class ModelMaker:
 
 
     def get_comp_indices(self):
-        # Returns the indices of the compartment that each parameter belongs to
+        """
+         Computes the indices of the compartment that each parameter belongs to.
+         Returns:
+             compartment_indices (list): A list where each element is the index of the compartment that the corresponding parameter belongs to.
+         """
+        
         compartment_indices = []
         for parameter_index in range(self.n_parameters):
             for i in range(len(self.parameter_indices)):
@@ -174,6 +157,13 @@ class ModelMaker:
 
     @staticmethod
     def model_compartments(modelname):
+        """
+        Maps the model name to its corresponding compartment classes.
+        Args:
+            modelname (str): The name of the model.
+        Returns:
+            tuple: A tuple of instances of the compartment classes corresponding to the model."""
+
         comps_classes = []
         compartment_list = []
         
@@ -197,4 +187,6 @@ class ModelMaker:
 
 
         return tuple(comps_classes)
+
+
 

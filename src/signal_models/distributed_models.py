@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from utils.utils_wm import WM_model, spherical_harmonics_directions
+from src.utils.utils_wm import WM_model, spherical_harmonics_directions
 
 class Standard_wm: ## check with leon -- add unit tests?
     """
@@ -70,53 +70,3 @@ class Standard_wm: ## check with leon -- add unit tests?
 
         return S
     
-
-class t1_smdt: ##again, do we want this in the first iteration? -- i think its broken, refactor
-    """
-    T1-weighted SMDT model for diffusion MRI signal.
-    
-    Attributes:
-        parameter_ranges (list): Ranges for the parameters [S0, tex, Di, De, f].
-        parameter_names (list): Names of the parameters.
-        n_parameters (int): Number of parameters.
-        spherical_mean (bool): Whether the model is spherically-averaged or not.  
-
-    Methods:
-        __init__: Initializes the model with parameter ranges and names.
-        __call__(grad, parameters): Computes the diffusion signal based on the gradient and parameters.
-    """
-
-    def __init__(self):
-
-        self.parameter_ranges = [[0.5, 3], [.001, 1], [0, 100000],  [0.001,1000000]] #no idea if the ranges are solid
-        self.parameter_names = ['D_par', 'k', 'T1', 'S0' ]
-        self.n_parameters = 4
-        self.spherical_mean = False
-
-
-    def __call__(self, grad, parameters):
-        
-
-        b_vecs = grad.bvecs # we assume that the first three columns contain the diffusion gradient direction in Cartesian coordinates
-        b_values = grad.bvalues # b-value assumed in the fourth position in s/mm^2
-
-        # b_values [b_values ==0] = 0.01 # to potentially avoid divisions by 0
-        b_values = b_values /1000.0 # b-values in ms/um^2
-        TI = grad[:,5].unsqueeze(1) # inversion time assumed in the sixth position in ms
-        TS = grad[:,4].unsqueeze(1) # saturation or preparation time assumed in the fifth position in ms
-
-
-        # Constant factor employed in the equation
-        sfac = 0.5 * np.sqrt(np.pi)
-        # parameters
-        Dpar = parameters[:,0].unsqueeze(1)
-        kperp = parameters[:,1].unsqueeze(1)
-        Dperp = kperp*Dpar
-        T1 = parameters[:,2].unsqueeze(1)
-        S0 = parameters[:,3].unsqueeze(1)
-
-
-        # we obtain the signal
-        S = sfac * S0 * torch.abs(1.0 - torch.exp(-TI/T1) - (torch.exp(-TS/T1)) * torch.exp(-TI/T1)) * torch.erf(torch.sqrt(b_values*(Dpar-Dperp)))/torch.sqrt(b_values*(Dpar-Dperp))
-
-        return S
