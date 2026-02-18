@@ -190,3 +190,25 @@ class Astrosticks:
 
         S = torch.where(x > 0, numer / denom, torch.ones_like(x))
         return S
+    
+
+class Astrosticks_fixed:
+    def __init__(self):
+        self.parameter_ranges = [[2, 2]]
+        self.parameter_names      = ['D_par']
+        self.n_parameters         = 1
+        self.spherical_mean   = True
+
+
+    def __call__(self, grad, parameters):
+        b_values = grad.bvalues
+        D_par    = parameters[:, 0].unsqueeze(1)
+    
+        pi_tensor = torch.tensor(torch.pi)
+
+        S = np.ones_like(b_values)
+        S = ((torch.sqrt(pi_tensor) * torch.erf(torch.sqrt(b_values * D_par))) /
+                    (2 * torch.sqrt(b_values * D_par)))
+
+
+        return S
