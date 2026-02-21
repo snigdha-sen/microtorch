@@ -96,7 +96,7 @@ pip install git+https://github.com/snigdha-sen/microtorch.git
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
-## Running from the Command Line
+## Running microTorch from the Command Line
 
 microTorch uses **Hydra** for configuration management.\
 Default configuration files are located in `src/conf/`, and any
@@ -111,121 +111,10 @@ Multiple parameters can be overridden in a single command.
 
 ------------------------------------------------------------------------
 
-## Minimal Example
-
-``` bash
-python -m src.main \
-  model.name=BallStick \
-  data.image=/path/to/dwi.nii \
-  acquisition.bvals=/path/to/bvals \
-  acquisition.bvecs=/path/to/bvecs
-```
-
-------------------------------------------------------------------------
-
-## Model Selection
-
-Specify the model using:
-
-``` bash
-model.name=MODEL_NAME
-```
-
-Examples:
-
--   `BallStick`
--   `BallSphere`
--   `VERDICT`
--   `SANDI`
-
-Model names should be written in **PascalCase**.
-
-------------------------------------------------------------------------
-
-## Data and File Paths
-
-### Required
-
-``` bash
-data.image=/path/to/dwi.nii
-```
-
-Optional mask:
-
-``` bash
-data.mask=/path/to/mask.nii
-```
-
-------------------------------------------------------------------------
-
-## Acquisition Parameters
-
-You can either provide a single gradient scheme file:
-
-``` bash
-acquisition.grad=/path/to/grad.scheme
-```
-
-**OR** specify acquisition parameters individually:
-
-``` bash
-acquisition.bvals=/path/to/bvals
-acquisition.bvecs=/path/to/bvecs
-acquisition.delta=/path/to/delta
-acquisition.smalldelta=/path/to/smalldelta
-acquisition.TE=/path/to/TE
-acquisition.TR=/path/to/TR
-acquisition.TI=/path/to/TI
-acquisition.bdelta=/path/to/bdelta
-```
-
-You only need to provide the parameters required by your selected model.
-
-------------------------------------------------------------------------
-
-## Training / Network Parameters
-
-Training parameters can be overridden in the same way:
-
-``` bash
-training.num_iters=1000
-training.learning_rate=1e-3
-training.activation=relu
-training.seed=42
-training.dropout_frac=0.1
-training.layer_size=128
-training.num_layers=4
-training.clip=1.0
-training.operation=fit
-```
-
-------------------------------------------------------------------------
-
-## Example with Custom Training Parameters
-
-``` bash
-python -m src.main \
-  model.name=SANDI \
-  data.image=/data/dwi.nii \
-  acquisition.grad=/data/grad.scheme \
-  training.num_iters=2000 \
-  training.learning_rate=5e-4 \
-  training.layer_size=256
-```
-
-------------------------------------------------------------------------
-
-For a full list of configurable parameters, see the configuration files
-in:
-
-    src/conf/
-
-## Choosing a Model
+# Choosing a Model
 
 microTorch allows you to define models either by combining individual
 compartments or by selecting a predefined model.
-
-------------------------------------------------------------------------
 
 ## 1. Single-Compartment Models
 
@@ -281,15 +170,86 @@ Available predefined models:
 -   `SANDI` → Ball + Zeppelin + Astrosticks\
 -   `IVIM` → Ball + Ball
 
-These models provide convenient presets for widely used diffusion MRI
-frameworks.
+------------------------------------------------------------------------
+
+# Data and File Paths
+
+### Required
+
+``` bash
+data.image=/path/to/dwi.nii
+```
+
+Optional mask:
+
+``` bash
+data.mask=/path/to/mask.nii
+```
 
 ------------------------------------------------------------------------
 
-For full configuration options, see:
+# Acquisition Parameters
 
-    src/conf/model/
+You can either provide a single gradient scheme file:
 
+``` bash
+acquisition.grad=/path/to/grad.scheme
+```
+
+**OR** specify acquisition parameters individually:
+
+``` bash
+acquisition.bvals=/path/to/bvals
+acquisition.bvecs=/path/to/bvecs
+acquisition.delta=/path/to/delta
+acquisition.smalldelta=/path/to/smalldelta
+acquisition.TE=/path/to/TE
+acquisition.TR=/path/to/TR
+acquisition.TI=/path/to/TI
+acquisition.bdelta=/path/to/bdelta
+```
+
+You only need to provide the parameters required by your selected model.
+
+------------------------------------------------------------------------
+
+# Training / Network Parameters
+
+Training parameters can be overridden in the same way:
+
+``` bash
+training.num_iters=1000
+training.learning_rate=1e-3
+training.activation=relu
+training.seed=42
+training.dropout_frac=0.1
+training.layer_size=128
+training.num_layers=4
+training.clip=1.0
+training.operation=fit
+```
+
+------------------------------------------------------------------------
+
+# Minimal Example
+
+``` bash
+python -m src.main \
+  model.name=SANDI \
+  data.image=/data/dwi.nii \
+  acquisition.grad=/data/grad.scheme \
+  training.num_iters=2000 \
+  training.learning_rate=5e-4
+```
+
+------------------------------------------------------------------------
+
+For a full list of configurable parameters, see:
+
+    src/conf/
+
+    
+<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
 ### Examples and Simulated Test Data
 
