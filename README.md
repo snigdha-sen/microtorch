@@ -312,6 +312,8 @@ should verify:
 We encourage contributors to open an issue first if they would like to
 discuss substantial changes before implementation.
 
+<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
+
 # Acknowledgements
 
 ## Authors
