@@ -96,41 +96,202 @@ pip install git+https://github.com/snigdha-sen/microtorch.git
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
-## Run from command line
+## Running from the Command Line
 
-The command line input takes in a number of parameters that allow personalisation of file paths, model type and network parameters. The package makes use of hydra for configuration management - defaults are set in src/conf and can be changed by the user or via the command line.
+microTorch uses **Hydra** for configuration management.\
+Default configuration files are located in `src/conf/`, and any
+parameter can be overridden directly from the command line using Hydra's
+dot-notation syntax:
 
-**Model type**
-```
-python3 -m src.main model.name=
-```
-
-Add the name of the model you wish to use after the equals - either a widely-used model such as VERDICT, SANDI or compartments in Pascal case e.g. BallStick or BallSphere.
-
-**Folders and paths**
-
-Add the paths to the image (and mask, if using) after the equals.
-```
-data.image= data.mask=
-```
-In the same way, set the path  to the gradient file, containing all the acquisition parameters...
-```
-acquisition.grad=
-```
-... or specify individual file paths for each acquisition parameter (b/delta/Delta/TE/TR/TI/bdelta)
-```
-acquisition.bvals= acquisition.bvecs= acquisition.delta= acquisition.smalldelta= acquisition.TE= acquisition.TR= acquisition.TI= acquisition.bdelta= 
-```
-**Network parameters**
-
-To set the network training parameters, the same approach applies
-
-```
-training.num_iters= training.learning_rate= training.activation= training.seed= training.dropout_frac= training.layer_size= training.num_layers= training.clip= training.operation= 
-
+``` bash
+python -m src.main key=value
 ```
 
-### Test image
+Multiple parameters can be overridden in a single command.
+
+------------------------------------------------------------------------
+
+## Minimal Example
+
+``` bash
+python -m src.main \
+  model.name=BallStick \
+  data.image=/path/to/dwi.nii \
+  acquisition.bvals=/path/to/bvals \
+  acquisition.bvecs=/path/to/bvecs
+```
+
+------------------------------------------------------------------------
+
+## Model Selection
+
+Specify the model using:
+
+``` bash
+model.name=MODEL_NAME
+```
+
+Examples:
+
+-   `BallStick`
+-   `BallSphere`
+-   `VERDICT`
+-   `SANDI`
+
+Model names should be written in **PascalCase**.
+
+------------------------------------------------------------------------
+
+## Data and File Paths
+
+### Required
+
+``` bash
+data.image=/path/to/dwi.nii
+```
+
+Optional mask:
+
+``` bash
+data.mask=/path/to/mask.nii
+```
+
+------------------------------------------------------------------------
+
+## Acquisition Parameters
+
+You can either provide a single gradient scheme file:
+
+``` bash
+acquisition.grad=/path/to/grad.scheme
+```
+
+**OR** specify acquisition parameters individually:
+
+``` bash
+acquisition.bvals=/path/to/bvals
+acquisition.bvecs=/path/to/bvecs
+acquisition.delta=/path/to/delta
+acquisition.smalldelta=/path/to/smalldelta
+acquisition.TE=/path/to/TE
+acquisition.TR=/path/to/TR
+acquisition.TI=/path/to/TI
+acquisition.bdelta=/path/to/bdelta
+```
+
+You only need to provide the parameters required by your selected model.
+
+------------------------------------------------------------------------
+
+## Training / Network Parameters
+
+Training parameters can be overridden in the same way:
+
+``` bash
+training.num_iters=1000
+training.learning_rate=1e-3
+training.activation=relu
+training.seed=42
+training.dropout_frac=0.1
+training.layer_size=128
+training.num_layers=4
+training.clip=1.0
+training.operation=fit
+```
+
+------------------------------------------------------------------------
+
+## Example with Custom Training Parameters
+
+``` bash
+python -m src.main \
+  model.name=SANDI \
+  data.image=/data/dwi.nii \
+  acquisition.grad=/data/grad.scheme \
+  training.num_iters=2000 \
+  training.learning_rate=5e-4 \
+  training.layer_size=256
+```
+
+------------------------------------------------------------------------
+
+For a full list of configurable parameters, see the configuration files
+in:
+
+    src/conf/
+
+## Choosing a Model
+
+microTorch allows you to define models either by combining individual
+compartments or by selecting a predefined model.
+
+------------------------------------------------------------------------
+
+## 1. Single-Compartment Models
+
+To use a single compartment:
+
+``` bash
+python -m src.main model.name=Ball
+```
+
+Available compartments include:
+
+-   `Ball`
+-   `Stick`
+-   `Sphere`
+-   `Astrosticks` (option to fix diffusivity)
+-   `Zeppelin`
+-   `StandardWM`
+-   `Cylinder`
+
+------------------------------------------------------------------------
+
+## 2. Multi-Compartment Models
+
+You can combine compartments by concatenating their names in
+**PascalCase**, with no spaces:
+
+``` bash
+python -m src.main model.name=BallBallSphere
+```
+
+This example creates a model with: - 2 × Ball compartments\
+- 1 × Sphere compartment
+
+### Important Rules
+
+-   Compartment names must start with an uppercase letter.
+-   No spaces are allowed between compartments.
+-   Order determines how compartments are constructed internally.
+
+------------------------------------------------------------------------
+
+## 3. Predefined Models
+
+microTorch also includes commonly used multicompartment models:
+
+``` bash
+python -m src.main model.name=VERDICT
+```
+
+Available predefined models:
+
+-   `VERDICT` → Ball + Sphere + fixed Astrosticks\
+-   `SANDI` → Ball + Zeppelin + Astrosticks\
+-   `IVIM` → Ball + Ball
+
+These models provide convenient presets for widely used diffusion MRI
+frameworks.
+
+------------------------------------------------------------------------
+
+For full configuration options, see:
+
+    src/conf/model/
+
+
+### Examples and Simulated Test Data
 
 We have provided some test images to allow you to test if you have correctly set up all the dependencies:
 ```
@@ -139,28 +300,6 @@ python fit.py -m BallStick -img data/test_images/BallStick.nii.gz  -grad data/gr
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
-## Choosing a model
-
-To create a model comprising a single compartment, set 
-```-m <compartment_name>```. There are a number of typical compartments included:
-- Ball
-- Stick
-- Sphere
-- Astrosticks (option to fix D)
-- Zeppelin
-- Standard WM
-- Cylinder
-
-To create a model comprising **multiple** compartments, set ```-m <compartment_name1 compartment_name2...>``` 
-- e.g. ```-m BallBallSphere``` will result in a model comprising of 2 Balls and 1 Sphere.
-- Note: Compartment names must start with an uppercase letter and be followed by lowercase. There must be no spaces between compartments. 
-
-There are also a number of predefined models to be used as ```-m <model_name>```:
-- VERDICT (Ball, Sphere, Astrosticks - fixed)
-- SANDI (Ball, Zeppelin, Astrosticks)
-- IVIM (Ball, Ball)
-
-<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
 ## Adding a new compartment
 
