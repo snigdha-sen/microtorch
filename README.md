@@ -14,44 +14,83 @@ This work is by members of the UCL Centre for Medical Image Computing and the Ca
 
 ## Installation
 
-### With virtual environment (recommended)
+### 1. Clone the repository
 
-Clone the directory
-
-```bash
+``` bash
 git clone https://github.com/snigdha-sen/microtorch.git
+cd microtorch
 ```
 
-Create a virtual environment in the cloned directory
+------------------------------------------------------------------------
 
-```bash
-python -m venv <MICROTORCH_DIR>/microtorch_env
-```
-where ```<MICROTORCH_DIR>``` is the location where you cloned the repo.
+### 2. Create and activate a virtual environment (recommended)
 
-Activate the virtual environment
+Create a virtual environment:
 
-```bash
-files <MICROTORCH_DIR>/microtorch_env/bin/activate
+``` bash
+python -m venv .venv
 ```
 
-Then run 
+Activate it:
 
-```bash
-pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
+**macOS / Linux**
 
+``` bash
+source .venv/bin/activate
 ```
 
-### Without virtual enviroment (not recommended)
+**Windows**
 
-Run the following in bash
-
-```bash
-git clone https://github.com/snigdha-sen/microtorch.git
-
-pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
-
+``` bash
+.venv\Scripts\activate
 ```
+
+Upgrade pip:
+
+``` bash
+pip install --upgrade pip
+```
+
+------------------------------------------------------------------------
+
+### 3. Install the package
+
+Install MicroTorch and its dependencies (as defined in
+`pyproject.toml`):
+
+``` bash
+pip install .
+```
+
+------------------------------------------------------------------------
+
+## Development Installation (editable mode)
+
+If you plan to modify the code:
+
+``` bash
+pip install -e .
+```
+
+This installs the package in editable mode so changes to the source code
+are immediately reflected.
+
+------------------------------------------------------------------------
+
+## Install directly from GitHub
+
+If you do not want to clone the repository:
+
+``` bash
+pip install git+https://github.com/snigdha-sen/microtorch.git
+```
+
+------------------------------------------------------------------------
+
+> ⚠️ **Note on PyTorch:**\
+> Depending on your CUDA setup, you may need to install a specific
+> version of PyTorch.\
+> See: https://pytorch.org/get-started/locally/
 
 &nbsp;   
 
