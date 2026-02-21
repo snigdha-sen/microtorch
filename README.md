@@ -1,4 +1,4 @@
-# microTorch: microstructure model fitting with PyTorch
+j# microTorch: microstructure model fitting with PyTorch
 
 
 <img align="left" width="295" height="295" src="files/logo.jpeg" > 
@@ -150,8 +150,8 @@ python -m src.main model.name=VERDICT
 
 Available predefined models:
 
--   `VERDICT` → Ball + Sphere + fixed Astrosticks\
--   `SANDI` → Ball + Zeppelin + Astrosticks\
+-   `VERDICT` → Ball + Sphere + fixed Astrosticks
+-   `SANDI` → Ball + Zeppelin + Astrosticks
 -   `IVIM` → Ball + Ball
 
 ## Data and File Paths
@@ -303,9 +303,9 @@ Tests should be added to:
 Please follow the structure and conventions of existing tests. Tests
 should verify:
 
--   Correct parameter handling\
--   Numerical stability\
--   Expected output shape\
+-   Correct parameter handling
+-   Numerical stability
+-   Expected output shape
 -   Basic sanity checks of signal behaviour
 
 We encourage contributors to open an issue first if they would like to
