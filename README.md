@@ -311,3 +311,16 @@ should verify:
 We encourage contributors to open an issue first if they would like to
 discuss substantial changes before implementation.
 
+# Acknowledgements
+
+## Authors
+
+```microtorch``` is authored by Snigdha Sen, Rajib Ahmed, Gerrit Arends, Alvaro Planchuelo Gomez, Xiaoxiang Chen, Marta Masramon Masramon, Marco Palombo, Chris Parker, Chantal MW Tax, Eleftheria Panagiotaki and Paddy J Slator. 
+
+Snigdha Sen undertook this work whilst being funded by the EPSRC-funded UCL Center for Doctoral Training in Intelligent, Integrated Imaging in Healthcare (i4health) (EP/S021930/1) and the Department of Health's NIHR-funded Biomedical Research Centre at University College London Hospitals.
+
+## References
+
+[1] Sen S, Singh S, Pye H, et al. ssVERDICT: Self-supervised VERDICT-MRI for enhanced prostate tumor characterization. Magn Reson Med. 2024; 92: 2181-2192. doi: 10.1002/mrm.30186
+[2] Barbieri S, Gurney-Champion OJ, Klaassen R, Thoeny HC. Deep learning how to fit an intravoxel incoherent motion model to diffusion-weighted MRI. Magn Reson Med. 2020 Jan;83(1):312-321. doi: 10.1002/mrm.27910
+
