@@ -3,7 +3,7 @@
 
 <img align="left" width="295" height="295" src="files/logo.jpeg" > 
 
-The microTorch software package is designed to flexibly fit diffusion MRI (dMRI) microstructure models, using a self-supervised deep learning approach. The framework is designed to work with a variety of established dMRI multicompartment models, such as Ball-and-Stick, VERDICT and SANDI, but also allows users to combine compartment models as they wish.
+The ```microTorch``` software package is designed to flexibly fit diffusion MRI (dMRI) microstructure models, using a self-supervised deep learning approach. The framework is designed to work with a variety of established dMRI multicompartment models, such as Ball-and-Stick, VERDICT and SANDI, but also allows users to combine compartment models as they wish.
 
 We designed this framework to leverage the inference time gains of deep learning, whilst removing the requirement for explicit training data. Training and inference is performed simultaneously, for each dataset at a time, mimicking a traditional model fitting approach and reducing bias in the parameter estimates. Please see [1,2] for the theoretical underpinnings of this approach.
 
@@ -315,7 +315,7 @@ discuss substantial changes before implementation.
 
 ## Authors
 
-```microtorch``` is authored by Snigdha Sen, Rajib Ahmed, Gerrit Arends, Alvaro Planchuelo Gomez, Xiaoxiang Chen, Marta Masramon Masramon, Marco Palombo, Chris Parker, Chantal MW Tax, Eleftheria Panagiotaki and Paddy J Slator. 
+```microTorch``` is authored by Snigdha Sen, Rajib Ahmed, Gerrit Arends, Alvaro Planchuelo Gomez, Xiaoxiang Chen, Marta Masramon Masramon, Marco Palombo, Chris Parker, Chantal MW Tax, Eleftheria Panagiotaki and Paddy J Slator. 
 
 Snigdha Sen undertook this work whilst being funded by the EPSRC-funded UCL Center for Doctoral Training in Intelligent, Integrated Imaging in Healthcare (i4health) (EP/S021930/1) and the Department of Health's NIHR-funded Biomedical Research Centre at University College London Hospitals.
 
