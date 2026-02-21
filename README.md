@@ -1,4 +1,4 @@
-j# microTorch: microstructure model fitting with PyTorch
+# microTorch: microstructure model fitting with PyTorch
 
 
 <img align="left" width="295" height="295" src="files/logo.jpeg" > 
