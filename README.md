@@ -12,9 +12,9 @@ This work is by members of the UCL Centre for Medical Image Computing and the Ca
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
-## Installation
+# Installation
 
-### 1. Clone the repository
+## 1. Clone the repository
 
 ``` bash
 git clone https://github.com/snigdha-sen/microtorch.git
@@ -23,7 +23,7 @@ cd microtorch
 
 ------------------------------------------------------------------------
 
-### 2. Create and activate a virtual environment (recommended)
+## 2. Create and activate a virtual environment (recommended)
 
 Create a virtual environment:
 
@@ -53,7 +53,7 @@ pip install --upgrade pip
 
 ------------------------------------------------------------------------
 
-### 3. Install the package
+## 3. Install the package
 
 Install MicroTorch and its dependencies (as defined in
 `pyproject.toml`):
@@ -64,7 +64,7 @@ pip install .
 
 ------------------------------------------------------------------------
 
-## Development Installation (editable mode)
+### Development Installation (editable mode)
 
 If you plan to modify the code:
 
@@ -77,7 +77,7 @@ are immediately reflected.
 
 ------------------------------------------------------------------------
 
-## Install directly from GitHub
+### Install directly from GitHub
 
 If you do not want to clone the repository:
 
@@ -96,7 +96,7 @@ pip install git+https://github.com/snigdha-sen/microtorch.git
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
-## Running microTorch from the Command Line
+# Running microTorch from the Command Line
 
 microTorch uses **Hydra** for configuration management.\
 Default configuration files are located in `src/conf/`, and any
@@ -111,12 +111,12 @@ Multiple parameters can be overridden in a single command.
 
 ------------------------------------------------------------------------
 
-# Choosing a Model
+## Choosing a Model
 
 microTorch allows you to define models either by combining individual
 compartments or by selecting a predefined model.
 
-## 1. Single-Compartment Models
+### 1. Single-Compartment Models
 
 To use a single compartment:
 
@@ -136,7 +136,7 @@ Available compartments include:
 
 ------------------------------------------------------------------------
 
-## 2. Multi-Compartment Models
+### 2. Multi-Compartment Models
 
 You can combine compartments by concatenating their names in
 **PascalCase**, with no spaces:
@@ -148,7 +148,7 @@ python -m src.main model.name=BallBallSphere
 This example creates a model with: - 2 × Ball compartments\
 - 1 × Sphere compartment
 
-### Important Rules
+**Important Rules**
 
 -   Compartment names must start with an uppercase letter.
 -   No spaces are allowed between compartments.
@@ -156,7 +156,7 @@ This example creates a model with: - 2 × Ball compartments\
 
 ------------------------------------------------------------------------
 
-## 3. Predefined Models
+### 3. Predefined Models
 
 microTorch also includes commonly used multicompartment models:
 
@@ -172,7 +172,7 @@ Available predefined models:
 
 ------------------------------------------------------------------------
 
-# Data and File Paths
+## Data and File Paths
 
 ### Required
 
@@ -188,7 +188,7 @@ data.mask=/path/to/mask.nii
 
 ------------------------------------------------------------------------
 
-# Acquisition Parameters
+## Acquisition Parameters
 
 You can either provide a single gradient scheme file:
 
@@ -213,7 +213,7 @@ You only need to provide the parameters required by your selected model.
 
 ------------------------------------------------------------------------
 
-# Training / Network Parameters
+## Training / Network Parameters
 
 Training parameters can be overridden in the same way:
 
@@ -231,7 +231,7 @@ training.operation=fit
 
 ------------------------------------------------------------------------
 
-# Minimal Example
+## Minimal Example
 
 ``` bash
 python -m src.main \
@@ -251,7 +251,7 @@ For a full list of configurable parameters, see:
     
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
-### Examples and Simulated Test Data
+# Examples and Simulated Test Data
 
 We have provided some test images to allow you to test if you have correctly set up all the dependencies:
 ```
@@ -261,31 +261,84 @@ python fit.py -m BallStick -img data/test_images/BallStick.nii.gz  -grad data/gr
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
 
-## Adding a new compartment
+# Contributing
 
-You can add compartments that are not included in microTorch by modifying the ```signal_models.py``` file. Compartments must adhere to the following structure:
+We welcome contributions from the diffusion MRI community.
 
-```
-class <Compartment_name>:
+To propose a new feature or improvement:
+
+1.  Fork the repository.
+2.  Create a new branch named after your feature
+    (e.g. `feature/new-compartment`).
+3.  Implement your changes.
+4.  Open a Pull Request (PR) to the `main` branch.
+5.  A maintainer will review your contribution.
+
+Please ensure your code is well documented and tested before submitting
+a PR.
+
+------------------------------------------------------------------------
+
+## Adding a New Compartment
+
+New microstructure compartments can be added by extending:
+
+    src/signal_models.py
+
+Each compartment must follow the structure below:
+
+``` python
+class CompartmentName:
     def __init__(self):
-        self.parameter_ranges   = [[min_A, max_A], ...] # Acceptable range of values for each parameter.
-        self.param_names        = ['A', ...]            # Name of each parameter.
-        self.n_params           = N                     # Total number of parameters. In this case, N=1.
-        self.spherical_mean     = True                  # Requires spherical mean (True/False).
+        self.parameter_ranges = [[min_A, max_A], ...]  # Acceptable range for each parameter
+        self.param_names = ['A', ...]                  # Parameter names
+        self.n_params = N                              # Number of parameters
+        self.spherical_mean = True                     # Whether spherical mean is required
 
+    def __call__(self, grad, params):
 
-    def __call__(self, grad, params):    
-        
-        # Get necessary acquisition parameters
-        # Grad class includes b_values, b_vecs, Delta, delta, gradient_strength, TE and bdelta 
+        # Acquisition parameters
+        # The Grad class provides:
+        # b_values, b_vecs, Delta, delta, gradient_strength, TE, bdelta
         ac_param = grad.ac_param
 
-        # Get estimated parameters
-        # i is the index of the parameter as defined in __init__. In this case, i=0.
-        param_A  = params[:, i].unsqueeze(1) 
+        # Extract parameters (i corresponds to index in param_names)
+        param_A = params[:, i].unsqueeze(1)
 
-        # The signal equation must be fully differentiable.
+        # Signal equation (must be fully differentiable)
         S = ...
 
         return S
 ```
+
+### Requirements
+
+-   The forward model must be **fully differentiable** (compatible with
+    PyTorch autograd).
+-   Parameter ordering must match `param_names`.
+-   Parameter ranges should reflect physically meaningful bounds.
+-   Output shape must match the expected signal shape.
+
+------------------------------------------------------------------------
+
+## Adding Tests
+
+All new compartments must include appropriate unit tests.
+
+Tests should be added to:
+
+    microtorch/tests/signal_models/
+
+Please follow the structure and conventions of existing tests. Tests
+should verify:
+
+-   Correct parameter handling\
+-   Numerical stability\
+-   Expected output shape\
+-   Basic sanity checks of signal behaviour
+
+------------------------------------------------------------------------
+
+We encourage contributors to open an issue first if they would like to
+discuss substantial changes before implementation.
+
