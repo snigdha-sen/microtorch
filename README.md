@@ -21,8 +21,6 @@ git clone https://github.com/snigdha-sen/microtorch.git
 cd microtorch
 ```
 
-------------------------------------------------------------------------
-
 ## 2. Create and activate a virtual environment (recommended)
 
 Create a virtual environment:
@@ -51,8 +49,6 @@ Upgrade pip:
 pip install --upgrade pip
 ```
 
-------------------------------------------------------------------------
-
 ## 3. Install the package
 
 Install MicroTorch and its dependencies (as defined in
@@ -61,8 +57,6 @@ Install MicroTorch and its dependencies (as defined in
 ``` bash
 pip install .
 ```
-
-------------------------------------------------------------------------
 
 ### Development Installation (editable mode)
 
@@ -75,8 +69,6 @@ pip install -e .
 This installs the package in editable mode so changes to the source code
 are immediately reflected.
 
-------------------------------------------------------------------------
-
 ### Install directly from GitHub
 
 If you do not want to clone the repository:
@@ -84,8 +76,6 @@ If you do not want to clone the repository:
 ``` bash
 pip install git+https://github.com/snigdha-sen/microtorch.git
 ```
-
-------------------------------------------------------------------------
 
 > ⚠️ **Note on PyTorch:**\
 > Depending on your CUDA setup, you may need to install a specific
@@ -108,8 +98,6 @@ python -m src.main key=value
 ```
 
 Multiple parameters can be overridden in a single command.
-
-------------------------------------------------------------------------
 
 ## Choosing a Model
 
@@ -134,8 +122,6 @@ Available compartments include:
 -   `StandardWM`
 -   `Cylinder`
 
-------------------------------------------------------------------------
-
 ### 2. Multi-Compartment Models
 
 You can combine compartments by concatenating their names in
@@ -154,8 +140,6 @@ This example creates a model with: - 2 × Ball compartments\
 -   No spaces are allowed between compartments.
 -   Order determines how compartments are constructed internally.
 
-------------------------------------------------------------------------
-
 ### 3. Predefined Models
 
 microTorch also includes commonly used multicompartment models:
@@ -170,8 +154,6 @@ Available predefined models:
 -   `SANDI` → Ball + Zeppelin + Astrosticks\
 -   `IVIM` → Ball + Ball
 
-------------------------------------------------------------------------
-
 ## Data and File Paths
 
 ### Required
@@ -185,8 +167,6 @@ Optional mask:
 ``` bash
 data.mask=/path/to/mask.nii
 ```
-
-------------------------------------------------------------------------
 
 ## Acquisition Parameters
 
@@ -211,8 +191,6 @@ acquisition.bdelta=/path/to/bdelta
 
 You only need to provide the parameters required by your selected model.
 
-------------------------------------------------------------------------
-
 ## Training / Network Parameters
 
 Training parameters can be overridden in the same way:
@@ -229,7 +207,6 @@ training.clip=1.0
 training.operation=fit
 ```
 
-------------------------------------------------------------------------
 
 ## Minimal Example
 
@@ -241,8 +218,6 @@ python -m src.main \
   training.num_iters=2000 \
   training.learning_rate=5e-4
 ```
-
-------------------------------------------------------------------------
 
 For a full list of configurable parameters, see:
 
@@ -276,8 +251,6 @@ To propose a new feature or improvement:
 
 Please ensure your code is well documented and tested before submitting
 a PR.
-
-------------------------------------------------------------------------
 
 ## Adding a New Compartment
 
@@ -319,8 +292,6 @@ class CompartmentName:
 -   Parameter ranges should reflect physically meaningful bounds.
 -   Output shape must match the expected signal shape.
 
-------------------------------------------------------------------------
-
 ## Adding Tests
 
 All new compartments must include appropriate unit tests.
@@ -336,8 +307,6 @@ should verify:
 -   Numerical stability\
 -   Expected output shape\
 -   Basic sanity checks of signal behaviour
-
-------------------------------------------------------------------------
 
 We encourage contributors to open an issue first if they would like to
 discuss substantial changes before implementation.
