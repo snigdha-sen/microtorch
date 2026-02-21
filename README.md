@@ -131,7 +131,8 @@ You can combine compartments by concatenating their names in
 python -m src.main model.name=BallBallSphere
 ```
 
-This example creates a model with: - 2 × Ball compartments\
+This example creates a model with: 
+- 2 × Ball compartments
 - 1 × Sphere compartment
 
 **Important Rules**
@@ -211,11 +212,11 @@ training.operation=fit
 ## Minimal Example
 
 ``` bash
-python -m src.main \
-  model.name=SANDI \
-  data.image=/data/dwi.nii \
-  acquisition.grad=/data/grad.scheme \
-  training.num_iters=2000 \
+python -m src.main 
+  model.name=SANDI 
+  data.image=/data/dwi.nii 
+  acquisition.grad=/data/grad.scheme 
+  training.num_iters=2000 
   training.learning_rate=5e-4
 ```
 
@@ -244,7 +245,7 @@ To propose a new feature or improvement:
 
 1.  Fork the repository.
 2.  Create a new branch named after your feature
-    (e.g. `feature/new-compartment`).
+    (e.g. `new-compartment`).
 3.  Implement your changes.
 4.  Open a Pull Request (PR) to the `main` branch.
 5.  A maintainer will review your contribution.
@@ -322,5 +323,6 @@ Snigdha Sen undertook this work whilst being funded by the EPSRC-funded UCL Cent
 ## References
 
 [1] Sen S, Singh S, Pye H, et al. ssVERDICT: Self-supervised VERDICT-MRI for enhanced prostate tumor characterization. Magn Reson Med. 2024; 92: 2181-2192. doi: 10.1002/mrm.30186
+
 [2] Barbieri S, Gurney-Champion OJ, Klaassen R, Thoeny HC. Deep learning how to fit an intravoxel incoherent motion model to diffusion-weighted MRI. Magn Reson Med. 2020 Jan;83(1):312-321. doi: 10.1002/mrm.27910
 
