@@ -1,18 +1,35 @@
 # microTorch: microstructure model fitting with PyTorch
 
 
-<img align="left" width="295" height="295" src="files/logo.jpeg" > 
+<img align="left" width="250" height="250" src="microtorch/files/logo.jpeg" > 
+The microTorch software package is designed to flexibly fit diffusion MRI microstructure models, using a self-supervised deep learning approach. 
 
-The microTorch software package is designed to flexibly fit diffusion MRI (dMRI) microstructure models, using a self-supervised deep learning approach. The framework is designed to work with a variety of established dMRI multicompartment models, such as Ball-and-Stick, VERDICT and SANDI, but also allows users to combine compartment models as they wish.
+This work is by members of the UCL Centre for Medical Image Computing and the Cardiff University Brain Research Imaging Centre. Please contact snigdha.sen.20@ucl.ac.uk with any questions.  
 
-We designed this framework to leverage the inference time gains of deep learning, whilst removing the requirement for explicit training data. Training and inference is performed simultaneously, for each dataset at a time, mimicking a traditional model fitting approach and reducing bias in the parameter estimates. Please see [1,2] for the theoretical underpinnings of this approach.
-
-This work is by members of the UCL Centre for Medical Image Computing and the Cardiff University Brain Research Imaging Centre. We encourage contributions from the wider diffusion MRI community, and welcome requests for new features. Please contact snigdha.sen.20@ucl.ac.uk with any questions.  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
+&nbsp;  
 &nbsp;  
 
-<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
+<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
 
 ## Installation
+
+
+### Without virtual enviroment (not recommended)
+
+Run the following in bash
+
+```bash
+git clone https://github.com/snigdha-sen/microtorch.git
+
+pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
+
+```
+And the code might work!
 
 ### With virtual environment (recommended)
 
@@ -89,6 +106,10 @@ To set the network training parameters, the same approach applies
 ```
 training.num_iters= training.learning_rate= training.activation= training.seed= training.dropout_frac= training.layer_size= training.num_layers= training.clip= training.operation= 
 
+
+<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
+
+
 ```
 
 ### Test image
@@ -98,7 +119,7 @@ We have provided some test images to allow you to test if you have correctly set
 python fit.py -m BallStick -img data/test_images/BallStick.nii.gz  -grad data/grad_files/grad_HCP.txt -a relu -lr 0.0001 -ni 20
 ```
 
-<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
+<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
 
 ## Choosing a model
 
@@ -110,6 +131,12 @@ To create a model comprising a single compartment, set
 - Astrosticks (option to fix D)
 - Zeppelin
 - Standard WM
+=======
+- MSDKI
+- Astrosticks (option to fix D)
+- Zeppelin
+- Standard WM
+- T1 SMDT
 - Cylinder
 
 To create a model comprising **multiple** compartments, set ```-m <compartment_name1 compartment_name2...>``` 
@@ -121,7 +148,8 @@ There are also a number of predefined models to be used as ```-m <model_name>```
 - SANDI (Ball, Zeppelin, Astrosticks)
 - IVIM (Ball, Ball)
 
-<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
+
+<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
 
 ## Adding a new compartment
 

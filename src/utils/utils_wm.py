@@ -1,7 +1,7 @@
 import numpy as np
 import torch
-from scipy.special import sph_harm, erf, gamma,eval_laguerre
-from .geometry import cart2sphere
+from scipy.special import sph_harm_y, erf, gamma,eval_laguerre
+from .util_function import cart2sphere
 
 ##check if matlab model and python model correspond. Take bvalues from hcp. order 2, random sample Di,De,Dp [0,3]. Di>De>Dp. fODF: use watson distribution to sample from. Simulate one voxel first
 def WM_model(order, bvals, bdelta, Ysh, f, Di, De, Dp, fODF, S0):
@@ -182,7 +182,7 @@ def cart2sph(x, y, z):
 
     return theta, phi
 
-from scipy.special import sph_harm,erf
+from scipy.special import sph_harm_y,erf
 
     
 def erf_torch(x): #also still need a well working replacement for this
