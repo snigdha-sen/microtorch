@@ -27,16 +27,20 @@ def generate_random_params(modelfunc, num_samples, alpha=None):
     # Generate random values for non-fraction parameters
     model_params = torch.rand(num_samples, modelfunc.n_parameters) * (max_vals - min_vals) + min_vals
 
-    # Generate volume fractions from Dirichlet
-    if alpha is None:
-        alpha = torch.ones(modelfunc.n_fractions + 1) # +1 for the implicit last fraction
-    dirichlet_samples = torch.distributions.Dirichlet(alpha).sample((num_samples,))  # shape [num_samples, num_fractions]
+    if modelfunc.n_fractions > 1:
+        # Generate volume fractions from Dirichlet
+        if alpha is None:
+            alpha = torch.ones(modelfunc.n_fractions) 
+            dirichlet_samples = torch.distributions.Dirichlet(alpha).sample((num_samples,))  # shape [num_samples, num_fractions]
 
-    # Keep only first num_fractions - 1 fractions
-    fractions = dirichlet_samples[:, :-1]
+            # Keep all the fractions
+            fractions = dirichlet_samples
 
-    # Concatenate model parameters + fractions
-    params = torch.cat([model_params, fractions], dim=1)
+            # Concatenate model parameters + fractions
+            params = torch.cat([model_params, fractions], dim=1)
+    else:
+        params = model_params    
+
 
     return params.float()
 
@@ -94,7 +98,7 @@ def main():
     import torch
     import os
 
-    from acquisition_scheme import acquisition_scheme_loader, txt_file_loader
+    from src.utils.acquisition_scheme import acquisition_scheme_loader, txt_file_loader
 
     parser = argparse.ArgumentParser()
 

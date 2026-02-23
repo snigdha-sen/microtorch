@@ -57,23 +57,20 @@ class Net(nn.Module):
          
         # Enforce volume fraction parameters 
         frac_start = modelfunc.n_parameters
-        frac_end   = frac_start + modelfunc.n_fractions  # only the free fractions
-              
-        logits_free = params[:, frac_start:frac_end]
-        
-        #add 0 for the implicit last fraction 
-        zeros = torch.zeros_like(logits_free[:, :1])
-        logits_all = torch.cat([logits_free, zeros], dim=1)
-        
-        #centre the logits
-        logits_all = logits_all - logits_all.mean(dim=1, keepdim=True)
-        
+        frac_end   = frac_start + modelfunc.n_fractions  # all the fractions
+
+        logits_all = params[:, frac_start:frac_end]
+                        
         #softmax across the fractions to get valid fractions that sum to 1
-        fractions = torch.softmax(logits_all, dim=1)
+        tau = 1.0
+        fractions = torch.softmax(logits_all / tau, dim=1)
         
-        #store only the K-1 fractions 
-        params[:, frac_start:frac_end] = fractions[:, :-1]
+        #store all the fractions 
+        params[:, frac_start:frac_end] = fractions
+
+       
         
+
         X = self.modelfunc(self.grad, params)
         
         return X.to(torch.float32), params
@@ -89,7 +86,9 @@ class Net(nn.Module):
 
         elif method == 'sigmoid':
 
-            sigmoid_param = torch.sigmoid(param)
+            T = 3.0
+
+            sigmoid_param = torch.sigmoid(param / T)
             scaled_param = p_min + (p_max - p_min) * sigmoid_param
             unsqueezed_param = scaled_param.squeeze(1)
 

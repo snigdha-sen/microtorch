@@ -73,6 +73,7 @@ class ModelMaker:
             self.compartment_names.append(comp.__class__.__name__)
             self.n_parameters += comp.n_parameters
 
+
         self.parameter_ranges = np.array(self.parameter_ranges)  # Convert to numpy array
 
         self.n_fractions = len(self.compartments) # The number of ALL volume fractions
@@ -97,7 +98,9 @@ class ModelMaker:
             return self.compartments[0](grad, parameters)
         
         # Extract volume fractions
-        f = parameters[:, self.n_parameters:]  # shape [num_samples, n_fractions]
+        frac_start = self.n_parameters
+        frac_end = frac_start + self.n_fractions
+        f = parameters[:, frac_start:frac_end] # shape [num_samples, n_fractions]
         #last_fraction = 1 - f.sum(dim=1, keepdim=True)  # shape [num_samples, 1]
 
         num_comps = len(self.compartments)
@@ -178,7 +181,7 @@ class ModelMaker:
         compartment_list = []
         
         if modelname == "VERDICT":
-            compartment_list = ["Ball", "Sphere", "Astrosticks_fixed"]
+            compartment_list = ["Ball", "Sphere", "Astrosticks"]
         elif modelname == "SANDI":
             compartment_list = ["Ball", "Sphere", "Astrosticks"]
         elif modelname == "IVIM":
@@ -189,9 +192,20 @@ class ModelMaker:
             compartment_list = ["Standard_wm",]
         else:
             compartment_list = re.findall('([A-Z][a-z]+)', modelname)
-        for comp in compartment_list:
+        for (comp, i) in zip(compartment_list, range(len(compartment_list))):
             this_class = getattr(signal_models_module, comp)
-            comps_classes.append(this_class())
+            
+            #append the class to the list of compartment classes for this model
+            if comp == "Astrosticks" and modelname == "VERDICT": #special case for fixed diffusivity in verdict astrosticks
+                comps_classes.append(this_class(fixed_D_par=2.0))
+            else:
+                comps_classes.append(this_class())
+
+            #add different parameter ranges for IVIM ball compartments
+            if comp == "Ball" and modelname == "IVIM" and i == 0: #special case for different parameter ranges in IVIM ball compartments
+                comps_classes[i].parameter_ranges = np.array([[1.e-03, 3.0]])                
+            if comp == "Ball" and modelname == "IVIM" and i == 1: #special case for different parameter ranges in IVIM ball compartments
+                comps_classes[i].parameter_ranges = np.array([[3.0 , 30.0]])
 
 
         return tuple(comps_classes)

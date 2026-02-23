@@ -5,6 +5,8 @@ import torch
 
 def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
 
+    torch.autograd.set_detect_anomaly(True)
+    
     # create batch queues for data
     num_batches = len(img) // batch_size
     trainloader = utils.DataLoader(img,
@@ -15,6 +17,17 @@ def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
 
     # loss function and optimizer
     my_optim =  optim.Adam(net.parameters(), lr=lr)
+    # my_optim =  optim.AdamW(net.parameters(), lr=lr, weight_decay=1e-3)  
+    # my_scheduler = optim.lr_scheduler.OneCycleLR(
+    #     my_optim, 
+    #     max_lr=3e-4, 
+    #     steps_per_epoch=len(trainloader), 
+    #     epochs=num_iters, 
+    #     pct_start=0.1,
+    #     anneal_strategy="cos",
+    #     div_factor=10.0,
+    #     final_div_factor=1e3,
+    # )
 
     # best loss
     best = 1e16
@@ -41,9 +54,13 @@ def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
                 break  # Or raise an error
             loss.backward()
             my_optim.step()
+            # my_scheduler.step()  # Update learning rate
+            if i % 200 == 0:
+                print("lr:", my_optim.param_groups[0]["lr"])
             running_loss += loss.item()
 
         print("loss: {}".format(running_loss))
+
         # early stopping
         if running_loss < best:
             print("####################### saving good model #######################")
