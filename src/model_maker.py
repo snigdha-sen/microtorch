@@ -65,7 +65,15 @@ class ModelMaker:
         self.compartment_names = []
         self.n_parameters = 0
         print('###########', self.compartments)
-        self.spherical_mean = self.compartments[0].spherical_mean
+
+        # Determine the overall spherical mean property of the model based on its compartments
+        vals = [c.spherical_mean for c in self.compartments]
+        if any(v is True for v in vals):
+            self.spherical_mean = True
+        elif any(v is False for v in vals):
+            self.spherical_mean = False
+        else:
+            self.spherical_mean = None
 
         for comp in self.compartments:
             self.parameter_ranges.extend(comp.parameter_ranges)
@@ -197,7 +205,11 @@ class ModelMaker:
             
             #append the class to the list of compartment classes for this model
             if comp == "Astrosticks" and modelname == "VERDICT": #special case for fixed diffusivity in verdict astrosticks
-                comps_classes.append(this_class(fixed_D_par=2.0))
+                comps_classes.append(this_class(fixed_D_par=8.0))
+            elif comp == "Sphere" and modelname == "VERDICT": #special case for fixed diffusivity in verdict sphere
+                comps_classes.append(this_class(fixed_D=2.0))
+            elif comp == "Sphere" and modelname == "SANDI": #special case for fixed diffusivity in sandi sphere
+                comps_classes.append(this_class(fixed_D=3.0))
             else:
                 comps_classes.append(this_class())
 

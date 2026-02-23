@@ -158,3 +158,4 @@ class Astrosticks:
 
         S = torch.where(x > 0, numer / denom, torch.ones_like(x))
         return S
+    

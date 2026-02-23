@@ -1,32 +1,52 @@
 
 import numpy as np 
 import torch
+from utils.acquisition_scheme import AcquisitionScheme
 
 
 def direction_average(img, grad):
     # Find unique shells - all parameters except gradient directions are the same
-    grad_matrix = grad.get_scheme_as_matrix()
-
-    #debug line
-    #print(np.array_equal(np.array(grad_matrix), np.array(grad_matrix2)))
-
-    unique_shells = torch.unique(grad_matrix[:, 3:], dim=0)
+    unique_shells = torch.unique(grad.bvalues) # Assuming bvalues define the shells, adjust if other parameters are needed
 
     # Preallocate
     da_img  = torch.zeros(img.shape[0:3] + (unique_shells.shape[0],), dtype=img.dtype)
-    da_grad = torch.zeros(unique_shells.shape[0], grad_matrix.shape[1], dtype=grad_matrix.dtype)
+
+    da_bvecs = torch.zeros_like(unique_shells.unsqueeze(1).repeat(1, grad.bvecs.shape[1])) 
+    da_bvalues = torch.zeros_like(unique_shells)
+    da_delta = torch.zeros_like(unique_shells) if grad.delta is not None else None
+    da_Delta = torch.zeros_like(unique_shells) if grad.Delta is not None else None
+    da_TE = torch.zeros_like(unique_shells) if grad.TE is not None else None
+    da_bdelta = torch.zeros_like(unique_shells) if grad.bdelta is not None else None
+    da_TE = torch.zeros_like(unique_shells) if grad.TE is not None else None
 
     for i, shell in enumerate(unique_shells):
         # Indices of grad file for this shell          
-        shell_index = torch.all(grad_matrix[:, 3:] == shell, dim=1)
-        # Calculate the spherical mean of this shell - average along final axis    
+        shell_index = grad.bvalues == shell        
+        # Calculate the spherical mean of this shell - average along final axis   
         da_img[..., i] = torch.squeeze(torch.mean(img[..., shell_index], axis=img.ndim-1))
-        # Fill in this row of the direction-averaged grad file       
-        da_grad[i, 3:] = shell
+        # Fill in this row of the direction-averaged grad things
+        da_bvecs[i] = 0.0 # Set the gradient directions to zero for this shell      
+        da_bvalues[i] = shell # Set the bvalues to the unique shell value
+        if grad.delta is not None:# Set delta to the first value for this shell
+            da_delta[i] = grad.delta[i]   
+        if grad.Delta is not None:# Set Delta to the first value for this shell
+            da_Delta[i] = grad.Delta[i] 
+        if grad.TE is not None:
+            da_TE[i] = grad.TE[i] 
+        if grad.bdelta is not None:
+            da_bdelta[i] = grad.bdelta[i] 
 
-    grad.set_scheme_from_matrix(da_grad)
+    da_grad = AcquisitionScheme(
+        bvalues=da_bvalues,
+        bvecs=da_bvecs,
+        gradient_strengths=grad.gradient_strengths,
+        delta=da_delta,
+        Delta=da_Delta,
+        TE=da_TE,
+        bdelta=da_bdelta,
+    )
 
-    return da_img
+    return da_img, da_grad
          
 
 def img2voxel(img, mask):
