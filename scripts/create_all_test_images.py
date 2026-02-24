@@ -15,7 +15,7 @@ DEFAULT_GRAD = "simulation_data/grad/grad_HCP.txt"
 MODEL_GRAD = {
     "VERDICT": "simulation_data/grad/grad_verdict.txt",
     "SANDI": "simulation_data/grad/grad_HCP_with_deltas.txt",
-    "IVIM": "simulation_data/grad/grad_verdict.txt",
+    "IVIM": "simulation_data/grad/grad_ivim.txt",
     "BallStick": "simulation_data/grad/grad_HCP_with_deltas.txt",
     "ZeppelinZeppelin": "simulation_data/grad/grad_verdict.txt",
     "Ball": "simulation_data/grad/grad_HCP_with_deltas.txt",
@@ -68,6 +68,7 @@ def run_fit(model_name: str, grad_path: str, image_path: Path, mask_path: Path):
         f"data.mask={mask_path}",
         f"acquisition.grad={grad_path}",
         f"model.name={model_name}",
+        f"plot.enabled=false",
     ]
 
     print("\n>>>", " ".join(cmd))
