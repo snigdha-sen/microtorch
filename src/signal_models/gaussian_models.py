@@ -56,7 +56,9 @@ class Msdki: ## are we keeping this in for the first iteration?
         b_values = grad.bvalues
         
         D = parameters[:,0].unsqueeze(1)
-        K = parameters[:,1].unsqueeze(1)
+        # this goes off to very high values for large b, so we clamp it to avoid numerical issues
+        K = parameters[:, 1].unsqueeze(1)
+        K = torch.clamp(K, min=torch.tensor(0.0), max = (6 / (torch.max(b_values) * D)) )
                 
         S = torch.exp(-b_values*D + (b_values**2 * D**2 * K / 6)) 
 
@@ -82,7 +84,7 @@ class Zeppelin:
     
     """
     def __init__(self):
-        self.parameter_ranges = [[.001, 3], [.001, 1], [0, torch.pi], [-torch.pi, torch.pi]]
+        self.parameter_ranges = [[.001, 3], [.001, 0.999], [0, torch.pi], [-torch.pi, torch.pi]]
         self.parameter_names      = ['Dpar', 'k', 'theta', 'phi']
         self.n_parameters         = 4
         self.spherical_mean   = False
@@ -94,7 +96,7 @@ class Zeppelin:
 
         Dpar = parameters[:, 0:1]           
         k    = parameters[:, 1:2]           
-        Dper = k * Dpar                     
+        Dper = k * Dpar        
 
         theta = parameters[:, 2]            
         phi   = parameters[:, 3]            

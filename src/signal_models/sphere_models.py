@@ -22,6 +22,7 @@ class Sphere:
         self.parameter_names        = ['radius']
         self.n_parameters           = 1
         self.spherical_mean     = True
+        self.fixed_D = fixed_D
 
     def __call__(self, grad, parameters):
 
@@ -29,7 +30,13 @@ class Sphere:
         delta = grad.delta
         Delta = grad.Delta
 
-        D = self.fixed_D if hasattr(self, 'fixed_D') else 2.0 # D_IC
+        # D = self.fixed_D if hasattr(self, 'fixed_D') else 2.0 # D_IC
+
+        if self.fixed_D is None:
+            D = torch.full((parameters.shape[0], 1), float(2.0))
+        else:
+            D = torch.full((parameters.shape[0], 1), float(self.fixed_D))
+        
         radius = parameters[:,0].unsqueeze(1)
 
         SPHERE_TRASCENDENTAL_ROOTS = np.r_[

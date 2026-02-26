@@ -193,6 +193,9 @@ def main():
 
     S = modelfunc(grad, params)
     
+    # Add Rician noise to the signal
+    S = add_rician_noise(S, snr=20.0) #you can adjust the SNR as needed
+
     # S_ball = ball_modelfunc(grad, params_ball)
     # S_stick = stick_modelfunc(grad, params_stick)
 
@@ -221,6 +224,27 @@ def main():
     maskimg = nib.Nifti1Image(mask.numpy(), np.eye(4))
     nib.save(maskimg, os.path.join(args.savedir, args.model, args.model + '_' + ''.join(modelfunc.compartment_names) + '_mask.nii.gz'))
 
+#function to add rician noise to signals
+import torch
+
+def add_rician_noise(data: torch.Tensor, snr: float = 20.0) -> torch.Tensor:
+    """
+    Add Rician noise to MRI magnitude data.    
+    """
+    if snr <= 0:
+        return data
+
+    scale = 1.0 / snr
+
+    noise_real = torch.randn_like(data) * scale
+    noise_imag = torch.randn_like(data) * scale
+
+    data_real = data + noise_real
+    data_imag = noise_imag
+
+    data_noisy = torch.sqrt(data_real**2 + data_imag**2)
+
+    return data_noisy
 
 if __name__ == '__main__':
     freeze_support()

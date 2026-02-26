@@ -4,8 +4,6 @@ from tqdm import tqdm
 import torch
 
 def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
-
-    torch.autograd.set_detect_anomaly(True)
     
     # create batch queues for data
     num_batches = len(img) // batch_size
@@ -17,16 +15,16 @@ def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
 
     # loss function and optimizer
     my_optim =  optim.Adam(net.parameters(), lr=lr)
-    # my_optim =  optim.AdamW(net.parameters(), lr=lr, weight_decay=1e-3)  
+    # my_optim =  optim.AdamW(net.parameters(), lr=lr, weight_decay=1e-4)  
     # my_scheduler = optim.lr_scheduler.OneCycleLR(
     #     my_optim, 
-    #     max_lr=3e-4, 
+    #     max_lr=1e-2, 
     #     steps_per_epoch=len(trainloader), 
     #     epochs=num_iters, 
     #     pct_start=0.1,
     #     anneal_strategy="cos",
-    #     div_factor=10.0,
-    #     final_div_factor=1e3,
+    #     div_factor=25.0,
+    #     final_div_factor=1e4,
     # )
 
     # best loss
@@ -54,7 +52,7 @@ def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
                 break  # Or raise an error
             loss.backward()
             my_optim.step()
-            # my_scheduler.step()  # Update learning rate
+            # smy_scheduler.step()  # Update learning rate
             if i % 200 == 0:
                 print("lr:", my_optim.param_groups[0]["lr"])
             running_loss += loss.item()

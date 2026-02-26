@@ -43,22 +43,27 @@ class Net(nn.Module):
 
     def forward(self, X):        
         
-        if self.dropout_fraction > 0:
-            X = self.dropout(X)
-
-        params = self.encoder(X)
-
         #get the signal model function               
         modelfunc = self.modelfunc
         clipping_method = self.clipping_method
+
+        # Get the start and end indices for the volume fraction parameters
+        frac_start = modelfunc.n_parameters
+        frac_end   = frac_start + modelfunc.n_fractions  # all the fractions
+
+        # if self.dropout_fraction > 0:
+        #     X = self.dropout(X)
+        
+        params = self.encoder(X)
+
+        if self.dropout_fraction > 0:
+            # params = self.dropout(params)
+            params[:, :frac_start] = self.dropout(params[:, :frac_start])  # only non-fraction params       
                                
         for i in range(modelfunc.n_parameters): #set min/max of non-volume fraction parameters       
             params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
          
         # Enforce volume fraction parameters 
-        frac_start = modelfunc.n_parameters
-        frac_end   = frac_start + modelfunc.n_fractions  # all the fractions
-
         logits_all = params[:, frac_start:frac_end]
                         
         #softmax across the fractions to get valid fractions that sum to 1
