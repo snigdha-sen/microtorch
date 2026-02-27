@@ -78,39 +78,38 @@ class Zeppelin:
     Methods:
         __init__(): Initializes the Zeppelin model with parameter ranges and names.
         __call__(grad, parameters): Computes the signal based on the gradient and parameters.
-
-        def _attenuation_zeppelin(bvals, lambda_par, lambda_perp, n, mu):
-    "Signal attenuation for Zeppelin model."
     
     """
     def __init__(self):
-        self.parameter_ranges = [[.001, 3], [.001, 0.999], [0, torch.pi], [-torch.pi, torch.pi]]
+        self.parameter_ranges = [[.001, 3], [.001, 1.0], [0, torch.pi], [-torch.pi, torch.pi]]
         self.parameter_names      = ['Dpar', 'k', 'theta', 'phi']
         self.n_parameters         = 4
         self.spherical_mean   = False
 
 
     def __call__(self, grad, parameters):
-        n = grad.bvecs                      #
-        b = grad.bvalues                    
+        g = grad.bvecs              # (N,3)
+        b = grad.bvalues            # (N,)
 
-        Dpar = parameters[:, 0:1]           
-        k    = parameters[:, 1:2]           
-        Dper = k * Dpar        
+        Dpar = parameters[:, 0:1]   # (B,1)
+        k    = parameters[:, 1:2]   # (B,1)
+        Dper = k * Dpar
 
-        theta = parameters[:, 2]            
-        phi   = parameters[:, 3]            
+        theta = parameters[:, 2]
+        phi   = parameters[:, 3]
 
-        mu = sphere2cart(theta, phi).T      # (B, 3)
-        mu = mu / torch.norm(mu, dim=1, keepdim=True)
+        mu = sphere2cart(theta, phi)       # expect (B,3)
+        if mu.shape[-1] != 3:
+            mu = mu.T
+        mu = mu / (torch.norm(mu, dim=1, keepdim=True) + 1e-12)  # (B,3)
 
-        mag_par = (mu @ n.T) 
+        # cos between mu and each gradient direction
+        mag_par = mu @ g.T                      # (B,N)
+        mag_par2 = mag_par * mag_par
+        mag_perp2 = 1.0 - mag_par2
 
-        # Clamp to avoid tiny negatives from numerical error
-        mag_perp = torch.sqrt(torch.clamp(1.0 - mag_par**2, min=0.0))
-
-        b = b.unsqueeze(0)                  
-
-        S = torch.exp(-b * (Dpar * mag_par**2 + Dper * mag_perp**2))   
-
+        b = b.view(1, -1)                   # (1,N)
+        S = torch.exp(-b * (Dpar * mag_par2 + Dper * mag_perp2))
         return S
+
+

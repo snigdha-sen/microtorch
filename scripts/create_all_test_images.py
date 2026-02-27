@@ -79,7 +79,7 @@ def main():
     for model, grad in MODEL_GRAD.items():
         run_make_test_image(model, grad)
         image_path, mask_path = get_image_and_mask(model)
-        run_fit(model, grad, image_path, mask_path)
+        #run_fit(model, grad, image_path, mask_path)
 
 
 if __name__ == "__main__":
