@@ -177,6 +177,14 @@ You can either provide a single gradient scheme file:
 acquisition.grad=/path/to/grad.scheme
 ```
 
+where gradient scheme files use an extended MRtrix-style format.
+
+- Columns 1–3: Gradient direction vector (x, y, z)
+- Column 4: b-value [s/mm²]
+- Column 5: Diffusion gradient separation, Δ (“big delta”) [ms]
+- Column 6: Diffusion gradient duration, δ (“small delta”) [ms]
+- Column 7: Echo time (TE) [ms]
+
 **OR** specify acquisition parameters individually:
 
 ``` bash
@@ -191,6 +199,8 @@ acquisition.bdelta=/path/to/bdelta
 ```
 
 You only need to provide the parameters required by your selected model.
+
+
 
 ## Training / Network Parameters
 
@@ -227,12 +237,46 @@ For a full list of configurable parameters, see:
     
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
-# Examples and Simulated Test Data
+## Testing with Synthetic Data
 
-We have provided some test images to allow you to test if you have correctly set up all the dependencies:
+To verify that everything is configured correctly and to test model fitting using data with known ground truth, you can generate synthetic test images for all currently defined models and compartments:
+
+```bash
+./scripts/create_test_images.py
 ```
-python fit.py -m BallStick -img data/test_images/BallStick.nii.gz  -grad data/grad_files/grad_HCP.txt -a relu -lr 0.0001 -ni 20
+
+The generated test datasets will be saved in:
+
 ```
+simulation_data/data
+```
+
+The images are created using example gradient files stored in:
+
+```
+simulation_data/grad
+```
+
+---
+
+To automatically run model fitting on each of the generated test datasets:
+
+```bash
+./scripts/create_test_images.py --fit
+```
+
+---
+
+
+To assess the quality of the fits, open and run:
+
+```
+examples/plot_test_images.ipynb
+```
+
+This notebook compares the fitted parameters against the ground truth values to assess if fits are working as expected.
+
+
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
