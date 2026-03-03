@@ -19,6 +19,10 @@ class AcquisitionScheme:
         bdelta=None,
     ):
         self.bvalues = torch.as_tensor(bvalues, dtype=torch.float32)
+
+        if any(self.bvalues == 0): #prevent issues with zero b-values in log space or as denominators  
+            self.bvalues[self.bvalues == 0] = 1e-6
+
         self.bvecs = torch.as_tensor(bvecs, dtype=torch.float32)
 
         self.number_of_measurements = int(self.bvalues.size(-1))

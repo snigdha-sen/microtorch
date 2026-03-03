@@ -219,6 +219,14 @@ class ModelMaker:
             if comp == "Ball" and modelname == "IVIM" and i == 1: #special case for different parameter ranges in IVIM ball compartments
                 comps_classes[i].parameter_ranges = np.array([[3.0 , 30.0]])
 
+            
+            #add different parameter ranges for ZeppelinZeppelin zeppelin compartments
+            if comp == "Zeppelin" and modelname == "ZeppelinZeppelin" and i == 0: #special case for different parameter ranges in ZeppelinZeppelin zeppelin compartments
+                comps_classes[i].parameter_ranges[0] = [1.e-03, 3.0]
+            if comp == "Zeppelin" and modelname == "ZeppelinZeppelin" and i == 1: #special case for different parameter ranges in ZeppelinZeppelin zeppelin compartments
+                comps_classes[i].parameter_ranges[0] = [3.0 , 30.0]
+
+
 
         return tuple(comps_classes)
 

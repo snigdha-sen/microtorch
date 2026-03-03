@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class Net(nn.Module):
 
-    def __init__(self,grad, modelfunc, layer_dims, n_layers, dropout_fraction, clipping_method = 'clamp', activation=nn.PReLU()):  
+    def __init__(self, grad, modelfunc, layer_dims, n_layers, dropout_fraction, clipping_method = 'clamp', activation=nn.PReLU()):  
 
         """
         Define the network architecture
@@ -63,19 +63,14 @@ class Net(nn.Module):
         for i in range(modelfunc.n_parameters): #set min/max of non-volume fraction parameters       
             params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
          
-        # Enforce volume fraction parameters 
-        logits_all = params[:, frac_start:frac_end]
-                        
-        #softmax across the fractions to get valid fractions that sum to 1
-        tau = 1.0
-        fractions = torch.softmax(logits_all / tau, dim=1)
+        #set min/max of volume fraction parameters and enforce sum to 1 across fractions
+        fraction_clipping_method = 'clamp' 
+        fractions = Net.fraction_squash(params[:, frac_start:frac_end], fraction_clipping_method, modelfunc)
         
         #store all the fractions 
         params[:, frac_start:frac_end] = fractions
 
-       
-        
-
+        # compute the predicted signal using the model function with the current parameters
         X = self.modelfunc(self.grad, params)
         
         return X.to(torch.float32), params
@@ -91,13 +86,50 @@ class Net(nn.Module):
 
         elif method == 'sigmoid':
 
-            T = 3.0
+            T = 1.0
 
             sigmoid_param = torch.sigmoid(param / T)
             scaled_param = p_min + (p_max - p_min) * sigmoid_param
             unsqueezed_param = scaled_param.squeeze(1)
 
-        else:
+        else:    
             raise ValueError("Unsupported method: {}".format(method))
 
         return unsqueezed_param
+    
+
+    def fraction_squash(logits_all, method, modelfunc):
+
+        if method == 'softmax':
+            tau = 1.0
+            fractions = torch.softmax(logits_all / tau, dim=1)
+
+        elif method == 'clamp':
+            if modelfunc.n_fractions == 1:
+                # Two compartments: clip the single free fraction to [0,1]
+                fractions = Net.squash(
+                    logits_all[:, 0].clone().unsqueeze(1),
+                    modelfunc.clipping_method,
+                    0, 1
+                )
+                fractions = torch.cat([fractions, 1 - fractions], dim=1)  # implicit second fraction
+            else:
+                #More than two compartments
+                # extract free fractions and make sure in [0,1]
+                f_free = torch.relu(logits_all[:, :-1])  # all but last fraction are free 
+
+                # Compute implicit last fraction
+                final_f = 1 - f_free.sum(dim=1, keepdim=True)
+                final_f = torch.clamp(final_f, min=1e-8)  # prevent negative last fraction
+
+                # Concatenate free fractions + last fraction
+                fractions = torch.cat([f_free, final_f], dim=1)
+
+                # Normalize all fractions so sum = 1 
+                sum_all = fractions.sum(dim=1, keepdim=True)
+                fractions = fractions / torch.clamp(sum_all, min=1e-8)
+
+        else:
+            raise ValueError("Unsupported method: {}".format(method))
+
+        return fractions

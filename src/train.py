@@ -52,7 +52,7 @@ def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
                 break  # Or raise an error
             loss.backward()
             my_optim.step()
-            # smy_scheduler.step()  # Update learning rate
+            # my_scheduler.step()  # Update learning rate
             if i % 200 == 0:
                 print("lr:", my_optim.param_groups[0]["lr"])
             running_loss += loss.item()
