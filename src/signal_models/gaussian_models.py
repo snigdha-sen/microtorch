@@ -112,4 +112,34 @@ class Zeppelin:
         S = torch.exp(-b * (Dpar * mag_par2 + Dper * mag_perp2))
         return S
 
+class Ballt2:
+    """
+    A class representing a ball with T2 decay model for diffusion MRI.
+    This model computes the signal based on the diffusion parameters, gradient directions, and TEs.
 
+    Attributes:
+        parameter_ranges (list): Ranges for the parameters.
+        parameter_names (list): Names of the parameters.
+        n_parameters (int): Number of parameters.
+        spherical_mean (bool): Indicates if the model is spherically averaged.
+
+    Methods:
+        __init__(): Initializes the ball model with parameter ranges and names.
+        __call__(grad, parameters): Computes the signal based on the gradient and parameters.
+    """
+    def __init__(self):
+        self.parameter_ranges   = [[.001, 3.], [0.01, 0.5]]
+        self.parameter_names        = ['D', 'T2']
+        self.n_parameters           = 2
+        self.spherical_mean     = None
+
+    def __call__(self, grad, parameters):    
+        b_values = grad.bvalues
+        TE = grad.TE
+     
+        D        = parameters[:, 0].unsqueeze(1) 
+        T2       = parameters[:, 1].unsqueeze(1)    
+
+        S = torch.exp(-b_values * D) * torch.exp(-(TE - torch.min(TE)) / T2)
+
+        return S

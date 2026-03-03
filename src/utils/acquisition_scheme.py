@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from utils.load_data import load_grad
 
 
 # -----------------------------
@@ -52,8 +51,21 @@ def _process_bvalues(bvals):
 
     if np.max(bvals) > 100:
         bvals = bvals / 1000.0
+        print("Assumed b-values are given in s/mm^2 and converted to ms/μm^2 for internal use. If this is not correct, please check your b-values and ensure they are in the correct units.")
 
     return bvals
+
+def _process_TE(TE):
+    TE = np.asarray(TE, dtype=np.float32)
+
+    if np.any(TE < 0):
+        raise ValueError("TE contains negative values")
+
+    if np.max(TE) > 10:
+        TE = TE / 1000.0
+        print("Assumed TE values are given in ms and converted to seconds for internal use. If this is not correct, please check your TE values and ensure they are in the correct units.")
+
+    return TE
 
 
 def check_acquisition_scheme(bvalues, bvecs, delta=None, Delta=None, TE=None):
@@ -103,8 +115,8 @@ def acquisition_scheme_loader(filepath):
 
     Delta = data[:, 4] if data.shape[1] > 4 else None
     delta = data[:, 5] if data.shape[1] > 5 else None
-    gradient_strengths = data[:, 6] if data.shape[1] > 6 else None
-    TE = data[:, 7] if data.shape[1] > 7 else None
+    gradient_strengths = data[:, 7] if data.shape[1] > 7 else None
+    TE = _process_TE(data[:, 6]) if data.shape[1] > 6 else None
     bdelta = data[:, 8] if data.shape[1] > 8 else None
 
     check_acquisition_scheme(bvalues, bvecs, delta, Delta, TE)
@@ -129,7 +141,7 @@ def txt_file_loader(bvals, bvecs, Delta=None, delta=None, TE=None, bdelta=None):
 
     Delta = load_grad(Delta).T.squeeze() if Delta else None
     delta = load_grad(delta).T.squeeze() if delta else None
-    TE = load_grad(TE).T.squeeze() if TE else None
+    TE = _process_TE(load_grad(TE).T.squeeze()) if TE else None
     bdelta = load_grad(bdelta).T.squeeze() if bdelta else None
 
     check_acquisition_scheme(bvals, bvecs, delta, Delta, TE)
@@ -144,3 +156,18 @@ def txt_file_loader(bvals, bvecs, Delta=None, delta=None, TE=None, bdelta=None):
         bdelta=bdelta,
     )
 
+
+def load_grad(grad_filename):
+    """Load gradient information from a text file containing either b-values, b-vectors, or timing parameters."""
+    #TO DO: replace with something that finds the file e.g. pkg_resources.resource_filename
+    #grad_files_path = '/Users/paddyslator/python/self-qmri/data'
+    try:
+        #grad = torch.tensor(np.loadtxt(grad_filename), dtype=torch.float32)  
+        grad = np.loadtxt(grad_filename)
+        
+        if len(grad.shape) < 2:
+            grad = grad[:,None]
+        
+        return grad #np.transpose(grad)
+    except:
+        return None

@@ -64,7 +64,7 @@ class Net(nn.Module):
             params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
          
         #set min/max of volume fraction parameters and enforce sum to 1 across fractions
-        fraction_clipping_method = 'clamp' 
+        fraction_clipping_method = 'softmax' 
         fractions = Net.fraction_squash(params[:, frac_start:frac_end], fraction_clipping_method, modelfunc)
         
         #store all the fractions 
@@ -81,7 +81,7 @@ class Net(nn.Module):
 
         if method == 'clamp':
 
-            squashed_param_tensor =torch.clamp(param, min=p_min, max=p_max)
+            squashed_param_tensor = torch.clamp(param, min=p_min, max=p_max)
             unsqueezed_param = squashed_param_tensor.squeeze(1)
 
         elif method == 'sigmoid':
