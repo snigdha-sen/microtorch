@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 from glob import glob
 import os
 import subprocess
@@ -14,10 +15,10 @@ DEFAULT_GRAD = "simulation_data/grad/grad_HCP.txt"
 
 MODEL_GRAD = {
     "VERDICT": "simulation_data/grad/grad_verdict.txt",
-    "SANDI": "simulation_data/grad/grad_HCP_with_deltas.txt",
+    "SANDI": "simulation_data/grad/grad_sandi.txt",
     "IVIM": "simulation_data/grad/grad_ivim.txt",
     "BallStick": "simulation_data/grad/grad_HCP_with_deltas.txt",
-    "ZeppelinZeppelin": "simulation_data/grad/grad_verdict.txt",
+    "ZeppelinZeppelin": "simulation_data/grad/grad_anisotropic_ivim.txt",
     "Ball": "simulation_data/grad/grad_HCP_with_deltas.txt",
     "Msdki": "simulation_data/grad/grad_HCP_with_deltas.txt",
     "Zeppelin": "simulation_data/grad/grad_HCP_with_deltas.txt",
@@ -76,10 +77,46 @@ def run_fit(model_name: str, grad_path: str, image_path: Path, mask_path: Path):
 
 
 def main():
-    for model, grad in MODEL_GRAD.items():
-        run_make_test_image(model, grad)
+    parser = argparse.ArgumentParser(description="Run simulation + fitting pipeline.")
+
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help="Run only a specific model (default: run all models)"
+    )
+
+    parser.add_argument(
+        "--grad",
+        type=str,
+        default=None,
+        help="Override gradient file path"
+    )
+
+    parser.add_argument(
+        "--fit",
+        action="store_true",
+        help="Run fitting step as well"
+    )
+
+    args = parser.parse_args()
+
+    # Determine which models to run
+    if args.model:
+        if args.model not in MODEL_GRAD:
+            raise ValueError(f"Unknown model {args.model}")
+        models_to_run = {args.model: MODEL_GRAD[args.model]}
+    else:
+        models_to_run = MODEL_GRAD
+
+    for model, grad in models_to_run.items():
+        grad_path = args.grad if args.grad else grad
+
+        run_make_test_image(model, grad_path)
         image_path, mask_path = get_image_and_mask(model)
-        #run_fit(model, grad, image_path, mask_path)
+
+        if args.fit:
+            run_fit(model, grad_path, image_path, mask_path)
 
 
 if __name__ == "__main__":
