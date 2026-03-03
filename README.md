@@ -10,6 +10,14 @@ We designed this framework to leverage the inference time gains of deep learning
 This work is by members of the UCL Centre for Medical Image Computing and the Cardiff University Brain Research Imaging Centre. Please contact snigdha.sen.20@ucl.ac.uk with any questions.  
 &nbsp;  
 
+MicroTorch is actively developed software and will contain bugs and issues. If you encounter a problem you can:
+
+- Open an issue here: https://github.com/snigdha-sen/microtorch/issues 
+- Fork or branch the repository, implement a fix, and submit a merge request
+
+We appreciate any feedback or contributions that help improve the project.
+
+
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
 # Installation
