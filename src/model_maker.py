@@ -64,7 +64,6 @@ class ModelMaker:
         self.parameter_names = []
         self.compartment_names = []
         self.n_parameters = 0
-        print('###########', self.compartments)
 
         # Determine the overall spherical mean property of the model based on its compartments
         vals = [c.spherical_mean for c in self.compartments]
@@ -89,6 +88,8 @@ class ModelMaker:
 
         self.parameter_indices = self.get_parameter_indices()  # Get the indices of the parameters in the parameter vector for each compartment
         self.compartment_indices = self.get_comp_indices()  # Get the indices of the compartment that each parameter at a given index belongs to
+        
+
 
     def __call__(self, grad, parameters):
         """
@@ -215,7 +216,7 @@ class ModelMaker:
 
             #add different parameter ranges for IVIM ball compartments
             if comp == "Ball" and modelname == "IVIM" and i == 0: #special case for different parameter ranges in IVIM ball compartments
-                comps_classes[i].parameter_ranges = np.array([[1.e-03, 3.]])                
+                comps_classes[i].parameter_ranges = np.array([[1.e-03, 3.]])   
             if comp == "Ball" and modelname == "IVIM" and i == 1: #special case for different parameter ranges in IVIM ball compartments
                 comps_classes[i].parameter_ranges = np.array([[3. , 30.]])
 
@@ -234,6 +235,13 @@ class ModelMaker:
             if comp == "Ballt2" and modelname == "Ballt2Ballt2" and i == 1: #special case for different parameter ranges in Ballt2Ballt2 ball compartments
                 comps_classes[i].parameter_ranges[0] = [3. , 30.]
                 comps_classes[i].parameter_ranges[1] = [0.08, 0.3]
+
+        print("-----------")
+        print("########### Making model: ", modelname)
+        print('########### Compartments:', comps_classes)
+        print('########### Parameter names:', [comp.parameter_names for comp in comps_classes])
+        print('########### Parameter ranges:', [comp.parameter_ranges for comp in comps_classes])
+        print("-----------")
 
 
 

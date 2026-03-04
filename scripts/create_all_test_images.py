@@ -24,6 +24,7 @@ MODEL_GRAD = {
     "Zeppelin": "simulation_data/grad/grad_HCP_with_deltas.txt",
     "Sphere": "simulation_data/grad/grad_verdict.txt",
     "Stick": "simulation_data/grad/grad_HCP_with_deltas.txt",
+    # "Cylinder": "simulation_data/grad/grad_HCP_with_deltas.txt",
     "Astrosticks": "simulation_data/grad/grad_verdict.txt",
     "Ballt2Ballt2": "simulation_data/grad/grad_ivim_T2.txt",
 }

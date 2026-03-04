@@ -1,3 +1,5 @@
+from math import gamma
+
 import numpy as np
 import torch
 import scipy.special as special
@@ -65,10 +67,11 @@ class Cylinder:
         dtype = parameters.dtype
 
         n = grad.bvecs.to(device=device, dtype=dtype)                 # (M,3)
-        b = grad.bvalues.to(device=device, dtype=dtype)               # (M,)
+        b_values = grad.bvalues.to(device=device, dtype=dtype)               # (M,)
         delta = grad.delta.to(device=device, dtype=dtype)             # (M,)
-        Delta = grad.Delta.to(device=device, dtype=dtype)             # (M,)
-        g = grad.gradient_strengths.to(device=device, dtype=dtype)    # (M,)
+        Delta = grad.Delta.to(device=device, dtype=dtype)             # (M,)        
+        #g = grad.gradient_strengths.to(device=device, dtype=dtype)    # (M,)
+
 
         theta = parameters[:, 0]                                      # (B,)
         phi = parameters[:, 1]                                        # (B,)
@@ -87,11 +90,16 @@ class Cylinder:
         mag_perp = torch.sqrt(torch.clamp(1.0 - dot**2, min=0.0))
 
 
-        b_row = b.unsqueeze(0) 
+        b_row = b_values.unsqueeze(0) 
         E_parallel = torch.exp(-b_row * Dpar * (dot**2)) 
 
        
-        gamma = torch.tensor(2.67e8, device=device, dtype=dtype)  
+        #gamma = torch.tensor(2.67e8, device=device, dtype=dtype)  
+        gamma = torch.tensor(2.675987e2, device=device, dtype=dtype)  
+        
+        #calculate gradient strength from b-values, delta, and Delta   
+        g = torch.sqrt(b_values) / (gamma * delta * torch.sqrt(Delta - delta / 3)) # (M,)
+      
         g_perp = g.unsqueeze(0) * mag_perp                        
 
         
