@@ -1,5 +1,5 @@
 import torch
-from utils.geometry import sphere2cart
+from src.utils.geometry import sphere2cart
 
 class Ball:
     """

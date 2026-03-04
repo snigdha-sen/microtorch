@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from utils.utils_wm import WM_model, spherical_harmonics_directions
+from src.utils.utils_wm import WM_model, spherical_harmonics_directions
 
 class Standard_wm: ## check with leon -- add unit tests?
     """
