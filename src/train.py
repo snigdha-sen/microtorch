@@ -3,7 +3,7 @@ import torch.utils.data as utils
 from tqdm import tqdm
 import torch
 
-def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
+def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10, patience=10):
     
     # create batch queues for data
     num_batches = len(img) // batch_size
@@ -30,7 +30,6 @@ def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
     # best loss
     best = 1e16
     num_bad_epochs = 0
-    patience = 10
 
     for epoch in range(num_iters):
         print("-----------------------------------------------------------------")
@@ -61,7 +60,7 @@ def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
 
         # early stopping
         if running_loss < best:
-            print("####################### saving good model #######################")
+            print("########## This epoch's loss is better than the best loss so far, saving model")
             final_model = net.state_dict()
             best = running_loss
             num_bad_epochs = 0

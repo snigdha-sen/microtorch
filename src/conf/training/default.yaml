@@ -7,3 +7,4 @@ layer_size: 256      # -ls / --layer_size
 num_layers: 3         # -nl / --num_layers
 clip: clamp         # -cl / --clip (choices: 'clamp', 'sigmoid')
 operation: train+fit  # -op / --operation (choices: 'train', 'fit', 'train+fit')
+patience: 10         # -pa / --patience (early stopping patience)

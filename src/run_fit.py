@@ -121,6 +121,7 @@ def run_fit(cfg):
         lr=cfg.training.learning_rate,
         batch_size=256,
         num_iters=cfg.training.num_iters,
+        patience=cfg.training.patience,
     )
 
     # -----------------------
