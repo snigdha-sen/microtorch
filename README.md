@@ -390,6 +390,22 @@ discuss substantial changes before implementation.
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
+## Useful Information
+
+### zsh shell autocompletion
+
+In zsh, file path autocompletion does not always work after the `=` used in Hydra command-line overrides (e.g. `data.image=...`). To enable path completion in this case, add the following line to your `~/.zshrc` file:
+
+```zsh
+setopt magic_equal_subst
+```
+Then reload your shell
+
+```
+source ~/.zshrc
+```
+
+
 # Acknowledgements
 
 ## Authors
