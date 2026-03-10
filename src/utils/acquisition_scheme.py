@@ -115,9 +115,17 @@ def acquisition_scheme_loader(filepath):
 
     Delta = data[:, 4] if data.shape[1] > 4 else None
     delta = data[:, 5] if data.shape[1] > 5 else None
-    gradient_strengths = data[:, 7] if data.shape[1] > 7 else None
+    #gradient_strengths = data[:, 6] if data.shape[1] > 6 else None
     TE = _process_TE(data[:, 6]) if data.shape[1] > 6 else None
-    bdelta = data[:, 8] if data.shape[1] > 8 else None
+    bdelta = data[:, 7] if data.shape[1] > 7 else None
+
+    # compute gradient strengths if possible
+    if Delta is not None and delta is not None:
+        gamma = 2.675987e2 # units are rad/ms/mT to stay consistent with b-values in ms/μm^2 and delta/Delta in ms
+        gradient_strengths = np.sqrt(bvalues) / (gamma * delta * np.sqrt(Delta - delta / 3))
+        print("Calculated gradient strengths from b-values and timing parameters.")
+        print("Assuming b-values are in ms/μm^2, delta and Delta are in ms. Gradient strengths will be in mT/μm.")
+
 
     check_acquisition_scheme(bvalues, bvecs, delta, Delta, TE)
 

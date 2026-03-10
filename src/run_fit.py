@@ -108,6 +108,7 @@ def run_fit(cfg):
         n_layers=cfg.training.num_layers,
         dropout_fraction=cfg.training.dropout_frac,
         clipping_method=cfg.training.clip,
+        clipping_method_fraction=cfg.training.clip_fraction,
         activation=mlp_activation[cfg.training.activation],
     )
 

@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class Net(nn.Module):
 
-    def __init__(self, grad, modelfunc, layer_dims, n_layers, dropout_fraction, clipping_method = 'clamp', activation=nn.PReLU()):  
+    def __init__(self, grad, modelfunc, layer_dims, n_layers, dropout_fraction, clipping_method = 'clamp', clipping_method_fraction = "clamp", activation=nn.PReLU()):  
 
         """
         Define the network architecture
@@ -22,7 +22,7 @@ class Net(nn.Module):
         self.grad = grad
         self.modelfunc  = modelfunc
         self.clipping_method = clipping_method
-
+        self.clipping_method_fraction = clipping_method_fraction
         dim_in          = layer_dims
         self.fc_layers  = nn.ModuleList()
         self.fc_layers.extend([nn.Linear(dim_in, layer_dims), activation])
@@ -43,36 +43,56 @@ class Net(nn.Module):
 
     def forward(self, X):        
         
-        #get the signal model function               
+        #get the model function and clipping method
         modelfunc = self.modelfunc
         clipping_method = self.clipping_method
+        clipping_method_fraction = self.clipping_method_fraction
 
         # Get the start and end indices for the volume fraction parameters
         frac_start = modelfunc.n_parameters
         frac_end   = frac_start + modelfunc.n_fractions  # all the fractions
 
-        # if self.dropout_fraction > 0:
-        #     X = self.dropout(X)
-        
-        params = self.encoder(X)
 
-        if self.dropout_fraction > 0:
-            # params = self.dropout(params)
-            params[:, :frac_start] = self.dropout(params[:, :frac_start])  # only non-fraction params       
-                               
-        for i in range(modelfunc.n_parameters): #set min/max of non-volume fraction parameters       
-            params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
-         
+        #choose which network - messy for now but will clean up after testing different options
+        # network = "dev_MLP"
+        network = "softmax_MLP"
+
+        if network == "dev_MLP":
+            
+            if self.dropout_fraction > 0:
+                X = self.dropout(X)
+
+            #params = self.encoder(X)              
+            params = F.softplus(self.encoder(X))
+            #params = abs(self.encoder(X))
+            #get the signal model function        
+            #modelfunc = getattr(models, model)
+            
+
+            for i in range(modelfunc.n_parameters): #set min/max of non-volume fraction parameters       
+                params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
+
+                        
+        elif network == "softmax_MLP":
+            params = self.encoder(X)
+
+            if self.dropout_fraction > 0:
+                # only do dropout on the non-fraction parameters 
+                params[:, :frac_start] = self.dropout(params[:, :frac_start])  # only non-fraction params       
+                                
+            for i in range(modelfunc.n_parameters): #set min/max of non-volume fraction parameters       
+                params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
+            
+
         #set min/max of volume fraction parameters and enforce sum to 1 across fractions
-        fraction_clipping_method = 'softmax' 
-        fractions = Net.fraction_squash(params[:, frac_start:frac_end], fraction_clipping_method, modelfunc)
-        
+        fractions = Net.fraction_squash(params[:, frac_start:frac_end], clipping_method_fraction, modelfunc)
+            
         #store all the fractions 
         params[:, frac_start:frac_end] = fractions
 
         # compute the predicted signal using the model function with the current parameters
         X = self.modelfunc(self.grad, params)
-        
+            
         return X.to(torch.float32), params
     
 
