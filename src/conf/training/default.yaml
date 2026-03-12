@@ -2,8 +2,10 @@ num_iters: 100          # -ni / --num_iters
 learning_rate: 3e-4    # -lr / --learning_rate
 activation: prelu     # -ac / --activation
 seed: null             # -se / --seed (None → auto-generate)
-dropout_frac: 0.2      # -df / --dropout_frac
+dropout_frac: 0.1      # -df / --dropout_frac
 layer_size: 256      # -ls / --layer_size
 num_layers: 3         # -nl / --num_layers
-clip: clamp         # -cl / --clip (choices: 'clamp', 'sigmoid')
+clip: sigmoid         # -cl / --clip (choices: 'clamp', 'sigmoid')
+clip_fraction: softmax # -cf / --clip_fraction (choices: 'softmax', 'clamp')
 operation: train+fit  # -op / --operation (choices: 'train', 'fit', 'train+fit')
+patience: 10         # -pa / --patience (early stopping patience)

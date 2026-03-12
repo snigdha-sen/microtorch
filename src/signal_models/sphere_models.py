@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from typing import Optional
 
 class Sphere:
     """
@@ -16,11 +17,12 @@ class Sphere:
         __init__(): Initializes the sphere model with parameter ranges and names.
         __call__(grad, parameters): Computes the signal based on the gradient and parameters.
     """
-    def __init__(self):
+    def __init__(self, fixed_D: Optional[float] = None):
         self.parameter_ranges   = [[0.001, 15]]
         self.parameter_names        = ['radius']
         self.n_parameters           = 1
         self.spherical_mean     = True
+        self.fixed_D = fixed_D
 
     def __call__(self, grad, parameters):
 
@@ -28,7 +30,13 @@ class Sphere:
         delta = grad.delta
         Delta = grad.Delta
 
-        D = 2 # D_IC
+        # D = self.fixed_D if hasattr(self, 'fixed_D') else 2.0 # D_IC
+
+        if self.fixed_D is None:
+            D = torch.full((parameters.shape[0], 1), float(2.0))
+        else:
+            D = torch.full((parameters.shape[0], 1), float(self.fixed_D))
+        
         radius = parameters[:,0].unsqueeze(1)
 
         SPHERE_TRASCENDENTAL_ROOTS = np.r_[

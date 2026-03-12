@@ -64,8 +64,15 @@ class ModelMaker:
         self.parameter_names = []
         self.compartment_names = []
         self.n_parameters = 0
-        print('###########', self.compartments)
-        self.spherical_mean = self.compartments[0].spherical_mean
+
+        # Determine the overall spherical mean property of the model based on its compartments
+        vals = [c.spherical_mean for c in self.compartments]
+        if any(v is True for v in vals):
+            self.spherical_mean = True
+        elif any(v is False for v in vals):
+            self.spherical_mean = False
+        else:
+            self.spherical_mean = None
 
         for comp in self.compartments:
             self.parameter_ranges.extend(comp.parameter_ranges)
@@ -73,13 +80,16 @@ class ModelMaker:
             self.compartment_names.append(comp.__class__.__name__)
             self.n_parameters += comp.n_parameters
 
+
         self.parameter_ranges = np.array(self.parameter_ranges)  # Convert to numpy array
 
-        self.n_fractions = len(self.compartments) - 1  # The number of volume fractions
+        self.n_fractions = len(self.compartments) # The number of ALL volume fractions
         self.parameter_names.extend([f'f_{i}' for i in range(self.n_fractions)])
 
         self.parameter_indices = self.get_parameter_indices()  # Get the indices of the parameters in the parameter vector for each compartment
         self.compartment_indices = self.get_comp_indices()  # Get the indices of the compartment that each parameter at a given index belongs to
+        
+
 
     def __call__(self, grad, parameters):
         """
@@ -97,8 +107,10 @@ class ModelMaker:
             return self.compartments[0](grad, parameters)
         
         # Extract volume fractions
-        f = parameters[:, self.n_parameters:]  # shape [num_samples, n_fractions-1]
-        last_fraction = 1 - f.sum(dim=1, keepdim=True)  # shape [num_samples, 1]
+        frac_start = self.n_parameters
+        frac_end = frac_start + self.n_fractions
+        f = parameters[:, frac_start:frac_end] # shape [num_samples, n_fractions]
+        #last_fraction = 1 - f.sum(dim=1, keepdim=True)  # shape [num_samples, 1]
 
         num_comps = len(self.compartments)
         
@@ -110,13 +122,13 @@ class ModelMaker:
             device=parameters.device
         )
         
-        # Add contributions from all compartments except last
-        for i in range(num_comps - 1):
+        # Add contributions from all compartments 
+        for i in range(num_comps):
             fraction = f[:, i:i+1]
             S += fraction * self.compartments[i](grad, parameters[:, self.parameter_indices[i]])
 
         # Add last compartment
-        S += last_fraction * self.compartments[-1](grad, parameters[:, self.parameter_indices[-1]])
+        #S += last_fraction * self.compartments[-1](grad, parameters[:, self.parameter_indices[-1]])
         
                 
         return S
@@ -168,7 +180,7 @@ class ModelMaker:
         compartment_list = []
         
         if modelname == "VERDICT":
-            compartment_list = ["Ball", "Sphere", "Astrosticks_fixed"]
+            compartment_list = ["Ball", "Sphere", "Astrosticks"]
         elif modelname == "SANDI":
             compartment_list = ["Ball", "Sphere", "Astrosticks"]
         elif modelname == "IVIM":
@@ -180,10 +192,50 @@ class ModelMaker:
         elif modelname == "t1_smdt":
             compartment_list = ["t1_smdt",]
         else:
-            compartment_list = re.findall('([A-Z][a-z]+)', modelname)
-        for comp in compartment_list:
+            compartment_list = re.findall(r"([A-Z][a-z]*\d*)", modelname)
+        for (comp, i) in zip(compartment_list, range(len(compartment_list))):
             this_class = getattr(signal_models_module, comp)
-            comps_classes.append(this_class())
+            
+            #append the class to the list of compartment classes for this model
+            if comp == "Astrosticks" and modelname == "VERDICT": #special case for fixed diffusivity in verdict astrosticks
+                comps_classes.append(this_class(fixed_D_par=8.0))
+            elif comp == "Sphere" and modelname == "VERDICT": #special case for fixed diffusivity in verdict sphere
+                comps_classes.append(this_class(fixed_D=2.0))
+            elif comp == "Sphere" and modelname == "SANDI": #special case for fixed diffusivity in sandi sphere
+                comps_classes.append(this_class(fixed_D=3.0))
+            else:
+                comps_classes.append(this_class())
+
+            #add different parameter ranges for IVIM ball compartments
+            if comp == "Ball" and modelname == "IVIM" and i == 0: #special case for different parameter ranges in IVIM ball compartments
+                comps_classes[i].parameter_ranges = np.array([[1.e-03, 3.]])   
+            if comp == "Ball" and modelname == "IVIM" and i == 1: #special case for different parameter ranges in IVIM ball compartments
+                comps_classes[i].parameter_ranges = np.array([[3. , 30.]])
+
+            
+            #add different parameter ranges for ZeppelinZeppelin zeppelin compartments
+            if comp == "Zeppelin" and modelname == "ZeppelinZeppelin" and i == 0: #special case for different parameter ranges in ZeppelinZeppelin zeppelin compartments
+                comps_classes[i].parameter_ranges[0] = [1.e-03, 3.]
+            if comp == "Zeppelin" and modelname == "ZeppelinZeppelin" and i == 1: #special case for different parameter ranges in ZeppelinZeppelin zeppelin compartments
+                comps_classes[i].parameter_ranges[0] = [3. , 30.]
+
+
+            #add different parameter ranges for ZeppelinZeppelin zeppelin compartments
+            if comp == "Ballt2" and modelname == "Ballt2Ballt2" and i == 0: #special case for different parameter ranges in Ballt2Ballt2 ball compartments
+                comps_classes[i].parameter_ranges[0] = [1.e-03, 3.]
+                comps_classes[i].parameter_ranges[1] = [0.001, 0.08]
+            if comp == "Ballt2" and modelname == "Ballt2Ballt2" and i == 1: #special case for different parameter ranges in Ballt2Ballt2 ball compartments
+                comps_classes[i].parameter_ranges[0] = [3. , 30.]
+                comps_classes[i].parameter_ranges[1] = [0.08, 0.3]
+
+        print("-----------")
+        print("########### Making model: ", modelname)
+        print('########### Compartments:', comps_classes)
+        print('########### Parameter names:', [comp.parameter_names for comp in comps_classes])
+        print('########### Parameter ranges:', [comp.parameter_ranges for comp in comps_classes])
+        print("-----------")
+
+
 
 
         return tuple(comps_classes)

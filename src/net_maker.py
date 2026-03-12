@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class Net(nn.Module):
 
-    def __init__(self,grad, modelfunc, layer_dims, n_layers, dropout_fraction, clipping_method = 'clamp', activation=nn.PReLU()):  
+    def __init__(self, grad, modelfunc, layer_dims, n_layers, dropout_fraction, clipping_method = 'clamp', clipping_method_fraction = "clamp", activation=nn.PReLU()):  
 
         """
         Define the network architecture.
@@ -22,7 +22,7 @@ class Net(nn.Module):
         self.grad = grad
         self.modelfunc  = modelfunc
         self.clipping_method = clipping_method
-
+        self.clipping_method_fraction = clipping_method_fraction
         dim_in          = layer_dims
         self.fc_layers  = nn.ModuleList()
         self.fc_layers.extend([nn.Linear(dim_in, layer_dims), activation])
@@ -43,50 +43,56 @@ class Net(nn.Module):
 
     def forward(self, X):        
         
-        if self.dropout_fraction > 0:
-            X = self.dropout(X)
-
-        #params = self.encoder(X)              
-        params = F.softplus(self.encoder(X))
-        #params = abs(self.encoder(X))
-        #get the signal model function        
-        #modelfunc = getattr(models, model)
+        #get the model function and clipping method
         modelfunc = self.modelfunc
         clipping_method = self.clipping_method
-                               
-        for i in range(modelfunc.n_parameters): #set min/max of non-volume fraction parameters       
-            params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
-         
-       # Enforce volume fraction parameters 
+        clipping_method_fraction = self.clipping_method_fraction
+
+        # Get the start and end indices for the volume fraction parameters
         frac_start = modelfunc.n_parameters
-        frac_end   = frac_start + modelfunc.n_fractions  # only the free fractions
+        frac_end   = frac_start + modelfunc.n_fractions  # all the fractions
 
-        if modelfunc.n_fractions == 1:
-            # Two compartments: clip the single free fraction to [0,1]
-            params[:, frac_start] = Net.squash(
-                params[:, frac_start].clone().unsqueeze(1),
-                clipping_method,
-                0, 1
-            )
-        else:
-            # extract free fractions and make sure in [0,1]
-            f_free = torch.relu(params[:, frac_start:frac_end])
 
-            # Compute implicit last fraction
-            final_f = 1 - f_free.sum(dim=1, keepdim=True)
-            final_f = torch.clamp(final_f, min=1e-8)  # prevent negative last fraction
+        #choose which network - messy for now but will clean up after testing different options
+        # network = "dev_MLP"
+        network = "softmax_MLP"
 
-            # Concatenate free fractions + last fraction
-            all_f = torch.cat([f_free, final_f], dim=1)
+        if network == "dev_MLP":
+            
+            if self.dropout_fraction > 0:
+                X = self.dropout(X)
 
-            # Normalize all fractions so sum = 1 
-            sum_all = all_f.sum(dim=1, keepdim=True)
-            all_f = all_f / torch.clamp(sum_all, min=1e-8)
+            #params = self.encoder(X)              
+            params = F.softplus(self.encoder(X))
+            #params = abs(self.encoder(X))
+            #get the signal model function        
+            #modelfunc = getattr(models, model)
+            
 
-            # Store back only the free fractions
-            params[:, frac_start:frac_end] = all_f[:, :-1]
-        
+            for i in range(modelfunc.n_parameters): #set min/max of non-volume fraction parameters       
+                params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
+
+                        
+        elif network == "softmax_MLP":
+            params = self.encoder(X)
+
+            if self.dropout_fraction > 0:
+                # only do dropout on the non-fraction parameters 
+                params[:, :frac_start] = self.dropout(params[:, :frac_start])  # only non-fraction params       
+                                
+            for i in range(modelfunc.n_parameters): #set min/max of non-volume fraction parameters       
+                params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
+            
+
+        #set min/max of volume fraction parameters and enforce sum to 1 across fractions
+        fractions = Net.fraction_squash(params[:, frac_start:frac_end], clipping_method_fraction, modelfunc)
+            
+        #store all the fractions 
+        params[:, frac_start:frac_end] = fractions
+
+        # compute the predicted signal using the model function with the current parameters
         X = self.modelfunc(self.grad, params)
+            
         return X.to(torch.float32), params
     
 
@@ -110,16 +116,55 @@ class Net(nn.Module):
 
         if method == 'clamp':
 
-            squashed_param_tensor =torch.clamp(param, min=p_min, max=p_max)
+            squashed_param_tensor = torch.clamp(param, min=p_min, max=p_max)
             unsqueezed_param = squashed_param_tensor.squeeze(1)
 
         elif method == 'sigmoid':
 
-            sigmoid_param = torch.sigmoid(param)
+            T = 1.0
+
+            sigmoid_param = torch.sigmoid(param / T)
             scaled_param = p_min + (p_max - p_min) * sigmoid_param
             unsqueezed_param = scaled_param.squeeze(1)
+
+        else:    
+            raise ValueError("Unsupported method: {}".format(method))
+
+        return unsqueezed_param
+    
+
+    def fraction_squash(logits_all, method, modelfunc):
+
+        if method == 'softmax':
+            tau = 1.0
+            fractions = torch.softmax(logits_all / tau, dim=1)
+
+        elif method == 'clamp':
+            if modelfunc.n_fractions == 1:
+                # Two compartments: clip the single free fraction to [0,1]
+                fractions = Net.squash(
+                    logits_all[:, 0].clone().unsqueeze(1),
+                    modelfunc.clipping_method,
+                    0, 1
+                )
+                fractions = torch.cat([fractions, 1 - fractions], dim=1)  # implicit second fraction
+            else:
+                #More than two compartments
+                # extract free fractions and make sure in [0,1]
+                f_free = torch.relu(logits_all[:, :-1])  # all but last fraction are free 
+
+                # Compute implicit last fraction
+                final_f = 1 - f_free.sum(dim=1, keepdim=True)
+                final_f = torch.clamp(final_f, min=1e-8)  # prevent negative last fraction
+
+                # Concatenate free fractions + last fraction
+                fractions = torch.cat([f_free, final_f], dim=1)
+
+                # Normalize all fractions so sum = 1 
+                sum_all = fractions.sum(dim=1, keepdim=True)
+                fractions = fractions / torch.clamp(sum_all, min=1e-8)
 
         else:
             raise ValueError("Unsupported method: {}".format(method))
 
-        return unsqueezed_param
+        return fractions
