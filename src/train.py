@@ -3,7 +3,7 @@ import torch.utils.data as utils
 from tqdm import tqdm
 import torch
 
-def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10):
+def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10, patience=10):
     """
     A function to train a MLP neural network on the image data, using 
     the specified loss function and training parameters.

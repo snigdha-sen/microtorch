@@ -80,10 +80,9 @@ def main():
     import nibabel as nib
 
     base = f"{args.model}_{''.join(modelfunc.compartment_names)}"
-    nib.save(nib.Nifti1Image(Simg.cpu().numpy(), np.eye(4)), os.path.join(args.savedir, f"{base}_data.nii.gz"))
-    nib.save(nib.Nifti1Image(paramsimg.cpu().numpy(), np.eye(4)), os.path.join(args.savedir, f"{base}_params.nii.gz"))
-    nib.save(nib.Nifti1Image(mask.cpu().numpy(), np.eye(4)), os.path.join(args.savedir, f"{base}_mask.nii.gz"))
-
+    nib.save(nib.Nifti1Image(Simg.cpu().numpy(), np.eye(4)), os.path.join(args.savedir, args.model, f"{base}_data.nii.gz"))
+    nib.save(nib.Nifti1Image(paramsimg.cpu().numpy(), np.eye(4)), os.path.join(args.savedir, args.model, f"{base}_params.nii.gz"))
+    nib.save(nib.Nifti1Image(mask.cpu().numpy(), np.eye(4)), os.path.join(args.savedir, args.model, f"{base}_mask.nii.gz"))
 
 
 #helper functions 
