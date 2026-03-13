@@ -1,2 +1,2 @@
-name: verdict        # -mod / --model (choices: 'verdict', sandi')
+name: ivim        # -mod / --model (choices: 'verdict', sandi')
 lmax: 2              # -lmax / --lmax

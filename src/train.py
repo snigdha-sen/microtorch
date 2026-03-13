@@ -2,8 +2,9 @@ import torch.optim as optim
 import torch.utils.data as utils
 from tqdm import tqdm
 import torch
+import optuna
 
-def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10, patience=10):
+def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10, patience=10, trial=None):
     """
     A function to train a MLP neural network on the image data, using 
     the specified loss function and training parameters.
@@ -46,7 +47,6 @@ def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10, patience=10
     # best loss
     best = 1e16
     num_bad_epochs = 0
-    patience = 10
 
     for epoch in range(num_iters):
         print("-----------------------------------------------------------------")
@@ -75,6 +75,12 @@ def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10, patience=10
 
         print("loss: {}".format(running_loss))
 
+        if trial is not None:
+            trial.report(running_loss, step=epoch)
+            if trial.should_prune():
+                raise optuna.TrialPruned()
+
+
         # early stopping
         if running_loss < best:
             print("########## This epoch's loss is better than the best loss so far, saving model")
@@ -93,4 +99,5 @@ def train(net, img, lossfunc, lr=1e-3, batch_size=256, num_iters=10, patience=10
     net.eval()
     with torch.no_grad():
         X_real_pred, params = net(img)
-    return X_real_pred, params
+
+    return X_real_pred, params, best
