@@ -1,0 +1,12 @@
+name: Ballt2Ballt2
+
+compartments:
+  - class: Ballt2
+    parameter_ranges:
+      - [1.0e-03, 3.0]
+      - [0.001, 0.08]
+
+  - class: Ballt2
+    parameter_ranges:
+      - [3.0, 30.0]
+      - [0.08, 0.3]

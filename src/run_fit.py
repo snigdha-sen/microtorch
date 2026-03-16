@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import nibabel as nib
-
+from src.utils.optuna_search import get_model_hyperparams
 from src.train import train
 from src.model_maker import ModelMaker
 from src.net_maker import Net
@@ -101,28 +101,36 @@ def run_fit(cfg):
     # -----------------------
     lossfunc = nn.MSELoss()
 
+
+    hyperparams = get_model_hyperparams(
+        grad=grad,
+        modelfunc=modelfunc,
+        mlp_activation=mlp_activation,
+        X_train=X_train,
+        cfg=cfg)
+
     net = Net(
         grad,
         modelfunc,
-        layer_dims=grad.number_of_measurements,
-        n_layers=cfg.training.num_layers,
-        dropout_fraction=cfg.training.dropout_frac,
+        input_neurons=grad.number_of_measurements,
+        layer_dims=hyperparams["hidden_size"],
+        n_layers=hyperparams["num_layers"],
+        dropout_fraction=hyperparams["dropout_frac"],
         clipping_method=cfg.training.clip,
-        clipping_method_fraction=cfg.training.clip_fraction,
-        activation=mlp_activation[cfg.training.activation],
+        activation=mlp_activation[hyperparams["activation"]],
     )
 
     # -----------------------
     # Train
     # -----------------------
-    _, params = train(
+    _, params, _ = train(
         net,
         X_train,
         lossfunc,
-        lr=cfg.training.learning_rate,
+        lr=hyperparams["lr"],
         batch_size=256,
         num_iters=cfg.training.num_iters,
-        patience=cfg.training.patience,
+        patience=hyperparams["patience"],
     )
 
     # -----------------------

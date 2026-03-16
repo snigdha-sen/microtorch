@@ -4,11 +4,11 @@ defaults:
   - model: default
   - acquisition: default
   - data: default
-
+  - tuning: default
 hydra:
   run:
     dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 plot:
-  enabled: true
+  enabled: false
   zslice: 0
