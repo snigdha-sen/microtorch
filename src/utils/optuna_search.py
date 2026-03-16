@@ -144,6 +144,16 @@ def get_model_hyperparams(
 
     method = cfg.training.tune
 
+    #if loading tuned hyperparams but file doesn't exist, fall back to default (prevents crashes if user forgets to run tuner first)
+    if method == "load_tuned" and not hyperparams_path.exists():
+        method = "default"
+        print("-" * 45)
+        print(f"Warning: No tuned hyperparameters found at {hyperparams_path}.")    
+        print("Falling back to default hyperparameters from config. "    \
+              "To run hyperparameter tuning and save results, set cfg.training.tune=optuna_tuner")
+        print("-" * 45)
+
+
     if method == "optuna_tuner":
         print("-" * 45)
         print("Starting Optuna hyperparameter search …")
@@ -162,18 +172,21 @@ def get_model_hyperparams(
 
     elif method == "load_tuned":
         print("-" * 45)
-        print("Loading previously tuned hyperparameters …")
+        print(f"Loading previously tuned hyperparameters for {cfg.model.name} model…")
         print("-" * 45)
-        if not hyperparams_path.exists():
-            sys.exit(f"ERROR: {hyperparams_path} not found. Run with tune=optuna_tuner first.")
         with open(hyperparams_path) as f:
             hyperparams = yaml.safe_load(f)
         print(f"Loaded hyperparameters from {hyperparams_path}")
         return hyperparams
 
-    else:
+    elif method == "default":
         # Fall back to config values — no tuning
-        print("Using hyperparameters from config (no tuning).")
+        print("-" * 45)
+        print("Warning: Using default hyperparameters from config (no tuning). " \
+        "These hyperparamters have not been optimized for the " 
+        + cfg.model.name + " model and may lead to suboptimal results.")
+        print("To run hyperparameter tuning and save results, set cfg.training.tune=optuna_tuner")
+        print("-" * 45)
         return {
             "num_layers":   cfg.training.num_layers,
             "hidden_size": cfg.training.layer_size,
@@ -182,3 +195,5 @@ def get_model_hyperparams(
             "lr":           cfg.training.learning_rate,
             "activation":   cfg.training.activation,
         }
+    else:
+        raise ValueError(f"Invalid tuning method: {method}. Must be one of 'optuna_tuner', 'load_tuned', or 'default'.")

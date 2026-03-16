@@ -1,0 +1,6 @@
+activation: elu
+dropout_frac: 0.07671266290085964
+hidden_size: 256
+lr: 0.0012308133090961054
+num_layers: 4
+patience: 200
