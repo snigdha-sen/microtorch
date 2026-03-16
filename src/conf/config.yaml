@@ -10,5 +10,5 @@ hydra:
     dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 plot:
-  enabled: false
+  enabled: true
   zslice: 0

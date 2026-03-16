@@ -181,36 +181,60 @@ class ModelMaker:
                 config = yaml.safe_load(f) or {}
 
             compartment_specs = config.get("compartments", [])
-            print(f"Found YAML configuration for {modelname} model. Using specified compartments and parameter ranges.")
+            print(f"Found YAML configuration for {modelname} model.")
+            print("Using specified compartments and applying any YAML-defined parameter range overrides.")
         else:
             # fallback to parsing modelname if no yaml exists
-            compartment_list = re.findall(r"([A-Z][a-z]*\d*)", modelname)            
+            compartment_list = re.findall(r"([A-Z][a-z]*\d*)", modelname)
             compartment_specs = [{"class": comp} for comp in compartment_list]
-            print(f"No YAML configuration found for {modelname} model.") 
-            print(f"Falling back to parsing model name for compartments: {compartment_list}.") 
+
+            print(f"No YAML configuration found for {modelname} model.")
+            print(f"Falling back to parsing model name for compartments: {compartment_list}.")
             print("Parameter ranges will be the default compartment values.")
 
         for spec in compartment_specs:
             class_name = spec["class"]
             init_kwargs = spec.get("init_kwargs", {})
-            parameter_ranges = spec.get("parameter_ranges")
+            parameter_ranges = spec.get("parameter_ranges", None)
 
             cls = getattr(signal_models_module, class_name)
             obj = cls(**init_kwargs)
 
+            # Only override parameter ranges if they are explicitly given in YAML
             if parameter_ranges is not None:
-                obj.parameter_ranges = np.array(parameter_ranges)
+                default_parameter_ranges = obj.parameter_ranges
+
+                print(parameter_ranges)
+                print(default_parameter_ranges)
+                
+                if len(parameter_ranges) != len(default_parameter_ranges):
+                    raise ValueError(
+                        f"Invalid number of parameter ranges for compartment '{class_name}' "
+                        f"in model '{modelname}'. Expected {len(default_parameter_ranges)}, "
+                        f"got {len(parameter_ranges)}."
+                    )
+
+                for i, param_range in enumerate(parameter_ranges):
+                    if len(param_range) != 2:
+                        raise ValueError(
+                            f"Invalid parameter range at index {i} for compartment '{class_name}' "
+                            f"in model '{modelname}'. Each parameter range must be [min, max]."
+                        )
+
+                obj.parameter_ranges = parameter_ranges
 
             comps_classes.append(obj)
 
         print("-----------")
         print("########### Making model: ", modelname)
-        print('########### Compartments:', [comp.__class__.__name__ for comp in comps_classes])
-        print('########### Parameter names:', [comp.parameter_names for comp in comps_classes])
-        print('########### Parameter ranges:', [comp.parameter_ranges for comp in comps_classes])
+        print("########### Compartments:", [comp.__class__.__name__ for comp in comps_classes])
+        print("########### Parameter names:", [comp.parameter_names for comp in comps_classes])
+        print("########### Parameter ranges:", [comp.parameter_ranges for comp in comps_classes])
         print("-----------")
 
         return tuple(comps_classes)
+
+
 
                 
         

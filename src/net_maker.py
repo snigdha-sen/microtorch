@@ -174,7 +174,7 @@ class Net(nn.Module):
                 # Two compartments: clip the single free fraction to [0,1]
                 fractions = Net.squash(
                     logits_all[:, 0].clone().unsqueeze(1),
-                    modelfunc.clipping_method,
+                    method,
                     0, 1
                 )
                 fractions = torch.cat([fractions, 1 - fractions], dim=1)  # implicit second fraction

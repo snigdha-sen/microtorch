@@ -117,6 +117,7 @@ def run_fit(cfg):
         n_layers=hyperparams["num_layers"],
         dropout_fraction=hyperparams["dropout_frac"],
         clipping_method=cfg.training.clip,
+        clipping_method_fraction=cfg.training.clip_fraction,
         activation=mlp_activation[hyperparams["activation"]],
     )
 
