@@ -1,8 +1,11 @@
 import numpy as np
 import re
+import yaml
 
 import torch
 import src.signal_models as signal_models_module
+
+from src.utils.paths import MODELS_PATH
 
 
 class ModelMaker:
@@ -167,78 +170,51 @@ class ModelMaker:
         compartment_indices.extend(range(self.n_fractions))
         return compartment_indices
 
+
     @staticmethod
     def model_compartments(modelname):
-        """
-        Maps the model name to its corresponding compartment classes.
-        Args:
-            modelname (str): The name of the model.
-        Returns:
-            tuple: A tuple of instances of the compartment classes corresponding to the model."""
-
         comps_classes = []
-        compartment_list = []
-        
-        if modelname == "VERDICT":
-            compartment_list = ["Ball", "Sphere", "Astrosticks"]
-        elif modelname == "SANDI":
-            compartment_list = ["Ball", "Sphere", "Astrosticks"]
-        elif modelname == "IVIM":
-            compartment_list = ["Ball", "Ball"]
-        elif modelname == "NEXI":
-            compartment_list = ["NEXI",]
-        elif modelname == "Standard_wm":
-            compartment_list = ["Standard_wm",]
-        elif modelname == "t1_smdt":
-            compartment_list = ["t1_smdt",]
+
+        model_file = MODELS_PATH / f"{modelname}.yaml"
+
+        if model_file.exists():
+            with open(model_file, "r") as f:
+                config = yaml.safe_load(f) or {}
+
+            compartment_specs = config.get("compartments", [])
+            print(f"Found YAML configuration for {modelname} model. Using specified compartments and parameter ranges.")
         else:
-            compartment_list = re.findall(r"([A-Z][a-z]*\d*)", modelname)
-        for (comp, i) in zip(compartment_list, range(len(compartment_list))):
-            this_class = getattr(signal_models_module, comp)
-            
-            #append the class to the list of compartment classes for this model
-            if comp == "Astrosticks" and modelname == "VERDICT": #special case for fixed diffusivity in verdict astrosticks
-                comps_classes.append(this_class(fixed_D_par=8.0))
-            elif comp == "Sphere" and modelname == "VERDICT": #special case for fixed diffusivity in verdict sphere
-                comps_classes.append(this_class(fixed_D=2.0))
-            elif comp == "Sphere" and modelname == "SANDI": #special case for fixed diffusivity in sandi sphere
-                comps_classes.append(this_class(fixed_D=3.0))
-            else:
-                comps_classes.append(this_class())
+            # fallback to parsing modelname if no yaml exists
+            compartment_list = re.findall(r"([A-Z][a-z]*\d*)", modelname)            
+            compartment_specs = [{"class": comp} for comp in compartment_list]
+            print(f"No YAML configuration found for {modelname} model.") 
+            print(f"Falling back to parsing model name for compartments: {compartment_list}.") 
+            print("Parameter ranges will be the default compartment values.")
 
-            #add different parameter ranges for IVIM ball compartments
-            if comp == "Ball" and modelname == "IVIM" and i == 0: #special case for different parameter ranges in IVIM ball compartments
-                comps_classes[i].parameter_ranges = np.array([[1.e-03, 3.]])   
-            if comp == "Ball" and modelname == "IVIM" and i == 1: #special case for different parameter ranges in IVIM ball compartments
-                comps_classes[i].parameter_ranges = np.array([[3. , 30.]])
+        for spec in compartment_specs:
+            class_name = spec["class"]
+            init_kwargs = spec.get("init_kwargs", {})
+            parameter_ranges = spec.get("parameter_ranges")
 
-            
-            #add different parameter ranges for ZeppelinZeppelin zeppelin compartments
-            if comp == "Zeppelin" and modelname == "ZeppelinZeppelin" and i == 0: #special case for different parameter ranges in ZeppelinZeppelin zeppelin compartments
-                comps_classes[i].parameter_ranges[0] = [1.e-03, 3.]
-            if comp == "Zeppelin" and modelname == "ZeppelinZeppelin" and i == 1: #special case for different parameter ranges in ZeppelinZeppelin zeppelin compartments
-                comps_classes[i].parameter_ranges[0] = [3. , 30.]
+            cls = getattr(signal_models_module, class_name)
+            obj = cls(**init_kwargs)
 
+            if parameter_ranges is not None:
+                obj.parameter_ranges = np.array(parameter_ranges)
 
-            #add different parameter ranges for ZeppelinZeppelin zeppelin compartments
-            if comp == "Ballt2" and modelname == "Ballt2Ballt2" and i == 0: #special case for different parameter ranges in Ballt2Ballt2 ball compartments
-                comps_classes[i].parameter_ranges[0] = [1.e-03, 3.]
-                comps_classes[i].parameter_ranges[1] = [0.001, 0.08]
-            if comp == "Ballt2" and modelname == "Ballt2Ballt2" and i == 1: #special case for different parameter ranges in Ballt2Ballt2 ball compartments
-                comps_classes[i].parameter_ranges[0] = [3. , 30.]
-                comps_classes[i].parameter_ranges[1] = [0.08, 0.3]
+            comps_classes.append(obj)
 
         print("-----------")
         print("########### Making model: ", modelname)
-        print('########### Compartments:', comps_classes)
+        print('########### Compartments:', [comp.__class__.__name__ for comp in comps_classes])
         print('########### Parameter names:', [comp.parameter_names for comp in comps_classes])
         print('########### Parameter ranges:', [comp.parameter_ranges for comp in comps_classes])
         print("-----------")
 
-
-
-
         return tuple(comps_classes)
+
+                
+        
 
 
 

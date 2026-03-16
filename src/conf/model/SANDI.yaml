@@ -1,0 +1,12 @@
+name: SANDI
+
+compartments:
+  - class: Ball
+
+  - class: Sphere
+    init_kwargs:
+      fixed_D: 3.0
+
+  - class: Astrosticks
+
+  

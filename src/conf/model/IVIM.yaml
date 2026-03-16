@@ -1,0 +1,10 @@
+name: IVIM
+
+compartments:
+  - class: Ball
+    parameter_ranges:
+      - [1.0e-03, 3.0]
+      
+  - class: Ball
+    parameter_ranges:
+      - [3.0, 30.0]

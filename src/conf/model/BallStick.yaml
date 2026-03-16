@@ -1,0 +1,8 @@
+name: BallStick
+
+compartments:
+  - class: Ball
+    parameter_ranges:
+      - [1e-3, 3]
+
+  - class: Stick
