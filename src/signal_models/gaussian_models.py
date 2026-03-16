@@ -81,7 +81,7 @@ class Zeppelin:
     
     """
     def __init__(self):
-        self.parameter_ranges = [[.001, 3], [.001, 1.0], [0, torch.pi], [-torch.pi, torch.pi]]
+        self.parameter_ranges = [[.001, 3], [.001, 1.0], [0, torch.pi/2], [0, torch.pi]]
         self.parameter_names      = ['Dpar', 'k', 'theta', 'phi']
         self.n_parameters         = 4
         self.spherical_mean   = False
