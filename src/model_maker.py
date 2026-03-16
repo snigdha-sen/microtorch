@@ -5,7 +5,7 @@ import yaml
 import torch
 import src.signal_models as signal_models_module
 
-from src.utils.paths import MODELS_PATH
+from src.utils.paths import MODELS_CONF_PATH
 
 
 class ModelMaker:
@@ -46,7 +46,6 @@ class ModelMaker:
         Raises:
             ValueError: If the compartments have inconsistent spherical mean properties.
         """
-
         self.compartments = self.model_compartments(modelname)
 
         ## Comparments must have the same spherical mean property, if spherical mean isnt relevant for a compartment then it is set to None
@@ -175,7 +174,7 @@ class ModelMaker:
     def model_compartments(modelname):
         comps_classes = []
 
-        model_file = MODELS_PATH / f"{modelname}.yaml"
+        model_file = MODELS_CONF_PATH / f"{modelname}.yaml"
 
         if model_file.exists():
             with open(model_file, "r") as f:

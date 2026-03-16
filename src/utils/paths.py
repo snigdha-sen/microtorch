@@ -4,4 +4,5 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SIMULATION_PATH = PROJECT_ROOT.parent / "simulation_data" 
 GRAD_PATH = PROJECT_ROOT.parent / "simulation_data" / "grad"
 SIMULATION_DATA_PATH = SIMULATION_PATH / "data"
-MODELS_PATH = PROJECT_ROOT / "models"
+MODELS_PATH = PROJECT_ROOT / "signal_models"
+MODELS_CONF_PATH = PROJECT_ROOT / "conf" / "model"
