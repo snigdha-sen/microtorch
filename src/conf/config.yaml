@@ -12,3 +12,9 @@ hydra:
 plot:
   enabled: true
   zslice: 0
+
+paths:
+  models_dir: src/models
+  sim_data_dir: src/simulated_data/data
+  grad_dir: src/simulated_data/grad
+  
