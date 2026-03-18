@@ -77,9 +77,9 @@ class Net(nn.Module):
 
 
         #choose which network - messy for now but will clean up after testing different options
-        network = "dev_MLP"
+        #network = "dev_MLP"
         #network = "softmax_MLP"
-        #network = "hidden_dropout_MLP"
+        network = "hidden_dropout_MLP"
 
         if network == "dev_MLP":
             
@@ -88,11 +88,10 @@ class Net(nn.Module):
 
             #params = self.encoder(X)              
             params = F.softplus(self.encoder(X))
-            #params = abs(self.encoder(X))
+            #params = torch.abs(self.encoder(X))
             #get the signal model function        
             #modelfunc = getattr(models, model)
-            
-
+                                        
             for i in range(modelfunc.n_parameters): #set min/max of non-volume fraction parameters       
                 params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
 
@@ -127,7 +126,7 @@ class Net(nn.Module):
         
         # compute the predicted signal using the model function with the current parameters
         X = self.modelfunc(self.grad, params)
-            
+                    
         return X.to(torch.float32), params
     
 

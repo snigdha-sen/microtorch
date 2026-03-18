@@ -16,9 +16,25 @@ def direction_average(img, grad):
         where M is the number of unique shells.
     """
 
+    # build shell definition table
+    shell_columns = [grad.bvalues]
 
+    if hasattr(grad, "TE") and grad.TE is not None:
+        shell_columns.append(grad.TE)
+    if hasattr(grad, "delta") and grad.delta is not None:
+        shell_columns.append(grad.delta)
+    if hasattr(grad, "Delta") and grad.Delta is not None:
+        shell_columns.append(grad.Delta)
+    if hasattr(grad, "bshape") and grad.bshape is not None:
+        shell_columns.append(grad.bshape)
+    if hasattr(grad, "bdelta") and grad.bdelta is not None:
+        shell_columns.append(grad.bdelta)
+        
+    shell_table = torch.stack(shell_columns, dim=1) 
+        
+        
     # Find unique shells - all parameters except gradient directions are the same
-    unique_shells = torch.unique(grad.bvalues) # Assuming bvalues define the shells, adjust if other parameters are needed
+    unique_shells, inverse = torch.unique(shell_table, dim=0, return_inverse=True)
 
     # Preallocate
     da_img  = torch.zeros(img.shape[0:3] + (unique_shells.shape[0],), dtype=img.dtype)
@@ -30,28 +46,38 @@ def direction_average(img, grad):
     da_TE = torch.zeros_like(unique_shells) if grad.TE is not None else None
     da_bdelta = torch.zeros_like(unique_shells) if grad.bdelta is not None else None
     da_TE = torch.zeros_like(unique_shells) if grad.TE is not None else None
+    da_gradient_strengths = torch.zeros_like(unique_shells) if grad.gradient_strengths is not None else None
+
 
     for i, shell in enumerate(unique_shells):
         # Indices of grad file for this shell          
-        shell_index = grad.bvalues == shell        
+        shell_index = (inverse == i)       
+        first_idx = torch.where(shell_index)[0][0]
+         
         # Calculate the spherical mean of this shell - average along final axis   
-        da_img[..., i] = torch.squeeze(torch.mean(img[..., shell_index], axis=img.ndim-1))
-        # Fill in this row of the direction-averaged grad things
+        da_img[..., i] = img[..., shell_index].mean(dim=-1)
+        
+        #set direction to zero after averaging
         da_bvecs[i] = 0.0 # Set the gradient directions to zero for this shell      
-        da_bvalues[i] = shell # Set the bvalues to the unique shell value
-        if grad.delta is not None:# Set delta to the first value for this shell
-            da_delta[i] = grad.delta[i]   
-        if grad.Delta is not None:# Set Delta to the first value for this shell
-            da_Delta[i] = grad.Delta[i] 
-        if grad.TE is not None:
-            da_TE[i] = grad.TE[i] 
-        if grad.bdelta is not None:
-            da_bdelta[i] = grad.bdelta[i] 
+        da_bvalues[i] = grad.bvalues[first_idx] # Set the bvalues to the unique shell value
+        
+        if da_TE is not None:
+            da_TE[i] = grad.TE[first_idx]
+        if da_delta is not None:
+            da_delta[i] = grad.delta[first_idx]
+        if da_Delta is not None:
+            da_Delta[i] = grad.Delta[first_idx]
+        if da_bdelta is not None:
+            da_bdelta[i] = grad.bdelta[first_idx]
+        if da_gradient_strengths is not None:
+            da_gradient_strengths[i] = grad.gradient_strengths[first_idx]
+        if da_bdelta is not None:
+            da_bdelta[i] = grad.bdelta[first_idx]
 
     da_grad = AcquisitionScheme(
         bvalues=da_bvalues,
         bvecs=da_bvecs,
-        gradient_strengths=grad.gradient_strengths,
+        gradient_strengths=da_gradient_strengths,
         delta=da_delta,
         Delta=da_Delta,
         TE=da_TE,
@@ -125,16 +151,31 @@ def normalise(X_train, grad):
     Returns:
         X_train (torch.Tensor): The normalised training data, where each voxel's signal is divided by the mean of the b0 volumes for that voxel.
     """
+    
+    nvol = grad.number_of_measurements
 
-    nvol    = grad.number_of_measurements
-    normvol = torch.where(grad.bvalues == torch.min(grad.bvalues))[0]
+    # find lowest b-value
+    min_b = torch.min(grad.bvalues)
+    ref_mask = (grad.bvalues == min_b)
 
-    if normvol.numel() > 1:  
-        b0_mean = torch.mean(X_train[:, normvol], dim=1, keepdim=True)
-                
-        X_train = X_train / b0_mean.repeat(1, nvol)
-    else:  
-        X_train = X_train / X_train[:, normvol].repeat(1, nvol)
+    # among those, find lowest TE if TE exists
+    if hasattr(grad, "TE") and grad.TE is not None:
+        min_te = torch.min(grad.TE[ref_mask])
+        ref_mask = ref_mask & (grad.TE == min_te)
+
+    #lowest b-value and lowest TE is the reference for normalisation.
+    ref_idx = torch.where(ref_mask)[0]
+
+    if ref_idx.numel() == 0:
+        raise ValueError("No normalisation volume found.")
+
+    # mean reference if multiple matching measurements
+    ref_signal = torch.mean(X_train[:, ref_idx], dim=1, keepdim=True)
+
+    # avoid divide-by-zero
+    ref_signal = torch.clamp(ref_signal, min=1e-8)
+
+    X_train = X_train / ref_signal.repeat(1, nvol)
 
     return X_train
 
