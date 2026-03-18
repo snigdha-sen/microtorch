@@ -10,7 +10,7 @@ hydra:
     dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 plot:
-  enabled: true
+  enabled: false
   zslice: 0
 
 paths:

@@ -85,7 +85,13 @@ class ModelMaker:
 
         self.parameter_ranges = np.array(self.parameter_ranges)  # Convert to numpy array
 
-        self.n_fractions = len(self.compartments) # The number of ALL volume fractions
+        self.n_compartments = len(self.compartments) # The number of compartments in the model
+        if self.n_compartments > 1:
+            self.n_fractions = len(self.compartments) # The number of ALL volume fractions
+        elif self.n_compartments == 1:
+            self.n_fractions = 0 # if only one compartment, no volume fractions needed
+
+        # If more than one compartment, add n_fractions volume fraction parameters
         self.parameter_names.extend([f'f_{i}' for i in range(self.n_fractions)])
 
         self.parameter_indices = self.get_parameter_indices()  # Get the indices of the parameters in the parameter vector for each compartment
@@ -108,14 +114,15 @@ class ModelMaker:
         if len(self.compartments) == 1:
             return self.compartments[0](grad, parameters)
         
-        # Extract volume fractions
-        frac_start = self.n_parameters
-        frac_end = frac_start + self.n_fractions
-        f = parameters[:, frac_start:frac_end] # shape [num_samples, n_fractions]
-        #last_fraction = 1 - f.sum(dim=1, keepdim=True)  # shape [num_samples, 1]
+        if self.n_compartments > 1: # Extract volume fractions for multicompartment models
+            frac_start = self.n_parameters
+            frac_end = frac_start + self.n_fractions
+            f = parameters[:, frac_start:frac_end] # shape [num_samples, n_fractions]
+            #last_fraction = 1 - fractions.sum(dim=1, keepdim=True)  # shape [num_samples, 1]
+        elif self.n_compartments == 1: # Set f to 1 single compartment models 
+            f = torch.ones(parameters.size(0), 1, device=parameters.device) # shape [num_samples, 1]
 
-        num_comps = len(self.compartments)
-        
+                            
         # Initialize signal to zeros
         S = torch.zeros(
             parameters.size(0),
@@ -125,7 +132,7 @@ class ModelMaker:
         )
         
         # Add contributions from all compartments 
-        for i in range(num_comps):
+        for i in range(self.n_compartments):
             fraction = f[:, i:i+1]
             S += fraction * self.compartments[i](grad, parameters[:, self.parameter_indices[i]])
 

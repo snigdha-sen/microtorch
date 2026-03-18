@@ -26,7 +26,10 @@ class Net(nn.Module):
         self.clipping_method_fraction = clipping_method_fraction
         self.dropout_fraction = dropout_fraction
 
-        dim_out = modelfunc.n_parameters + modelfunc.n_fractions
+        if modelfunc.n_fractions > 1:
+            dim_out = modelfunc.n_parameters + modelfunc.n_fractions
+        else:
+            dim_out = modelfunc.n_parameters
 
         # ----------------------------------------------------------------
         # dev_MLP / softmax_MLP — original flat encoder (no per-layer dropout)
@@ -74,8 +77,9 @@ class Net(nn.Module):
 
 
         #choose which network - messy for now but will clean up after testing different options
-        # network = "dev_MLP"
-        network = "hidden_dropout_MLP"
+        network = "dev_MLP"
+        #network = "softmax_MLP"
+        #network = "hidden_dropout_MLP"
 
         if network == "dev_MLP":
             
@@ -115,11 +119,12 @@ class Net(nn.Module):
                 )
 
         #set min/max of volume fraction parameters and enforce sum to 1 across fractions
-        fractions = Net.fraction_squash(params[:, frac_start:frac_end], clipping_method_fraction, modelfunc)
+        if modelfunc.n_fractions > 1:
+            fractions = Net.fraction_squash(params[:, frac_start:frac_end], clipping_method_fraction, modelfunc)
             
-        #store all the fractions 
-        params[:, frac_start:frac_end] = fractions
-
+            #store all the fractions 
+            params[:, frac_start:frac_end] = fractions
+        
         # compute the predicted signal using the model function with the current parameters
         X = self.modelfunc(self.grad, params)
             
@@ -156,6 +161,8 @@ class Net(nn.Module):
             sigmoid_param = torch.sigmoid(param / T)
             scaled_param = p_min + (p_max - p_min) * sigmoid_param
             unsqueezed_param = scaled_param.squeeze(1)
+        elif method == 'free': #no squashing 
+            unsqueezed_param = param.squeeze(1)
 
         else:    
             raise ValueError("Unsupported method: {}".format(method))
@@ -193,7 +200,8 @@ class Net(nn.Module):
                 # Normalize all fractions so sum = 1 
                 sum_all = fractions.sum(dim=1, keepdim=True)
                 fractions = fractions / torch.clamp(sum_all, min=1e-8)
-
+        elif method == 'free': #no squashing 
+            fractions = logits_all  
         else:
             raise ValueError("Unsupported method: {}".format(method))
 
