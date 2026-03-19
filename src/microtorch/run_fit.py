@@ -7,11 +7,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import nibabel as nib
-from src.utils.optuna_search import get_model_hyperparams
-from src.train import train
-from src.model_maker import ModelMaker
-from src.net_maker import Net
-from src.utils import (
+from microtorch.utils.optuna_search import get_model_hyperparams
+from microtorch.train import train
+from microtorch.model_maker import ModelMaker
+from microtorch.net_maker import Net
+from microtorch.utils import (
     txt_file_loader,
     acquisition_scheme_loader,
     direction_average,

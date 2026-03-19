@@ -6,8 +6,8 @@ from pathlib import Path
 import optuna
 from optuna.trial import TrialState
 from hydra.core.hydra_config import HydraConfig
-from src.net_maker import Net
-from src.train import train
+from microtorch.net_maker import Net
+from microtorch.train import train
 import torch.nn as nn
 
 def sample_hyperparams(trial, tuning_cfg):

@@ -1,6 +1,6 @@
 import numpy as np 
 import torch
-from src.utils.acquisition_scheme import AcquisitionScheme
+from .acquisition_scheme import AcquisitionScheme
 
 
 def direction_average(img, grad):

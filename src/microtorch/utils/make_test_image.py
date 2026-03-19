@@ -8,13 +8,14 @@ from pathlib import Path
 from multiprocessing import freeze_support
 import torch
 
+from .acquisition_scheme import acquisition_scheme_loader, txt_file_loader
+from microtorch.model_maker import ModelMaker
+
 def main():
     import argparse
     import numpy as np
     import torch
     import os
-
-    from src.utils.acquisition_scheme import acquisition_scheme_loader, txt_file_loader
 
     parser = argparse.ArgumentParser()
 
@@ -44,9 +45,6 @@ def main():
 
     # Add parent directory to Python path
     sys.path.append(str(Path(__file__).resolve().parent.parent))
-
-    from src.utils.acquisition_scheme import acquisition_scheme_loader, txt_file_loader
-    from model_maker import ModelMaker
 
     modelfunc = ModelMaker(args.model)
 

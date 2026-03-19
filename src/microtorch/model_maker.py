@@ -3,9 +3,9 @@ import re
 import yaml
 
 import torch
-import src.signal_models as signal_models_module
+import microtorch.signal_models as signal_models_module
 
-from src.utils.paths import MODELS_CONF_PATH
+from microtorch.utils.paths import MODELS_CONF_PATH
 
 
 class ModelMaker:
