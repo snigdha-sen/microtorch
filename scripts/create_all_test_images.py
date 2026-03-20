@@ -28,6 +28,7 @@ MODEL_GRAD = {
     "Astrosticks": "simulation_data/grad/grad_verdict.txt",
     "Ballt2Ballt2": "simulation_data/grad/grad_ivim_T2.txt",
     "Ballt2": "simulation_data/grad/grad_ivim_T2_small.txt",
+    "Tensor": "simulation_data/grad/grad_HCP_with_deltas.txt",
 }
 
 
@@ -35,7 +36,7 @@ MODEL_GRAD = {
 def run_make_test_image(model_name: str, grad_path: str):
     cmd = [
         sys.executable,
-        "-m", "src.utils.make_test_image",
+        "-m", "microtorch.utils.make_test_image",
         "-m", model_name,
         "-g", grad_path,
     ]
@@ -67,7 +68,7 @@ def get_image_and_mask(model_name: str):
 def run_fit(model_name: str, grad_path: str, image_path: Path, mask_path: Path):
     cmd = [
         sys.executable,
-        "-m", "src.main",
+        "-m", "microtorch.main",
         f"data.image={image_path}",
         f"data.mask={mask_path}",
         f"acquisition.grad={grad_path}",
