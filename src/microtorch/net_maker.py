@@ -92,7 +92,7 @@ class Net(nn.Module):
             dropout=dropout_fraction,
         )
 
-    def forward(self, X):        
+    def forward(self, X, return_latent=False):        
         
         #get the model function and clipping method
         modelfunc = self.modelfunc
@@ -146,7 +146,16 @@ class Net(nn.Module):
                 )
         '''
 
-        params = self.encoder(X)
+        params_out = self.encoder(X)
+
+        if self.network_type == "vae":
+            params, mu, logvar = params_out
+        else:
+            params = params_out
+            mu = logvar = None
+
+        if self.network_type == "dev_mlp": # can make softmax mlp by choosing clipping method to be softmax
+            params = F.softplus(params)
 
         if (
             self.clipping_method_fraction == "softmax"
@@ -154,8 +163,6 @@ class Net(nn.Module):
         ):
             params[:, :frac_start] = self.post_param_dropout(params[:, :frac_start])
 
-        if self.network_type == "dev_mlp": # can make softmax mlp by choosing clipping method to be softmax
-            params = F.softplus(params)
 
         for i in range(modelfunc.n_parameters):
             params[:, i] = squash(
@@ -180,5 +187,8 @@ class Net(nn.Module):
         # compute the predicted signal using the model function with the current parameters
         X = modelfunc(self.grad, params)
                     
-        return X.to(torch.float32), params
+        if return_latent and self.network_type == "vae":
+            return X.to(torch.float32), params, mu, logvar
+        else:
+            return X.to(torch.float32), params
     
