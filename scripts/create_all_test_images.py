@@ -23,6 +23,7 @@ MODEL_GRAD = {
     "Msdki": "simulation_data/grad/grad_HCP_with_deltas.txt",
     "Zeppelin": "simulation_data/grad/grad_HCP_with_deltas.txt",
     "Sphere": "simulation_data/grad/grad_verdict.txt",
+    "BallDot": "simulation_data/grad/grad_sandi.txt",
     "Stick": "simulation_data/grad/grad_HCP_with_deltas.txt",
     # "Cylinder": "simulation_data/grad/grad_HCP_with_deltas.txt",
     "Astrosticks": "simulation_data/grad/grad_verdict.txt",
