@@ -1,5 +1,5 @@
 import torch
-from src.utils.geometry import sphere2cart
+from microtorch.utils.geometry import sphere2cart
 
 class Ball:
     """

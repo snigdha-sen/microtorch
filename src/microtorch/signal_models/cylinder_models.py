@@ -5,7 +5,7 @@ import torch
 import scipy.special as special
 from typing import Optional
 
-from src.utils.geometry import sphere2cart
+from microtorch.utils.geometry import sphere2cart
 
 # Precompute cylinder roots ONCE (order=1, first N roots)
 # SciPy returns a NumPy array

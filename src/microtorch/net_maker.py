@@ -3,10 +3,21 @@ import torch.nn as nn
 import torch.nn.functional as F
 import copy
 
+from networks import build_network
+
 class Net(nn.Module):
 
-    def __init__(self, grad, modelfunc, input_neurons, layer_dims, n_layers, dropout_fraction, clipping_method='clamp',
-                 clipping_method_fraction="clamp", activation=nn.PReLU()):
+    def __init__(self, 
+                 grad, 
+                 modelfunc, 
+                 input_neurons, 
+                 layer_dims, 
+                 n_layers, 
+                 dropout_fraction, 
+                 network_type="hidden_dropout_mlp", 
+                 clipping_method='clamp',
+                 clipping_method_fraction="clamp", 
+                 activation=nn.PReLU()):
         """
         Define the network architecture.
         
@@ -20,17 +31,22 @@ class Net(nn.Module):
         """
 
         super(Net, self).__init__()
+
         self.grad = grad
         self.modelfunc = modelfunc
         self.clipping_method = clipping_method
         self.clipping_method_fraction = clipping_method_fraction
-        self.dropout_fraction = dropout_fraction
+        self.network_type = network_type
+
+        self.post_param_dropout = (
+            nn.Dropout(dropout_fraction) if dropout_fraction > 0 else None
+        )
 
         if modelfunc.n_fractions > 1:
             dim_out = modelfunc.n_parameters + modelfunc.n_fractions
         else:
             dim_out = modelfunc.n_parameters
-
+        '''
         # ----------------------------------------------------------------
         # dev_MLP / softmax_MLP — original flat encoder (no per-layer dropout)
         # ----------------------------------------------------------------
@@ -63,6 +79,17 @@ class Net(nn.Module):
 
         self.hidden = nn.Sequential(*hidden_layers)
         self.head = nn.Linear(layer_dims, dim_out)  # output head, no dropout
+        '''
+
+        self.encoder = build_network(
+            network_type,
+            input_neurons=input_neurons,
+            layer_dims=layer_dims,
+            n_layers=n_layers,
+            dim_out=dim_out,
+            activation=activation,
+            dropout=dropout_fraction,
+        )
 
     def forward(self, X):        
         
@@ -75,7 +102,7 @@ class Net(nn.Module):
         frac_start = modelfunc.n_parameters
         frac_end   = frac_start + modelfunc.n_fractions  # all the fractions
 
-
+        '''
         #choose which network - messy for now but will clean up after testing different options
         #network = "dev_MLP"
         #network = "softmax_MLP"
@@ -116,21 +143,45 @@ class Net(nn.Module):
                     modelfunc.parameter_ranges[i, 0],
                     modelfunc.parameter_ranges[i, 1],
                 )
+        '''
+
+        params = self.encoder(X)
+
+        if (
+            self.clipping_method_fraction == "softmax"
+            and self.post_param_dropout is not None
+        ):
+            params[:, :frac_start] = self.post_param_dropout(params[:, :frac_start])
+
+        if self.network_type == "dev_mlp": # can make softmax mlp by choosing clipping method to be softmax
+            params = F.softplus(params)
+
+        for i in range(modelfunc.n_parameters):
+            params[:, i] = Net.squash(
+                params[:, i].clone().unsqueeze(1),
+                clipping_method,
+                modelfunc.parameter_ranges[i, 0],
+                modelfunc.parameter_ranges[i, 1],
+            )
 
         #set min/max of volume fraction parameters and enforce sum to 1 across fractions
         if modelfunc.n_fractions > 1:
-            fractions = Net.fraction_squash(params[:, frac_start:frac_end], clipping_method_fraction, modelfunc)
-            
+            fractions = Net.fraction_squash(
+                clipping_method_fraction,
+                params[:, frac_start:frac_end], 
+                modelfunc,
+                tau=1.0
+                )
             #store all the fractions 
             params[:, frac_start:frac_end] = fractions
         
         # compute the predicted signal using the model function with the current parameters
-        X = self.modelfunc(self.grad, params)
+        X = modelfunc(self.grad, params)
                     
         return X.to(torch.float32), params
     
 
-
+    @staticmethod
     def squash(param, method, p_min, p_max):
         """
         Constrain the parameter values to be within the specified range 
@@ -168,11 +219,10 @@ class Net(nn.Module):
 
         return unsqueezed_param
     
-
-    def fraction_squash(logits_all, method, modelfunc):
+    @staticmethod
+    def fraction_squash(method, logits_all, modelfunc, tau=1.0):
 
         if method == 'softmax':
-            tau = 1.0
             fractions = torch.softmax(logits_all / tau, dim=1)
 
         elif method == 'clamp':
