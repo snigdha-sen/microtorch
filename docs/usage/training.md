@@ -16,14 +16,14 @@ training.clip=1.0
 training.operation=fit
 ```
 
-## Optuna Tuning
+# Optuna Tuning
 
-# Overview
+## Overview
 
 Optuna is an automatic hyperparameter optimization framework. By selecting the optuna_tuner option in the conf/training/default.yaml file, you can enable Optuna-based tuning. This allows the model to search for the best hyperparameters, optimizing them during the training process. If the load_tuned option is selected, the best hyperparameters found during the search will be used for the final model fitting.
 
-# Configuration
-Tuning Options
+## Configuration
+### Tuning Options
 
 In the conf/training/default.yaml file, the tune option determines how the tuning process works:
 
@@ -42,11 +42,11 @@ Patience
 
 Other hyperparameters that are not optimized will use the values defined in the training/default.yaml file.
 
-# Trials
+### Trials
 
 Optuna relies on a number of trials to explore the hyperparameter search space. The number of trials can be set under the n_trials option in the training/default.yaml file. It is recommended to use at least 40-50 trials to efficiently explore the hyperparameter space.
 
-# Hyperparameter Search Space
+### Hyperparameter Search Space
 
 The hyperparameter search space is defined in the tuning/default.yaml file. Each hyperparameter can have different types:
 
@@ -72,7 +72,7 @@ Example Configuration
 
 Here is an example of a tuning/default.yaml file configuration:
 
-# Hyperparameter search space
+### Hyperparameter search space
 
 learning_rate:
   type: float
