@@ -3,10 +3,22 @@ import torch.nn as nn
 import torch.nn.functional as F
 import copy
 
+from microtorch.networks import build_network
+from microtorch.utils.network_constraints import squash, fraction_squash
+
 class Net(nn.Module):
 
-    def __init__(self, grad, modelfunc, input_neurons, layer_dims, n_layers, dropout_fraction, clipping_method='clamp',
-                 clipping_method_fraction="clamp", activation=nn.PReLU()):
+    def __init__(self, 
+                 grad, 
+                 modelfunc, 
+                 input_neurons, 
+                 layer_dims, 
+                 n_layers, 
+                 dropout_fraction, 
+                 network_type="hidden_dropout_mlp", 
+                 clipping_method='clamp',
+                 clipping_method_fraction="clamp", 
+                 activation=nn.PReLU()):
         """
         Define the network architecture.
         
@@ -20,17 +32,22 @@ class Net(nn.Module):
         """
 
         super(Net, self).__init__()
+
         self.grad = grad
         self.modelfunc = modelfunc
         self.clipping_method = clipping_method
         self.clipping_method_fraction = clipping_method_fraction
-        self.dropout_fraction = dropout_fraction
+        self.network_type = network_type
+
+        self.post_param_dropout = (
+            nn.Dropout(dropout_fraction) if dropout_fraction > 0 else None
+        )
 
         if modelfunc.n_fractions > 1:
             dim_out = modelfunc.n_parameters + modelfunc.n_fractions
         else:
             dim_out = modelfunc.n_parameters
-
+        '''
         # ----------------------------------------------------------------
         # dev_MLP / softmax_MLP — original flat encoder (no per-layer dropout)
         # ----------------------------------------------------------------
@@ -63,8 +80,19 @@ class Net(nn.Module):
 
         self.hidden = nn.Sequential(*hidden_layers)
         self.head = nn.Linear(layer_dims, dim_out)  # output head, no dropout
+        '''
 
-    def forward(self, X):        
+        self.encoder = build_network(
+            network_type,
+            input_neurons=input_neurons,
+            layer_dims=layer_dims,
+            n_layers=n_layers,
+            dim_out=dim_out,
+            activation=activation,
+            dropout=dropout_fraction,
+        )
+
+    def forward(self, X, return_latent=False):        
         
         #get the model function and clipping method
         modelfunc = self.modelfunc
@@ -75,7 +103,7 @@ class Net(nn.Module):
         frac_start = modelfunc.n_parameters
         frac_end   = frac_start + modelfunc.n_fractions  # all the fractions
 
-
+        '''
         #choose which network - messy for now but will clean up after testing different options
         #network = "dev_MLP"
         #network = "softmax_MLP"
@@ -116,92 +144,51 @@ class Net(nn.Module):
                     modelfunc.parameter_ranges[i, 0],
                     modelfunc.parameter_ranges[i, 1],
                 )
+        '''
+
+        params_out = self.encoder(X)
+
+        if self.network_type == "vae":
+            params, mu, logvar = params_out
+        else:
+            params = params_out
+            mu = logvar = None
+
+        if self.network_type == "dev_mlp": # can make softmax mlp by choosing clipping method to be softmax
+            params = F.softplus(params)
+
+        if (
+            self.clipping_method_fraction == "softmax"
+            and self.post_param_dropout is not None
+        ):
+            params[:, :frac_start] = self.post_param_dropout(params[:, :frac_start])
+
+
+        for i in range(modelfunc.n_parameters):
+            params[:, i] = squash(
+                params[:, i].clone().unsqueeze(1),
+                clipping_method,
+                modelfunc.parameter_ranges[i, 0],
+                modelfunc.parameter_ranges[i, 1],
+                T=1.0
+            )
 
         #set min/max of volume fraction parameters and enforce sum to 1 across fractions
         if modelfunc.n_fractions > 1:
-            fractions = Net.fraction_squash(params[:, frac_start:frac_end], clipping_method_fraction, modelfunc)
-            
+            fractions = fraction_squash(
+                clipping_method_fraction,
+                params[:, frac_start:frac_end], 
+                modelfunc,
+                tau=1.0
+                )
             #store all the fractions 
             params[:, frac_start:frac_end] = fractions
         
         # compute the predicted signal using the model function with the current parameters
-        X = self.modelfunc(self.grad, params)
+        X = modelfunc(self.grad, params)
                     
-        return X.to(torch.float32), params
-    
-
-
-    def squash(param, method, p_min, p_max):
-        """
-        Constrain the parameter values to be within the specified range 
-        [p_min, p_max] using the specified method.
-
-        Args:
-            param (torch.Tensor): The parameter tensor to be constrained.
-            method (str): The method to use for constraining the parameters. 
-            Options are 'clamp' (simple clipping) or 'sigmoid' (sigmoid squashing).
-            p_min (float): The minimum value for the parameter.
-            p_max (float): The maximum value for the parameter.
-
-        Returns:
-            unsqueezed_param (torch.Tensor): The constrained parameter tensor, 
-            with the same shape as the input param but squeezed to remove the extra dimension.
-        """
-
-        if method == 'clamp':
-
-            squashed_param_tensor = torch.clamp(param, min=p_min, max=p_max)
-            unsqueezed_param = squashed_param_tensor.squeeze(1)
-
-        elif method == 'sigmoid':
-
-            T = 1.0
-
-            sigmoid_param = torch.sigmoid(param / T)
-            scaled_param = p_min + (p_max - p_min) * sigmoid_param
-            unsqueezed_param = scaled_param.squeeze(1)
-        elif method == 'free': #no squashing 
-            unsqueezed_param = param.squeeze(1)
-
-        else:    
-            raise ValueError("Unsupported method: {}".format(method))
-
-        return unsqueezed_param
-    
-
-    def fraction_squash(logits_all, method, modelfunc):
-
-        if method == 'softmax':
-            tau = 1.0
-            fractions = torch.softmax(logits_all / tau, dim=1)
-
-        elif method == 'clamp':
-            if modelfunc.n_fractions == 1:
-                # Two compartments: clip the single free fraction to [0,1]
-                fractions = Net.squash(
-                    logits_all[:, 0].clone().unsqueeze(1),
-                    method,
-                    0, 1
-                )
-                fractions = torch.cat([fractions, 1 - fractions], dim=1)  # implicit second fraction
-            else:
-                #More than two compartments
-                # extract free fractions and make sure in [0,1]
-                f_free = torch.relu(logits_all[:, :-1])  # all but last fraction are free 
-
-                # Compute implicit last fraction
-                final_f = 1 - f_free.sum(dim=1, keepdim=True)
-                final_f = torch.clamp(final_f, min=1e-8)  # prevent negative last fraction
-
-                # Concatenate free fractions + last fraction
-                fractions = torch.cat([f_free, final_f], dim=1)
-
-                # Normalize all fractions so sum = 1 
-                sum_all = fractions.sum(dim=1, keepdim=True)
-                fractions = fractions / torch.clamp(sum_all, min=1e-8)
-        elif method == 'free': #no squashing 
-            fractions = logits_all  
+        if return_latent and self.network_type == "vae":
+            return X.to(torch.float32), params, mu, logvar
         else:
-            raise ValueError("Unsupported method: {}".format(method))
-
-        return fractions
+            return X.to(torch.float32), params
+    
