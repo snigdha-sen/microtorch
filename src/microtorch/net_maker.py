@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import copy
 
-from networks import build_network
-from utils.network_constraints import squash, fraction_squash
+from microtorch.networks import build_network
+from microtorch.utils.network_constraints import squash, fraction_squash
 
 class Net(nn.Module):
 
