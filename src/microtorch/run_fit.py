@@ -4,6 +4,7 @@ from pathlib import Path
 from hydra.core.hydra_config import HydraConfig
 
 import numpy as np
+from omegaconf import OmegaConf
 import torch
 import torch.nn as nn
 import nibabel as nib
@@ -159,5 +160,9 @@ def run_fit(cfg):
         strip_filename(cfg.data.image) + "_param_maps.nii.gz"
     )
     nib.save(new_img, out_file)
+
+    #save the resolved config for reproducibility
+    output_config_path = Path(output_folder) / f"{strip_filename(cfg.data.image)}_config.yaml"
+    output_config_path.write_text(OmegaConf.to_yaml(cfg, resolve=True))
 
     return param_map, modelfunc, out_file
