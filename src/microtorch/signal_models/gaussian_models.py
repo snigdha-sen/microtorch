@@ -81,7 +81,7 @@ class Zeppelin:
     
     """
     def __init__(self):
-        self.parameter_ranges = [[.001, 3], [.001, 1.0], [0, torch.pi/2], [0, torch.pi]]
+        self.parameter_ranges = [[.001, 3], [.001, 1.0], [-torch.pi/2, torch.pi/2], [0, torch.pi]]
         self.parameter_names      = ['Dpar', 'k', 'theta', 'phi']
         self.n_parameters         = 4
         self.spherical_mean   = False
@@ -184,7 +184,7 @@ class Tensor:
             [0.001, 3.0],          # Dpar
             [0.0, 1.0],            # k1
             [0.0, 1.0],            # k2
-            [0.0, torch.pi / 2],   # theta
+            [-torch.pi/2, torch.pi/2],   # theta
             [0.0, torch.pi],       # phi
             [0.0, torch.pi],   # psi
         ]
