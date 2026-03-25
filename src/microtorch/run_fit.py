@@ -2,9 +2,11 @@ import os
 import random
 from pathlib import Path
 from hydra.core.hydra_config import HydraConfig
+from copy import deepcopy
+
 
 import numpy as np
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, open_dict
 import torch
 import torch.nn as nn
 import nibabel as nib
@@ -117,6 +119,7 @@ def run_fit(cfg):
         layer_dims=hyperparams["hidden_size"],
         n_layers=hyperparams["num_layers"],
         dropout_fraction=hyperparams["dropout_frac"],
+        network_type=cfg.training.network_type,
         clipping_method=cfg.training.clip,
         clipping_method_fraction=cfg.training.clip_fraction,
         activation=mlp_activation[hyperparams["activation"]],
@@ -161,8 +164,20 @@ def run_fit(cfg):
     )
     nib.save(new_img, out_file)
 
-    #save the resolved config for reproducibility
+    # -----------------------
+    # Save the used config.yaml 
+    # -----------------------
+    
+    # if tuning wasn't done, remove the tuning section to avoid confusion
+    cfg_to_save = deepcopy(cfg) 
+    print(cfg.training.tune)
+    print(cfg_to_save)
+    if not cfg.training.tune == "optuna_tuner" and "tuning" in cfg_to_save:
+        with open_dict(cfg_to_save):
+            del cfg_to_save["tuning"]
+            print("Removed tuning section from saved config since tuning was not performed")
+
     output_config_path = Path(output_folder) / f"{strip_filename(cfg.data.image)}_config.yaml"
-    output_config_path.write_text(OmegaConf.to_yaml(cfg, resolve=True))
+    output_config_path.write_text(OmegaConf.to_yaml(cfg_to_save, resolve=True))
 
     return param_map, modelfunc, out_file
