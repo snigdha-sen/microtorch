@@ -15,6 +15,6 @@ plot:
 
 paths:
   models_dir: src/models
-  sim_data_dir: src/simulated_data/data
-  grad_dir: src/simulated_data/grad
+  sim_data_dir: simulation_data/data
+  grad_dir: simulation_data/grad
   

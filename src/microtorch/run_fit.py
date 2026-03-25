@@ -54,6 +54,8 @@ def run_fit(cfg):
     # -----------------------
     # Acquisition
     # -----------------------
+    model_grad = cfg.acquisition.model_grad.get(cfg.model.name)
+
     if cfg.acquisition.bvals is not None:
         grad = txt_file_loader(
             cfg.acquisition.bvals,
@@ -63,10 +65,19 @@ def run_fit(cfg):
             cfg.acquisition.TE,
             cfg.acquisition.bdelta,
         )
+        print(f"Loaded acquisition scheme from separate bvals, bvecs, etc files.")
     elif cfg.acquisition.grad is not None:
         grad = acquisition_scheme_loader(cfg.acquisition.grad)
+        print(f"Loaded acquisition scheme from {cfg.acquisition.grad}")
+    elif model_grad is not None:
+        grad = acquisition_scheme_loader(model_grad)
+        print(f"Loaded default acquisition scheme for model {cfg.model.name}: {model_grad}")
     else:
-        raise ValueError("Either bvals/bvecs or grad must be provided")
+        raise ValueError(
+            f"No acquisition scheme found for model '{cfg.model.name}'. "
+            "Provide acquisition.bvals/bvecs, acquisition.grad, "
+            "or add a default gradient file for this model to src/microtorch/conf/acquisition/default.yaml."
+        )
 
     # -----------------------
     # Load image & mask
@@ -170,8 +181,6 @@ def run_fit(cfg):
     
     # if tuning wasn't done, remove the tuning section to avoid confusion
     cfg_to_save = deepcopy(cfg) 
-    print(cfg.training.tune)
-    print(cfg_to_save)
     if not cfg.training.tune == "optuna_tuner" and "tuning" in cfg_to_save:
         with open_dict(cfg_to_save):
             del cfg_to_save["tuning"]

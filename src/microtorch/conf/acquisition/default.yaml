@@ -7,3 +7,21 @@ TE: ""                        # -TE
 TR: ""                        # -TR
 TI: ""                        # -TI
 bdelta: null                  # -bd / --bdelta
+
+#default gradient files for each model (can be overridden by command line)
+model_grad:
+  VERDICT: ${paths.grad_dir}/grad_verdict.txt
+  SANDI: ${paths.grad_dir}/grad_sandi.txt
+  IVIM: ${paths.grad_dir}/grad_ivim.txt
+  BallStick: ${paths.grad_dir}/grad_HCP_with_deltas.txt
+  ZeppelinZeppelin: ${paths.grad_dir}/grad_anisotropic_ivim.txt
+  Ball: ${paths.grad_dir}/grad_HCP_with_deltas.txt
+  Msdki: ${paths.grad_dir}/grad_HCP_with_deltas.txt
+  Zeppelin: ${paths.grad_dir}/grad_HCP_with_deltas.txt
+  Sphere: ${paths.grad_dir}/grad_verdict.txt
+  BallDot: ${paths.grad_dir}/grad_sandi.txt
+  Stick: ${paths.grad_dir}/grad_HCP_with_deltas.txt
+  Astrosticks: ${paths.grad_dir}/grad_verdict.txt
+  Ballt2Ballt2: ${paths.grad_dir}/grad_ivim_T2.txt
+  Ballt2: ${paths.grad_dir}/grad_ivim_T2.txt
+  Tensor: ${paths.grad_dir}/grad_HCP_with_deltas.txt
