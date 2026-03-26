@@ -1,7 +1,7 @@
 import torch
 import pytest
 
-from signal_models.sphere_models import Sphere  # adjust to your actual import path
+from microtorch.signal_models.sphere_models import Sphere  # adjust to your actual import path
 
 
 class DummyGrad:
@@ -43,7 +43,7 @@ def test_sphere_output_shape_single_param_set(grad):
     S = model(grad, params)
 
     # Expect one value per measurement
-    assert S.shape == (grad.bvalues.numel(),)
+    assert S.shape == (1, grad.bvalues.numel())
 
 
 def test_signal_increases_with_radius_on_average(grad):

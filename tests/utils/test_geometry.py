@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from utils.geometry import sphere2cart, cart2sphere
+from microtorch.utils.geometry import sphere2cart, cart2sphere
 
 def test_sphere2cart_z_axis():
     theta = torch.tensor([0.0])

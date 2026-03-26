@@ -1,5 +1,5 @@
 from pathlib import Path
-from utils.helpers import strip_filename
+from microtorch.utils.helpers import strip_filename
 
 def test_strip_filename_nii_gz():
     path = "/data/sub-01/anat/image.nii.gz"

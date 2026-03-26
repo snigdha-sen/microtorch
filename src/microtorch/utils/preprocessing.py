@@ -17,8 +17,10 @@ def direction_average(img, grad):
     """
 
     # build shell definition table
-    shell_columns = [grad.bvalues]
+    shell_columns = []
 
+    if hasattr(grad, "bvalues") and grad.bvalues is not None:
+        shell_columns.append(grad.bvalues)
     if hasattr(grad, "TE") and grad.TE is not None:
         shell_columns.append(grad.TE)
     if hasattr(grad, "delta") and grad.delta is not None:
@@ -29,7 +31,11 @@ def direction_average(img, grad):
         shell_columns.append(grad.bshape)
     if hasattr(grad, "bdelta") and grad.bdelta is not None:
         shell_columns.append(grad.bdelta)
-        
+
+    # Make sure we have at least one column to stack
+    if len(shell_columns) == 0:
+        raise ValueError("No gradient information available to define shells!")
+
     shell_table = torch.stack(shell_columns, dim=1) 
         
         
@@ -39,7 +45,7 @@ def direction_average(img, grad):
     # Preallocate
     da_img  = torch.zeros(img.shape[0:3] + (unique_shells.shape[0],), dtype=img.dtype)
 
-    da_bvecs = torch.zeros_like(unique_shells.unsqueeze(1).repeat(1, grad.bvecs.shape[1])) 
+    da_bvecs = torch.zeros((unique_shells.shape[0], grad.bvecs.shape[1]), dtype=grad.bvecs.dtype)
     da_bvalues = torch.zeros_like(unique_shells)
     da_delta = torch.zeros_like(unique_shells) if grad.delta is not None else None
     da_Delta = torch.zeros_like(unique_shells) if grad.Delta is not None else None

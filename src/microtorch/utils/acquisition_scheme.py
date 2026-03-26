@@ -1,11 +1,6 @@
 import numpy as np
 import torch
 
-
-# -----------------------------
-# Core data container
-# -----------------------------
-
 class AcquisitionScheme:
     def __init__(
         self,
@@ -154,6 +149,7 @@ def acquisition_scheme_loader(filepath):
     bdelta = data[:, 7] if data.shape[1] > 7 else None
 
     # compute gradient strengths if possible
+    gradient_strengths = None
     if Delta is not None and delta is not None:
         gamma = 2.675987e2 # units are rad/ms/mT to stay consistent with b-values in ms/μm^2 and delta/Delta in ms
         gradient_strengths = np.sqrt(bvalues) / (gamma * delta * np.sqrt(Delta - delta / 3))
@@ -214,12 +210,13 @@ def load_grad(grad_filename):
     #TO DO: replace with something that finds the file e.g. pkg_resources.resource_filename
     #grad_files_path = '/Users/paddyslator/python/self-qmri/data'
     try:
-        #grad = torch.tensor(np.loadtxt(grad_filename), dtype=torch.float32)  
         grad = np.loadtxt(grad_filename)
-        
-        if len(grad.shape) < 2:
-            grad = grad[:,None]
-        
-        return grad #np.transpose(grad)
-    except:
+        if grad.ndim < 2:
+            grad = grad[:, None]  # promote 1D to column
+        return grad
+    except OSError:
+        # File missing → return None
         return None
+    except Exception as e:
+        # File exists but invalid → raise ValueError
+        raise ValueError(f"Invalid gradient file: {grad_filename}") from e
