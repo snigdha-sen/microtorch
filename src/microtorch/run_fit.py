@@ -122,7 +122,7 @@ def run_fit(cfg):
         mlp_activation=mlp_activation,
         X_train=X_train,
         cfg=cfg)
-
+    
     net = Net(
         grad,
         modelfunc,
@@ -171,7 +171,7 @@ def run_fit(cfg):
     new_img = nib.Nifti1Image(param_map, img_nii.affine, img_nii.header)
 
     out_file = output_folder / (
-        strip_filename(cfg.data.image) + "_param_maps.nii.gz"
+        strip_filename(cfg.data.image) + f"_{cfg.training.network_type}" + "_param_maps.nii.gz"
     )
     nib.save(new_img, out_file)
 

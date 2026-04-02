@@ -73,7 +73,7 @@ def run_fit(model_name: str, grad_path: str, image_path: Path, mask_path: Path, 
         "-m", "microtorch.main",
         f"data.image={image_path}",
         f"model.name={model_name}",
-        f"training.network={network_type}",
+        f"training.network_type={network_type}",
         "plot.enabled=false",
         ]
 

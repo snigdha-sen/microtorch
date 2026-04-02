@@ -1,10 +1,6 @@
-num_iters: 20         # -ni / --num_iters
+num_iters: 10         # -ni / --num_iters
 learning_rate: 3e-4    # -lr / --learning_rate
-activation: prelu     # -ac / --activation
 seed: null             # -se / --seed (None → auto-generate)
-dropout_frac: 0.1     # -df / --dropout_frac
-layer_size: 256      # -ls / --layer_size
-num_layers: 3         # -nl / --num_layers
 clip: sigmoid   # -cl / --clip (choices: 'clamp', 'sigmoid')
 clip_fraction: softmax # -cf / --clip_fraction (choices: 'softmax', 'clamp')
 operation: train+fit  # -op / --operation (choices: 'train', 'fit', 'train+fit')
@@ -12,3 +8,12 @@ patience: 10         # -pa / --patience (early stopping patience)
 tune: load_tuned # -tu / --tune (choices: 'optuna_tuner', 'load_tuned', 'default')
 n_trials: 10 # -tr / --trial_num (number of trials for optuna search)
 network_type: hidden_dropout_mlp # -nt / --network_type (choices: 'dev_mlp', 'hidden_dropout_mlp', 'cnn', 'vae')
+dropout_frac: 0.1     # -df / --dropout_frac
+layer_size: 256      # -ls / --layer_size (size of hidden layers [for MLPs or VAE], number of filters [for CNNs])
+num_layers: 3         # -nl / --num_layers
+activation: prelu     # -ac / --activation
+#latent_dim: 128     # -hd / --hidden_dim (additional VAE-specific parameter for the size of the latent layer)
+
+
+
+

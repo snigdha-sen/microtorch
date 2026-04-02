@@ -1,12 +1,12 @@
 from .mlp import DevMLP, HiddenDropoutMLP
-from .cnn import SimpleCNN
-from .vae import VAE
+#from .cnn import SimpleCNN
+#from .vae import VAE
 
 NETWORK_REGISTRY = {
     "dev_mlp": DevMLP,
     "hidden_dropout_mlp": HiddenDropoutMLP,
-    "cnn": SimpleCNN,
-    "vae": VAE
+    #"cnn": SimpleCNN,
+    #"vae": VAE
 }
 
 def build_network(name, **kwargs):

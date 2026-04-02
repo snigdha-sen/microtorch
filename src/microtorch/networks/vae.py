@@ -3,21 +3,25 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class VAE(nn.Module):
-    def __init__(self, input_dim, latent_dim, dim_out, hidden_dim=128):
+    def __init__(self, input_neurons, layer_dims, n_layers=None, dim_out=None, activation=None, dropout=None, latent_dim=64):
         super().__init__()
+        self.activation = activation
+        self.dropout = nn.Dropout(dropout) if dropout > 0 else None
         # Encoder
-        self.fc1 = nn.Linear(input_dim, hidden_dim)
-        self.fc_mu = nn.Linear(hidden_dim, latent_dim)
-        self.fc_logvar = nn.Linear(hidden_dim, latent_dim)
+        self.fc1 = nn.Linear(input_neurons, layer_dims)
+        self.fc_mu = nn.Linear(layer_dims, latent_dim)
+        self.fc_logvar = nn.Linear(layer_dims, latent_dim)
         # Decoder
         self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, dim_out)
+            nn.Linear(latent_dim, layer_dims),
+            self.activation,
+            nn.Linear(layer_dims, dim_out)
         )
 
     def encode(self, x):
-        h = F.relu(self.fc1(x))
+        h = self.activation(self.fc1(x))
+        if self.dropout:
+            h = self.dropout(h)
         return self.fc_mu(h), self.fc_logvar(h)
 
     def reparameterize(self, mu, logvar):
@@ -31,3 +35,5 @@ class VAE(nn.Module):
         params = self.decoder(z)
         return params, mu, logvar
 
+
+     
