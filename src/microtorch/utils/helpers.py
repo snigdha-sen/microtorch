@@ -1,6 +1,7 @@
+from typing import Union, Optional
 from pathlib import Path
 
-def strip_filename(path):
+def strip_filename(path: Union[str, Path]) -> str:
     """
     Removes folder path and strips '.nii' or '.nii.gz' extension from a file path.
 
@@ -23,7 +24,11 @@ def strip_filename(path):
 
 
     
-def most_recent_output_file(output_root, model_name, network_type="hidden_dropout_mlp"):
+def most_recent_output_file(
+    output_root: Union[str, Path],
+    model_name: str,
+    network_type: str = "hidden_dropout_mlp"
+) -> Optional[Path]:
     """
     Find the most recent output file for a given model and network.
 

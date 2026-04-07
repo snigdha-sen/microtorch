@@ -4,13 +4,19 @@ import logging
 import yaml
 from pathlib import Path
 import optuna
-from optuna.trial import TrialState
+from typing import Any, Dict
+from optuna.trial import Trial, TrialState
+from omegaconf import DictConfig
+import torch
 from hydra.core.hydra_config import HydraConfig
 from microtorch.net_maker import Net
 from microtorch.train import train
 import torch.nn as nn
 
-def sample_hyperparams(trial, tuning_cfg):
+from microtorch.utils.acquisition_scheme import AcquisitionScheme
+from microtorch.model_maker import ModelMaker
+
+def sample_hyperparams(trial: Trial, tuning_cfg: DictConfig) -> Dict[str, Any]:
     """Dynamically sample hyperparams from tuning config."""
     params = {}
     for name, spec in tuning_cfg.items():
@@ -25,11 +31,12 @@ def sample_hyperparams(trial, tuning_cfg):
     return params
 
 def run_hyperparams_tuning(
-    grad,
-    modelfunc,
-    mlp_activation,
-    X_train,
-    cfg):
+    grad: AcquisitionScheme,
+    modelfunc: ModelMaker,
+    mlp_activation: Dict[str, nn.Module],
+    X_train: torch.Tensor,
+    cfg: DictConfig,
+) -> Dict[str, Any]:
     """
     Hyperparameter tuning routine using Optuna.
 
@@ -47,7 +54,7 @@ def run_hyperparams_tuning(
     """
     lossfunc = nn.MSELoss()
 
-    def objective(trial):
+    def objective(trial: Trial) -> float:
         # ---- Sample hyperparameters ----
         hp = sample_hyperparams(trial, cfg.tuning)
 
@@ -119,11 +126,12 @@ def run_hyperparams_tuning(
 
 
 def get_model_hyperparams(
-    grad,
-    modelfunc,
-    mlp_activation,
-    X_train,
-    cfg):
+    grad: AcquisitionScheme,
+    modelfunc: ModelMaker,
+    mlp_activation: Dict[str, nn.Module],
+    X_train: torch.Tensor,
+    cfg: DictConfig,
+) -> Dict[str, Any]:
     """
     Entry point for hyperparameter resolution.
 

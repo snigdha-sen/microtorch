@@ -1,17 +1,19 @@
+from typing import Optional, Union
+from pathlib import Path
 import numpy as np
 import torch
 
 class AcquisitionScheme:
     def __init__(
-        self,
-        bvalues,
-        bvecs,
-        gradient_strengths=None,
-        delta=None,
-        Delta=None,
-        TE=None,
-        bdelta=None,
-    ):
+    self,
+    bvalues: Union[np.ndarray, list],
+    bvecs: Union[np.ndarray, list],
+    gradient_strengths: Optional[Union[np.ndarray, list]] = None,
+    delta: Optional[Union[np.ndarray, list]] = None,
+    Delta: Optional[Union[np.ndarray, list]] = None,
+    TE: Optional[Union[np.ndarray, list]] = None,
+    bdelta: Optional[Union[np.ndarray, list]] = None,
+) -> None:
         """
         Container for acquisition scheme details.
 
@@ -41,7 +43,7 @@ class AcquisitionScheme:
         self.bdelta = _to_tensor_or_none(bdelta)
 
 
-def _to_tensor_or_none(x):
+def _to_tensor_or_none(x: Optional[Union[np.ndarray, list]]) -> Optional[torch.Tensor]:
     """
     Helper function to convert input to a PyTorch tensor or return None if input is None.
 
@@ -54,7 +56,7 @@ def _to_tensor_or_none(x):
     return torch.as_tensor(x, dtype=torch.float32)
 
 
-def _process_bvalues(bvals):
+def _process_bvalues(bvals: Union[np.ndarray, list]) -> np.ndarray:
     """
     Process b-values to ensure they are in the correct format and units.
     Args:
@@ -74,7 +76,7 @@ def _process_bvalues(bvals):
 
     return bvals
 
-def _process_TE(TE):
+def _process_TE(TE: Union[np.ndarray, list]) -> np.ndarray:
     TE = np.asarray(TE, dtype=np.float32)
 
     if np.any(TE < 0):
@@ -87,7 +89,13 @@ def _process_TE(TE):
     return TE
 
 
-def check_acquisition_scheme(bvalues, bvecs, delta=None, Delta=None, TE=None):
+def check_acquisition_scheme(
+    bvalues: np.ndarray,
+    bvecs: np.ndarray,
+    delta: Optional[np.ndarray] = None,
+    Delta: Optional[np.ndarray] = None,
+    TE: Optional[np.ndarray] = None,
+) -> None:
     """
     Validates the acquisition scheme parameters.
     Args:
@@ -124,7 +132,7 @@ def check_acquisition_scheme(bvalues, bvecs, delta=None, Delta=None, TE=None):
             if np.any(arr < 0):
                 raise ValueError(f"{name} must be non-negative")
 
-def acquisition_scheme_loader(filepath):
+def acquisition_scheme_loader(filepath: Union[str, Path]) -> AcquisitionScheme:
     """
     Load acquisition scheme from a single text file.
     Expected columns:
@@ -170,7 +178,14 @@ def acquisition_scheme_loader(filepath):
     )
 
 
-def txt_file_loader(bvals, bvecs, Delta=None, delta=None, TE=None, bdelta=None):
+def txt_file_loader(
+    bvals: Union[str, Path],
+    bvecs: Union[str, Path],
+    Delta: Optional[Union[str, Path]] = None,
+    delta: Optional[Union[str, Path]] = None,
+    TE: Optional[Union[str, Path]] = None,
+    bdelta: Optional[Union[str, Path]] = None,
+) -> AcquisitionScheme:
     """
     Load acquisition scheme from separate text files.
 
@@ -205,7 +220,7 @@ def txt_file_loader(bvals, bvecs, Delta=None, delta=None, TE=None, bdelta=None):
     )
 
 
-def load_grad(grad_filename):
+def load_grad(grad_filename: Union[str, Path]) -> Optional[np.ndarray]:
     """Load gradient information from a text file containing either b-values, b-vectors, or timing parameters."""
     #TO DO: replace with something that finds the file e.g. pkg_resources.resource_filename
     #grad_files_path = '/Users/paddyslator/python/self-qmri/data'

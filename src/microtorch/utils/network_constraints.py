@@ -1,6 +1,13 @@
+from typing import Any
 import torch
 
-def squash(param, method, p_min, p_max, T=1.0):
+def squash(
+    param: torch.Tensor,
+    method: str,
+    p_min: float,
+    p_max: float,
+    T: float = 1.0
+) -> torch.Tensor:
     """
     Constrain the parameter values to be within the specified range 
     [p_min, p_max] using the specified method.
@@ -35,7 +42,12 @@ def squash(param, method, p_min, p_max, T=1.0):
     return unsqueezed_param
 
 
-def fraction_squash(method, logits_all, modelfunc, tau=1.0):
+def fraction_squash(
+    method: str,
+    logits_all: torch.Tensor,
+    modelfunc: Any,
+    tau: float = 1.0
+) -> torch.Tensor:
 
     if method == 'softmax':
         fractions = torch.softmax(logits_all / tau, dim=1)

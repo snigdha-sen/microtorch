@@ -1,10 +1,19 @@
+from typing import Optional, Union, Sequence, Callable
 import torch
 import torch.nn as nn
 import copy
 
 
 class DevMLP(nn.Module):
-    def __init__(self, input_neurons, layer_dims, n_layers, dim_out, activation, dropout):
+    def __init__(
+        self, 
+        input_neurons: int, 
+        layer_dims: int, 
+        n_layers: int, 
+        dim_out: int, 
+        activation: nn.Module, 
+        dropout: float
+    ) -> None:
         super().__init__()
 
         layers = []
@@ -16,14 +25,22 @@ class DevMLP(nn.Module):
         self.net = nn.Sequential(*layers, nn.Linear(layer_dims, dim_out))
         self.dropout = nn.Dropout(dropout) if dropout > 0 else None
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.dropout:
             x = self.dropout(x)
         return self.net(x)
 
 
 class HiddenDropoutMLP(nn.Module):
-    def __init__(self, input_neurons, layer_dims, n_layers, dim_out, activation, dropout):
+    def __init__(
+        self, 
+        input_neurons: int, 
+        layer_dims: int, 
+        n_layers: int, 
+        dim_out: int, 
+        activation: nn.Module, 
+        dropout: float
+    ) -> None:
         super().__init__()
 
         layers = []
@@ -40,6 +57,6 @@ class HiddenDropoutMLP(nn.Module):
         self.hidden = nn.Sequential(*layers)
         self.head = nn.Linear(layer_dims, dim_out)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         h = self.hidden(x)
         return self.head(h)

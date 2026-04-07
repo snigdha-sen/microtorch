@@ -1,4 +1,5 @@
 # Import packages
+from typing import Optional
 import torch
 import torch.nn as nn
 
@@ -14,11 +15,11 @@ class RicianLoss(nn.Module):
     Methods:
         __init__(sigma): Initializes the RicianLoss with the specified noise standard deviation.
         forward(predictions, inputs): Computes the Rician loss between the predicted and input signals."""
-    def __init__(self, sigma=0.05):
+    def __init__(self, sigma: float = 0.05) -> None:
         super(RicianLoss, self).__init__()
         self.sigma = sigma
     #
-    def forward(self, predictions, inputs):
+    def forward(self, predictions: torch.Tensor, inputs: torch.Tensor) -> torch.Tensor:
 
         # Rician loss
         term1 = torch.log(inputs / (self.sigma ** 2))
@@ -50,12 +51,12 @@ class RicianLossStable(nn.Module):  #New Rician Loss with added stability
         forward(predictions, inputs): Computes the Rician loss between the predicted and input signals with enhanced numerical stability.
     
     """    
-    def __init__(self, sigma=0.05, eps=1e-8):
+    def __init__(self, sigma: float = 0.05, eps: float = 1e-8) -> None:
         super(RicianLossStable, self).__init__()
         self.sigma = sigma
         self.eps = eps  #Epsilon Param for avoiding 0/NaN
 
-    def forward(self, predictions, inputs):
+    def forward(self, predictions: torch.Tensor, inputs: torch.Tensor) -> torch.Tensor:
         # Ensure inputs and predictions are positive and non-zero
         inputs = torch.clamp(inputs, min=self.eps)
         predictions = torch.clamp(predictions, min=self.eps)

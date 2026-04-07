@@ -6,6 +6,7 @@ import scipy.special as special
 from typing import Optional
 
 from microtorch.utils.geometry import sphere2cart
+from microtorch.utils.acquisition_scheme import AcquisitionScheme
 
 # Precompute cylinder roots ONCE (order=1, first N roots)
 # SciPy returns a NumPy array
@@ -33,7 +34,7 @@ class Stick:
         self.n_parameters = 3
         self.spherical_mean = False
 
-    def __call__(self, grad, parameters):
+    def __call__(self, grad: AcquisitionScheme, parameters: torch.Tensor) -> torch.Tensor:
         n = grad.bvecs                  # (M, 3) unit vectors
         b = grad.bvalues                # (M,)
 
@@ -80,7 +81,7 @@ class Cylinder:
         self.n_roots = n_roots
         self.lambda_perp = float(lambda_perp)
 
-    def __call__(self, grad, parameters):
+    def __call__(self, grad: AcquisitionScheme, parameters: torch.Tensor) -> torch.Tensor:
         device = parameters.device
         dtype = parameters.dtype
 
@@ -181,7 +182,7 @@ class Astrosticks:
         else:
             self.parameter_ranges = [[float(fixed_D_par), float(fixed_D_par)]]
 
-    def __call__(self, grad, parameters):
+    def __call__(self, grad: AcquisitionScheme, parameters: torch.Tensor) -> torch.Tensor:
         b = grad.bvalues
         if b.ndim == 1:
             b = b.unsqueeze(0)  # (1, M)

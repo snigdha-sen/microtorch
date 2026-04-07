@@ -1,5 +1,6 @@
 import torch
 from microtorch.utils.geometry import sphere2cart
+from microtorch.utils.acquisition_scheme import AcquisitionScheme
 
 class Ball:
     """
@@ -22,7 +23,7 @@ class Ball:
         self.n_parameters           = 1
         self.spherical_mean     = None
 
-    def __call__(self, grad, parameters):    
+    def __call__(self, grad: AcquisitionScheme, parameters: torch.Tensor) -> torch.Tensor:    
         
         D        = parameters[:, 0].unsqueeze(1) 
         b_values = grad.bvalues
@@ -52,7 +53,7 @@ class Msdki: ## are we keeping this in for the first iteration?
         self.n_parameters           = 2
         self.spherical_mean     = True
     
-    def __call__(self, grad, parameters):
+    def __call__(self, grad: AcquisitionScheme, parameters: torch.Tensor) -> torch.Tensor:
         b_values = grad.bvalues
         
         D = parameters[:,0].unsqueeze(1)
@@ -112,10 +113,6 @@ class Zeppelin:
         S = torch.exp(-b * (Dpar * mag_par2 + Dper * mag_perp2))
         return S
     
-import torch
-
-
-
 
 class Ballt2:
     """
@@ -138,7 +135,7 @@ class Ballt2:
         self.n_parameters           = 2
         self.spherical_mean     = None
 
-    def __call__(self, grad, parameters):    
+    def __call__(self, grad: AcquisitionScheme, parameters: torch.Tensor) -> torch.Tensor:    
         b_values = grad.bvalues
         TE = grad.TE
      
@@ -148,9 +145,6 @@ class Ballt2:
         S = torch.exp(-b_values * D) * torch.exp(-(TE - torch.min(TE)) / T2)
 
         return S
-    
-    
-    
     
 
 class Tensor:
@@ -192,7 +186,7 @@ class Tensor:
         self.n_parameters = 6
         self.spherical_mean = False
 
-    def __call__(self, grad, parameters):
+    def __call__(self, grad: AcquisitionScheme, parameters: torch.Tensor) -> torch.Tensor:
         g = grad.bvecs
         b = grad.bvalues
 

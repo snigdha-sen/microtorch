@@ -2,6 +2,8 @@ import numpy as np
 import torch
 from typing import Optional
 
+from microtorch.utils.acquisition_scheme import AcquisitionScheme
+
 class Sphere:
     """
     A class representing a sphere model for diffusion MRI.
@@ -24,7 +26,7 @@ class Sphere:
         self.spherical_mean     = True
         self.fixed_D = fixed_D
 
-    def __call__(self, grad, parameters):
+    def __call__(self, grad: AcquisitionScheme, parameters: torch.Tensor) -> torch.Tensor:
 
         b_values = grad.bvalues
         delta = grad.delta
@@ -105,7 +107,7 @@ class Dot:
         self.n_parameters       = 0
         self.spherical_mean     = None
 
-    def __call__(self, grad, parameters):
+    def __call__(self, grad: AcquisitionScheme, parameters: torch.Tensor) -> torch.Tensor:
 
         b_values = grad.bvalues
         

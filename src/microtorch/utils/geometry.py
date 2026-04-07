@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from pathlib import Path
 
-def sphere2cart(theta,phi):   
+def sphere2cart(theta: torch.Tensor, phi: torch.Tensor) -> torch.Tensor:
     """
     Converts spherical coordinates (theta, phi) to Cartesian coordinates (x, y, z).
 
@@ -23,7 +23,7 @@ def sphere2cart(theta,phi):
     return n
     
     
-def cart2sphere(xyz):
+def cart2sphere(xyz: np.ndarray) -> np.ndarray:
     """
     Converts Cartesian coordinates (x, y, z) to spherical coordinates (theta, phi).
     

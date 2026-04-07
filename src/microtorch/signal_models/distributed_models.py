@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from microtorch.utils.utils_wm import WM_model, spherical_harmonics_directions
+from microtorch.utils.acquisition_scheme import AcquisitionScheme
 
 class Standard_wm: ## check with leon -- add unit tests?
     """
@@ -28,7 +29,7 @@ class Standard_wm: ## check with leon -- add unit tests?
         self.spherical_mean = False ##output afhankelijk van gradient richting - output dependent on gradient direction
 
     
-    def __call__(self, grad, params):
+    def __call__(self, grad: AcquisitionScheme, params: torch.Tensor) -> torch.Tensor:
 
         order = 2
         b_values = grad.bvalues
@@ -95,7 +96,7 @@ class t1_smdt: ##again, do we want this in the first iteration? -- i think its b
         self.spherical_mean = False
 
 
-    def __call__(self, grad, parameters):
+    def __call__(self, grad: AcquisitionScheme, parameters: torch.Tensor) -> torch.Tensor:
         
 
         b_vecs = grad.bvecs # we assume that the first three columns contain the diffusion gradient direction in Cartesian coordinates
