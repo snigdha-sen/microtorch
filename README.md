@@ -43,14 +43,14 @@ data.image=/path/to/dwi.nii \
 acquisition.grad=/path/to/grad.scheme
 ```
 
-For full usage instructions and examples, see the [documentation](usage/cli.md).
+For full usage instructions and examples, see the [documentation](docs/usage/cli.md).
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
 # Contributing
 
 We welcome contributions! Please fork the repo, create a branch for your feature, and submit a Pull Request. 
-Ensure code is tested and documented. Full guidelines in [contributing](developer/contributing.md).
+Ensure code is tested and documented. Full guidelines in [contributing](docs/developer/contributing.md).
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 

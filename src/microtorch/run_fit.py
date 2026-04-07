@@ -3,9 +3,11 @@ import random
 from typing import Optional, Union
 from pathlib import Path
 from hydra.core.hydra_config import HydraConfig
-from omegaconf import DictConfig
+from copy import deepcopy
+
 
 import numpy as np
+from omegaconf import OmegaConf, open_dict
 import torch
 import torch.nn as nn
 import nibabel as nib
@@ -56,6 +58,8 @@ def run_fit(
     # -----------------------
     # Acquisition
     # -----------------------
+    model_grad = cfg.acquisition.model_grad.get(cfg.model.name)
+
     if cfg.acquisition.bvals is not None:
         grad = txt_file_loader(
             cfg.acquisition.bvals,
@@ -65,10 +69,19 @@ def run_fit(
             cfg.acquisition.TE,
             cfg.acquisition.bdelta,
         )
+        print(f"Loaded acquisition scheme from separate bvals, bvecs, etc files.")
     elif cfg.acquisition.grad is not None:
         grad = acquisition_scheme_loader(cfg.acquisition.grad)
+        print(f"Loaded acquisition scheme from {cfg.acquisition.grad}")
+    elif model_grad is not None:
+        grad = acquisition_scheme_loader(model_grad)
+        print(f"Loaded default acquisition scheme for model {cfg.model.name}: {model_grad}")
     else:
-        raise ValueError("Either bvals/bvecs or grad must be provided")
+        raise ValueError(
+            f"No acquisition scheme found for model '{cfg.model.name}'. "
+            "Provide acquisition.bvals/bvecs, acquisition.grad, "
+            "or add a default gradient file for this model to src/microtorch/conf/acquisition/default.yaml."
+        )
 
     # -----------------------
     # Load image & mask
@@ -113,7 +126,7 @@ def run_fit(
         mlp_activation=mlp_activation,
         X_train=X_train,
         cfg=cfg)
-
+    
     net = Net(
         grad,
         modelfunc,
@@ -121,6 +134,7 @@ def run_fit(
         layer_dims=hyperparams["hidden_size"],
         n_layers=hyperparams["num_layers"],
         dropout_fraction=hyperparams["dropout_frac"],
+        network_type=cfg.training.network_type,
         clipping_method=cfg.training.clip,
         clipping_method_fraction=cfg.training.clip_fraction,
         activation=mlp_activation[hyperparams["activation"]],
@@ -164,8 +178,22 @@ def run_fit(
     new_img = nib.Nifti1Image(param_map, img_nii.affine, img_nii.header)
 
     out_file = output_folder / (
-        strip_filename(cfg.data.image) + "_param_maps.nii.gz"
+        strip_filename(cfg.data.image) + f"_{cfg.training.network_type}" + "_param_maps.nii.gz"
     )
     nib.save(new_img, out_file)
+
+    # -----------------------
+    # Save the used config.yaml 
+    # -----------------------
+    
+    # if tuning wasn't done, remove the tuning section to avoid confusion
+    cfg_to_save = deepcopy(cfg) 
+    if not cfg.training.tune == "optuna_tuner" and "tuning" in cfg_to_save:
+        with open_dict(cfg_to_save):
+            del cfg_to_save["tuning"]
+            print("Removed tuning section from saved config since tuning was not performed")
+
+    output_config_path = Path(output_folder) / f"{strip_filename(cfg.data.image)}_config.yaml"
+    output_config_path.write_text(OmegaConf.to_yaml(cfg_to_save, resolve=True))
 
     return param_map, modelfunc, out_file

@@ -82,3 +82,33 @@ class Sphere:
         )
 
         return S
+    
+    
+class Dot:
+    """
+    A class representing a dot model for diffusion MRI.
+    This model computes the signal based on the diffusion parameters and gradient directions.
+
+    Attributes:
+        parameter_ranges (list): Ranges for the parameters.
+        parameter_names (list): Names of the parameters.
+        n_parameters (int): Number of parameters.
+        spherical_mean (bool): Indicates if the model is spherically averaged.
+
+    Methods:
+        __init__(): Initializes the dot model with parameter ranges and names.
+        __call__(grad, parameters): Computes the signal based on the gradient and parameters.
+    """
+    def __init__(self):
+        self.parameter_ranges   = []
+        self.parameter_names    = []
+        self.n_parameters       = 0
+        self.spherical_mean     = None
+
+    def __call__(self, grad, parameters):
+
+        b_values = grad.bvalues
+        
+        S = torch.ones_like(b_values)
+
+        return S

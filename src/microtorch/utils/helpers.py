@@ -23,13 +23,14 @@ def strip_filename(path):
 
 
     
-def most_recent_output_file(output_root, model_name):
+def most_recent_output_file(output_root, model_name, network_type="hidden_dropout_mlp"):
     """
-    Find the most recent output file for a given model.
+    Find the most recent output file for a given model and network.
 
     Args:
         output_root (str or Path): Path to the outputs directory.
         model_name (str): Name of the model (e.g., 'VERDICT', 'BallStick').
+        network_type (str): Type of the network (e.g., 'dev_mlp', 'hidden_dropout_mlp').
 
     Returns:
         Path or None: Path to the most recent file matching the model, or None if not found.
@@ -37,7 +38,7 @@ def most_recent_output_file(output_root, model_name):
     output_root = Path(output_root)
 
     # Pattern: model_name*_param_maps.nii.gz
-    pattern = f"{model_name}*_param_maps.nii.gz"
+    pattern = f"{model_name}*_*{network_type}*_*param_maps.nii.gz"
 
     # Recursively search for matching files
     files = list(output_root.rglob(pattern))
@@ -47,3 +48,8 @@ def most_recent_output_file(output_root, model_name):
     # Sort by modification time (most recent first)
     files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
     return files[0]
+
+
+
+
+most_recent_output_file

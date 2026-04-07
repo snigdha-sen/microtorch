@@ -56,7 +56,7 @@ class Compartmentname:
 
 In addition, when adding a new compartment you should:
 
-- Add the compartment name **in both required locations** in `src/signal_models/__init__.py`.
+- Add the compartment name **in both required locations** in `src/microtorch/signal_models/__init__.py`.
 - Add an example gradient file suitable for estimating the compartment’s parameters to `simulation_data/grad/` (if one does not already exist).
-- Register the model and its example gradient file in `src/utils/make_test_image.py`.
-- Optionally, add appropriate parameter ranges or fixed parameters via a yaml file (see below).
+- Register the model and its example gradient file in `scripts/create_all_test_images.py`.
+- Optionally, add appropriate parameter ranges or fixed parameters via a yaml file (see [adding_models.md](docs/developer/adding_models.md)).

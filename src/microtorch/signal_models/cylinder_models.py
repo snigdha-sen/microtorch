@@ -28,7 +28,7 @@ class Stick:
 
     """
     def __init__(self):
-        self.parameter_ranges = [[0.001, 3], [0, torch.pi/2], [0, torch.pi]]
+        self.parameter_ranges = [[0.001, 3], [-torch.pi/2, torch.pi/2], [0, torch.pi]]
         self.parameter_names = ["Dpar", "theta", "phi"]
         self.n_parameters = 3
         self.spherical_mean = False
@@ -72,7 +72,7 @@ class Cylinder:
     """
 
     def __init__(self, n_roots: int = 50, lambda_perp: float = 2e-9):
-        self.parameter_ranges = [[0, torch.pi/2], [0, torch.pi], [0.001, 3], [0.001, 10]]
+        self.parameter_ranges = [[-torch.pi/2, torch.pi/2], [0, torch.pi], [0.001, 3], [0.001, 10]]
         self.parameter_names = ["theta", "phi", "D_par", "radius"]
         self.n_parameters = 4
         self.spherical_mean = False
