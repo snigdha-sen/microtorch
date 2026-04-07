@@ -2,7 +2,7 @@ import os
 import random
 from typing import Optional, Union
 from pathlib import Path
-from hydra.core.hydra_config import HydraConfig
+from hydra.core.hydra_config import DictConfig
 from copy import deepcopy
 
 

@@ -10,6 +10,11 @@ data/.DS_Store
 #simulation data folder
 simulation_data/data/*
 
+# things in development
+src/microtorch/networks/cnn.py
+src/microtorch/networks/vae.py
+tests/integration/test_forward_pipeline.py
+
 #Everything below is from a template .gitignore file
 
 # Byte-compiled / optimized / DLL files
