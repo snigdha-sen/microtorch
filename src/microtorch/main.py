@@ -8,7 +8,8 @@ from microtorch.utils.plot_results import plot_param_maps
 def main(cfg: DictConfig):
     """
     Main entry point for the microtorch fitting pipeline.
-    Expects a Hydra config (DictConfig).
+    Args:
+        cfg (DictConfig): The configuration object containing all parameters for data loading, model setup, training, and plotting. 
     """
 
     # Enforce required args

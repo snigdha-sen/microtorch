@@ -5,6 +5,16 @@ import copy
 
 
 class DevMLP(nn.Module):
+    """
+    Simple MLP with dropout applied to the input layer only.
+    Args:
+        input_neurons (int): Number of input neurons (equal to number of measurements).
+        layer_dims (int): Number of neurons in each hidden layer.
+        n_layers (int): Total number of hidden layers.
+        dim_out (int): Number of output neurons (equal to number of parameter maps).
+        activation (nn.Module): Activation function to use after each hidden layer.
+        dropout (float): Dropout fraction to apply to the input layer (0 for no dropout).
+    """
     def __init__(
         self, 
         input_neurons: int, 
@@ -32,6 +42,16 @@ class DevMLP(nn.Module):
 
 
 class HiddenDropoutMLP(nn.Module):
+    """
+    MLP with dropout applied after each hidden layer.
+    Args:
+        input_neurons (int): Number of input neurons (equal to number of measurements).
+        layer_dims (int): Number of neurons in each hidden layer.
+        n_layers (int): Total number of hidden layers.
+        dim_out (int): Number of output neurons (equal to number of parameter maps).
+        activation (nn.Module): Activation function to use after each hidden layer.
+        dropout (float): Dropout fraction to apply after each hidden layer (0 for no dropout
+    """
     def __init__(
         self, 
         input_neurons: int, 

@@ -48,6 +48,20 @@ def fraction_squash(
     modelfunc: Any,
     tau: float = 1.0
 ) -> torch.Tensor:
+    """
+    Constrain the fraction parameters to be valid fractions (between 0 and 1, and sum to 1) using the specified method. 
+    Args:
+        method (str): The method to use for constraining the fractions. Options are 'softmax' (softmax squashing), 'clamp' (clamping free fractions and computing implicit  last fraction), or 'free' (no squashing, raw logits).
+        logits_all (torch.Tensor): The raw output tensor from the network containing both non-fraction parameters and fraction parameters. Shape: (batch_size, n_parameters + n_fractions).
+        modelfunc (ModelMaker): The model function object containing information about the number of parameters and fractions.  
+        tau (float): Temperature parameter for softmax squashing (only used if method='softmax').
+    Returns:
+        fractions (torch.Tensor): The constrained fraction tensor, with shape (batch_size, n_fractions), where each row sums to 1 and each element is in [0, 1] (if method is 'softmax' or 'clamp').
+    Note:
+        - For 'softmax', the fraction parameters are obtained by applying softmax to the relevant logits, ensuring they sum to 1 and are between 0 and 1.
+        - For 'clamp', the first n_fractions-1 parameters are treated as free fractions that are clamped to [0, 1], and the last fraction is computed implicitly as 1 minus the sum of the free fractions. All fractions are then normalized to ensure they sum to 1.
+        - For 'free', no squashing is applied and the raw logits for the fractions are returned, which may not be valid fractions.
+    """
 
     if method == 'softmax':
         fractions = torch.softmax(logits_all / tau, dim=1)

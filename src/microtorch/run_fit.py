@@ -30,8 +30,17 @@ def run_fit(
     output_folder: Optional[Union[str, Path]] = None
 ) -> tuple[np.ndarray, "ModelMaker", Path]:
     """
-    Core fitting routine.
-    Expects a Hydra config (DictConfig).
+    Runs full model fitting pipeline, called via main.py.
+
+    Args:
+        cfg (DictConfig): chosen hydra configuration (model, data, training parameters etc).
+        output_folder (Optional[Union[str, Path]]): location to save output data.
+
+    Returns:
+        param_map (np.ndarray): resulting parametric maps after fitting.
+        modelfunc (ModelMaker): model fitted to the data.
+        out_file (Path): file where fitting output is saved.
+
     """
 
     mlp_activation = {

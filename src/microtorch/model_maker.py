@@ -179,6 +179,16 @@ class ModelMaker:
 
     @staticmethod
     def model_compartments(modelname: str) -> Tuple:
+        """
+        Maps the model name to its corresponding compartment classes, using YAML configuration if available, or parsing the model name as a fallback.
+
+        Args:
+            modelname (str): The name of the model. 
+        Returns:
+            tuple: A tuple of compartment class instances corresponding to the model.
+        Raises:
+            ValueError: If the YAML configuration for the model is invalid (e.g., incorrect number of parameter ranges).
+        """
         comps_classes = []
 
         model_file = MODELS_CONF_PATH / f"{modelname}.yaml"

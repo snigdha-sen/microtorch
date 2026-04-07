@@ -221,7 +221,13 @@ def txt_file_loader(
 
 
 def load_grad(grad_filename: Union[str, Path]) -> Optional[np.ndarray]:
-    """Load gradient information from a text file containing either b-values, b-vectors, or timing parameters."""
+    """
+    Load gradient information from a text file containing either b-values, b-vectors, or timing parameters.
+    Args:
+        grad_filename (str): Path to the text file containing the gradient information.
+    Returns:        
+        np.ndarray or None: The loaded gradient information as a NumPy array, or None if the file is missing. 
+    """
     #TO DO: replace with something that finds the file e.g. pkg_resources.resource_filename
     #grad_files_path = '/Users/paddyslator/python/self-qmri/data'
     try:
