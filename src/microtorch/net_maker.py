@@ -1,24 +1,29 @@
+from typing import Union, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import copy
+
+from microtorch.utils.acquisition_scheme import AcquisitionScheme
+from microtorch.model_maker import ModelMaker
 
 from microtorch.networks import build_network
 from microtorch.utils.network_constraints import squash, fraction_squash
 
 class Net(nn.Module):
 
-    def __init__(self, 
-                 grad, 
-                 modelfunc, 
-                 input_neurons, 
-                 layer_dims, 
-                 n_layers, 
-                 dropout_fraction, 
-                 network_type="hidden_dropout_mlp", 
-                 clipping_method='clamp',
-                 clipping_method_fraction="clamp", 
-                 activation=nn.PReLU()):
+    def __init__(
+        self,
+        grad: AcquisitionScheme,
+        modelfunc: ModelMaker,
+        input_neurons: int,
+        layer_dims: int,
+        n_layers: int,
+        dropout_fraction: float,
+        network_type: str = "hidden_dropout_mlp",
+        clipping_method: str = "clamp",
+        clipping_method_fraction: str = "clamp",
+        activation: nn.Module = nn.PReLU()
+    ) -> None:
         """
         Define the network architecture.
         
@@ -92,7 +97,11 @@ class Net(nn.Module):
             dropout=dropout_fraction,
         )
 
-    def forward(self, X, return_latent=False):        
+    def forward(
+        self,
+        X: torch.Tensor,
+        return_latent: bool = False
+    ) -> Union[Tuple[torch.Tensor, torch.Tensor], Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],]:       
         
         #get the model function and clipping method
         modelfunc = self.modelfunc

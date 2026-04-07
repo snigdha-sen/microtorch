@@ -1,7 +1,9 @@
 import os
 import random
+from typing import Optional, Union
 from pathlib import Path
 from hydra.core.hydra_config import HydraConfig
+from omegaconf import DictConfig
 
 import numpy as np
 import torch
@@ -21,7 +23,10 @@ from microtorch.utils import (
     strip_filename,
 )
 
-def run_fit(cfg):
+def run_fit(
+    cfg: "DictConfig",
+    output_folder: Optional[Union[str, Path]] = None
+) -> tuple[np.ndarray, "ModelMaker", Path]:
     """
     Core fitting routine.
     Expects a Hydra config (DictConfig).
@@ -149,7 +154,10 @@ def run_fit(cfg):
     # -----------------------
     # Save output
     # -----------------------
-    output_folder = Path(HydraConfig.get().run.dir)
+    if output_folder is None:
+        from hydra.core.hydra_config import HydraConfig
+        output_folder = Path(HydraConfig.get().run.dir)
+    output_folder = Path(output_folder)
     output_folder.mkdir(parents=True, exist_ok=True)
 
     img_nii = nib.load(os.path.join(cfg.data.folder, cfg.data.image))

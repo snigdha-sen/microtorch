@@ -1,6 +1,7 @@
 import numpy as np
 import re
 import yaml
+from typing import List, Tuple
 
 import torch
 import microtorch.signal_models as signal_models_module
@@ -36,7 +37,7 @@ class ModelMaker:
         get_compartment_indices(): Maps each parameter index to its compartment.
     """
 
-    def __init__(self, modelname):
+    def __init__(self, modelname: str) -> None:
         """
         Initializes the ModelMaker instance by creating compartments and managing parameters.
 
@@ -96,10 +97,9 @@ class ModelMaker:
 
         self.parameter_indices = self.get_parameter_indices()  # Get the indices of the parameters in the parameter vector for each compartment
         self.compartment_indices = self.get_comp_indices()  # Get the indices of the compartment that each parameter at a given index belongs to
-        
 
 
-    def __call__(self, grad, parameters):
+    def __call__(self, grad: torch.Tensor, parameters: torch.Tensor) -> torch.Tensor:
         """
         Computes the model signal for given gradients and parameters.
 
@@ -143,7 +143,7 @@ class ModelMaker:
         return S
 
 
-    def get_parameter_indices(self):
+    def get_parameter_indices(self) -> Tuple[List[int], ...]:
         """
          Computes the indices of the parameters in the parameter vector for each compartment.
          Returns:
@@ -160,7 +160,7 @@ class ModelMaker:
         return param_ind
 
 
-    def get_comp_indices(self):
+    def get_comp_indices(self) -> List[int]:
         """
          Computes the indices of the compartment that each parameter belongs to.
          Returns:
@@ -178,7 +178,7 @@ class ModelMaker:
 
 
     @staticmethod
-    def model_compartments(modelname):
+    def model_compartments(modelname: str) -> Tuple:
         comps_classes = []
 
         model_file = MODELS_CONF_PATH / f"{modelname}.yaml"

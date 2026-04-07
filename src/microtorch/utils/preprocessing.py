@@ -1,9 +1,10 @@
+from typing import Tuple, Optional
 import numpy as np 
 import torch
 from .acquisition_scheme import AcquisitionScheme
 
 
-def direction_average(img, grad):
+def direction_average(img: torch.Tensor, grad: AcquisitionScheme) -> Tuple[torch.Tensor, AcquisitionScheme]:
     """
     Averages the signal across all directions within each shell, 
     returning a direction-averaged image and corresponding gradient table.
@@ -93,7 +94,7 @@ def direction_average(img, grad):
     return da_img, da_grad
          
 
-def img2voxel(img, mask):
+def img2voxel(img: torch.Tensor, mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Converts the image and mask from voxel format to a 2D array of voxels in the mask and a 1D array of the mask in voxel format.
     
@@ -120,7 +121,7 @@ def img2voxel(img, mask):
     return X_train, maskvox
 
 
-def voxel2img(params, maskvox, shape):
+def voxel2img(params: np.ndarray, maskvox: np.ndarray, shape: Tuple[int, int, int]) -> np.ndarray:
     """
     Converts the predicted parameters from voxel format back to image format, 
     filling in the voxels in the mask and leaving the rest as zeros.
@@ -147,7 +148,7 @@ def voxel2img(params, maskvox, shape):
     return img
 
 
-def normalise(X_train, grad):
+def normalise(X_train: torch.Tensor, grad: AcquisitionScheme) -> torch.Tensor:
     """
     Normalises the training data by the mean of the b0 volumes (or the single b0 volume if only one is present).
     Args:
