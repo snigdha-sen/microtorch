@@ -7,15 +7,13 @@ import sys
 from pathlib import Path
 from multiprocessing import freeze_support
 import torch
+import numpy as np
+
 
 from .acquisition_scheme import acquisition_scheme_loader, txt_file_loader
 from microtorch.model_maker import ModelMaker
 
 def main():
-    import argparse
-    import numpy as np
-    import torch
-    import os
 
     parser = argparse.ArgumentParser()
 
@@ -39,13 +37,10 @@ def main():
 
     model = args.model
 
-    # #make the model function that will be incorporated into the net
-    import sys
-    from pathlib import Path
-
     # Add parent directory to Python path
     sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+    #make the model function that will be incorporated into the net
     modelfunc = ModelMaker(args.model)
 
     #load the acquisition scheme in
