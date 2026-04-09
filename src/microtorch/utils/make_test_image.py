@@ -122,12 +122,15 @@ def generate_random_params(modelfunc, num_samples, alpha=None):
                 (1 - sum of the others).
     """
 
-    # Convert parameter ranges to tensors
-    min_vals = torch.tensor(modelfunc.parameter_ranges[:, 0], dtype=torch.float32)
-    max_vals = torch.tensor(modelfunc.parameter_ranges[:, 1], dtype=torch.float32)
+    if not modelfunc.parameter_names == []:
+        # Convert parameter ranges to tensors    
+        min_vals = torch.tensor(modelfunc.parameter_ranges[:, 0], dtype=torch.float32)
+        max_vals = torch.tensor(modelfunc.parameter_ranges[:, 1], dtype=torch.float32)
 
-    # Generate random values for non-fraction parameters
-    model_params = torch.rand(num_samples, modelfunc.n_parameters) * (max_vals - min_vals) + min_vals
+        # Generate random values for non-fraction parameters
+        model_params = torch.rand(num_samples, modelfunc.n_parameters) * (max_vals - min_vals) + min_vals
+    else:
+        model_params = torch.empty(num_samples, 1)  # if no model parameters, e.g. dot compartment, return an empty tensor with the correct number of samples
 
     if modelfunc.n_fractions > 1:
         # Generate volume fractions from Dirichlet
