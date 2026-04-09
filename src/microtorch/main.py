@@ -18,7 +18,7 @@ def main(cfg: DictConfig):
     print("Running with config:\n")
     print(OmegaConf.to_yaml(cfg))
 
-    _, modelfunc, out_file = run_fit(cfg)
+    _, modelfunc, out_file = run_fit(cfg, output_folder=None)
 
     if cfg.plot.enabled:
         plot_param_maps(out_file, modelfunc, zslice=cfg.plot.zslice)

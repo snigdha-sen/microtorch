@@ -1,6 +1,6 @@
 import torch
 
-from loss_functions.RicianLoss import RicianLoss, RicianLossStable
+from microtorch.loss_functions.RicianLoss import RicianLoss, RicianLossStable
 
 def test_rician_loss_finite():
     loss_fn = RicianLoss(sigma=0.1)

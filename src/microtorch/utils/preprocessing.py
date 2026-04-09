@@ -1,9 +1,10 @@
+from typing import Tuple, Optional
 import numpy as np 
 import torch
 from .acquisition_scheme import AcquisitionScheme
 
 
-def direction_average(img, grad):
+def direction_average(img: torch.Tensor, grad: AcquisitionScheme) -> Tuple[torch.Tensor, AcquisitionScheme]:
     """
     Averages the signal across all directions within each shell, 
     returning a direction-averaged image and corresponding gradient table.
@@ -17,8 +18,10 @@ def direction_average(img, grad):
     """
 
     # build shell definition table
-    shell_columns = [grad.bvalues]
+    shell_columns = []
 
+    if hasattr(grad, "bvalues") and grad.bvalues is not None:
+        shell_columns.append(grad.bvalues)
     if hasattr(grad, "TE") and grad.TE is not None:
         shell_columns.append(grad.TE)
     if hasattr(grad, "delta") and grad.delta is not None:
@@ -29,7 +32,11 @@ def direction_average(img, grad):
         shell_columns.append(grad.bshape)
     if hasattr(grad, "bdelta") and grad.bdelta is not None:
         shell_columns.append(grad.bdelta)
-        
+
+    # Make sure we have at least one column to stack
+    if len(shell_columns) == 0:
+        raise ValueError("No gradient information available to define shells!")
+
     shell_table = torch.stack(shell_columns, dim=1) 
         
         
@@ -39,7 +46,7 @@ def direction_average(img, grad):
     # Preallocate
     da_img  = torch.zeros(img.shape[0:3] + (unique_shells.shape[0],), dtype=img.dtype)
 
-    da_bvecs = torch.zeros_like(unique_shells.unsqueeze(1).repeat(1, grad.bvecs.shape[1])) 
+    da_bvecs = torch.zeros((unique_shells.shape[0], grad.bvecs.shape[1]), dtype=grad.bvecs.dtype)
     da_bvalues = torch.zeros_like(unique_shells)
     da_delta = torch.zeros_like(unique_shells) if grad.delta is not None else None
     da_Delta = torch.zeros_like(unique_shells) if grad.Delta is not None else None
@@ -87,7 +94,7 @@ def direction_average(img, grad):
     return da_img, da_grad
          
 
-def img2voxel(img, mask):
+def img2voxel(img: torch.Tensor, mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Converts the image and mask from voxel format to a 2D array of voxels in the mask and a 1D array of the mask in voxel format.
     
@@ -114,7 +121,7 @@ def img2voxel(img, mask):
     return X_train, maskvox
 
 
-def voxel2img(params, maskvox, shape):
+def voxel2img(params: np.ndarray, maskvox: np.ndarray, shape: Tuple[int, int, int]) -> np.ndarray:
     """
     Converts the predicted parameters from voxel format back to image format, 
     filling in the voxels in the mask and leaving the rest as zeros.
@@ -141,7 +148,7 @@ def voxel2img(params, maskvox, shape):
     return img
 
 
-def normalise(X_train, grad):
+def normalise(X_train: torch.Tensor, grad: AcquisitionScheme) -> torch.Tensor:
     """
     Normalises the training data by the mean of the b0 volumes (or the single b0 volume if only one is present).
     Args:

@@ -1,7 +1,7 @@
 import torch
 import pytest
 
-from signal_models.gaussian_models import Ball, Msdki, Zeppelin  # adjust import path if needed
+from microtorch.signal_models.gaussian_models import Ball, Msdki, Zeppelin  # adjust import path if needed
 
 
 class DummyGrad:
@@ -37,7 +37,7 @@ def test_ball_attributes():
     m = Ball()
     assert m.n_parameters == 1
     assert m.parameter_names == ["D"]
-    assert m.spherical_mean is False
+    assert m.spherical_mean is None
 
 
 def test_ball_forward_shape_and_range(grad_ball):

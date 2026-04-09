@@ -1,7 +1,9 @@
 import nibabel as nib
 import matplotlib.pyplot as plt
 
-def plot_param_maps(nifti_file, modelfunc, zslice=0):
+from microtorch.model_maker import ModelMaker
+
+def plot_param_maps(nifti_file: str, modelfunc: ModelMaker, zslice: int = 0) -> None:
     """
     Plots the parameter maps from a NIfTI file.
     

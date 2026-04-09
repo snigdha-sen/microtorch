@@ -1,12 +1,36 @@
 import numpy as np 
 import torch
 
-from src.utils.preprocessing import direction_average, img2voxel, voxel2img, normalise
+from microtorch.utils.preprocessing import direction_average, img2voxel, voxel2img, normalise
+
+import torch
 
 class DummyGrad:
     def __init__(self, scheme_matrix, bvalues=None):
         self._scheme_matrix = scheme_matrix
-        self.bvalues = bvalues
+
+        # Ensure bvalues is always a tensor
+        if bvalues is None and scheme_matrix is not None:
+            self.bvalues = scheme_matrix[:, -1]  # torch tensor
+        elif isinstance(bvalues, tuple):
+            self.bvalues = torch.tensor(bvalues, dtype=torch.float32)
+        else:
+            self.bvalues = bvalues
+
+        # Ensure bvecs is a tensor
+        if scheme_matrix is not None:
+            self.bvecs = torch.zeros((scheme_matrix.shape[0], 3), dtype=torch.float32)
+        else:
+            self.bvecs = None
+
+        # Optional fields
+        self.TE = None
+        self.delta = None
+        self.Delta = None
+        self.bshape = None
+        self.bdelta = None
+        self.gradient_strengths = None
+
         self.number_of_measurements = (
             scheme_matrix.shape[0] if scheme_matrix is not None else None
         )
@@ -34,7 +58,7 @@ def test_direction_average_basic():
 
     grad = DummyGrad(scheme)
 
-    da_img = direction_average(img, grad)
+    da_img, da_grad = direction_average(img, grad)
 
     # Expect two shells
     assert da_img.shape == (1, 1, 1, 2)

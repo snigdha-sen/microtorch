@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from scipy.special import sph_harm_y, erf, gamma,eval_laguerre
+from scipy.special import sph_harm, erf, gamma, eval_laguerre
 from .geometry import cart2sphere
 
 ##check if matlab model and python model correspond. Take bvalues from hcp. order 2, random sample Di,De,Dp [0,3]. Di>De>Dp. fODF: use watson distribution to sample from. Simulate one voxel first
@@ -162,11 +162,11 @@ def real_spherical_harmonics(l, m, phi, theta):
     # Compute associated Legendre polynomial
     
     if m < 0:
-        Ysh_m = np.sqrt(2)*np.imag(sph_harm_y(abs(m),l,theta,phi))
+        Ysh_m = np.sqrt(2)*np.imag(sph_harm(abs(m),l,theta,phi))
     elif m > 0:
-        Ysh_m = np.sqrt(2)*np.real(sph_harm_y(m,l,theta, phi))
+        Ysh_m = np.sqrt(2)*np.real(sph_harm(m,l,theta, phi))
     else:
-        Ysh_m = np.real(sph_harm_y(0,l,theta,phi))
+        Ysh_m = np.real(sph_harm(0,l,theta,phi))
     
     return Ysh_m
 
@@ -182,7 +182,7 @@ def cart2sph(x, y, z):
 
     return theta, phi
 
-from scipy.special import sph_harm_y,erf
+from scipy.special import sph_harm, erf
 
     
 def erf_torch(x): #also still need a well working replacement for this

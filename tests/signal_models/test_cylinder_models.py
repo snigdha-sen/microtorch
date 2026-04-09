@@ -1,7 +1,7 @@
 import torch
 import pytest
 
-from signal_models.cylinder_models import Stick, Cylinder, Astrosticks  # adjust if your import path differs
+from microtorch.signal_models.cylinder_models import Stick, Cylinder, Astrosticks  # adjust if your import path differs
 
 
 class DummyGrad:
