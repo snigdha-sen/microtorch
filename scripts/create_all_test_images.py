@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# Script to create test images for all models. Can optionally run fitting step as well.
+# Runs make_test_image.py for each model, then optionallyruns microtorch.torch to fit each image with each network.
+
 import argparse
 from glob import glob
 import os
@@ -37,7 +40,7 @@ MODEL_GRAD = {
 def run_make_test_image(model_name: str, grad_path: str):
     cmd = [
         sys.executable,
-        "-m", "microtorch.utils.make_test_image",
+        "-m", "microtorch.utils.make_test_image_function",
         "-m", model_name,
         "-g", grad_path,
     ]
@@ -49,13 +52,13 @@ def run_make_test_image(model_name: str, grad_path: str):
 def get_image_and_mask(model_name: str):
     model_dir = os.path.join(DATA_ROOT, model_name)
 
-    print(model_dir)
+    print(f"Looking for images in: {model_dir}")
 
     data_files = list(glob(os.path.join(model_dir, model_name + "*_data.nii.gz")))
     mask_files = list(glob(os.path.join(model_dir, model_name + "*_mask.nii.gz")))
 
-    print(data_files)
-    print(mask_files)
+    print(f"Found data files: {data_files}")
+    print(f"Found mask files: {mask_files}")
 
     if len(data_files) != 1:
         raise RuntimeError(f"Expected 1 data file in {model_dir}, found {len(data_files)}")
