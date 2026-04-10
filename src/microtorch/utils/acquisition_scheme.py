@@ -25,8 +25,8 @@ class AcquisitionScheme:
             bdelta (array-like, optional): 1D array of bdelta values (for advanced models)
         """
 
-        self.bvalues = torch.as_tensor(bvalues, dtype=torch.float32)
-
+        self.bvalues = torch.as_tensor(bvalues, dtype=torch.float32)  
+        
         if any(self.bvalues == 0): #prevent issues with zero b-values in log space or as denominators  
             self.bvalues[self.bvalues == 0] = 1e-6
 

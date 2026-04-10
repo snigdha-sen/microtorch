@@ -39,7 +39,6 @@ def direction_average(img: torch.Tensor, grad: AcquisitionScheme) -> Tuple[torch
 
     shell_table = torch.stack(shell_columns, dim=1) 
         
-        
     # Find unique shells - all parameters except gradient directions are the same
     unique_shells, inverse = torch.unique(shell_table, dim=0, return_inverse=True)
 
@@ -47,14 +46,12 @@ def direction_average(img: torch.Tensor, grad: AcquisitionScheme) -> Tuple[torch
     da_img  = torch.zeros(img.shape[0:3] + (unique_shells.shape[0],), dtype=img.dtype)
 
     da_bvecs = torch.zeros((unique_shells.shape[0], grad.bvecs.shape[1]), dtype=grad.bvecs.dtype)
-    da_bvalues = torch.zeros_like(unique_shells)
-    da_delta = torch.zeros_like(unique_shells) if grad.delta is not None else None
-    da_Delta = torch.zeros_like(unique_shells) if grad.Delta is not None else None
-    da_TE = torch.zeros_like(unique_shells) if grad.TE is not None else None
-    da_bdelta = torch.zeros_like(unique_shells) if grad.bdelta is not None else None
-    da_TE = torch.zeros_like(unique_shells) if grad.TE is not None else None
-    da_gradient_strengths = torch.zeros_like(unique_shells) if grad.gradient_strengths is not None else None
-
+    da_bvalues = torch.zeros(unique_shells.shape[0], dtype=grad.bvalues.dtype) if grad.bvalues is not None else None
+    da_delta = torch.zeros(unique_shells.shape[0], dtype=grad.delta.dtype) if grad.delta is not None else None
+    da_Delta = torch.zeros(unique_shells.shape[0], dtype=grad.Delta.dtype) if grad.Delta is not None else None
+    da_TE = torch.zeros(unique_shells.shape[0], dtype=grad.TE.dtype) if grad.TE is not None else None
+    da_bdelta = torch.zeros(unique_shells.shape[0], dtype=grad.bdelta.dtype) if grad.bdelta is not None else None
+    da_gradient_strengths = torch.zeros(unique_shells.shape[0], dtype=grad.gradient_strengths.dtype) if grad.gradient_strengths is not None else None
 
     for i, shell in enumerate(unique_shells):
         # Indices of grad file for this shell          
@@ -80,7 +77,7 @@ def direction_average(img: torch.Tensor, grad: AcquisitionScheme) -> Tuple[torch
             da_gradient_strengths[i] = grad.gradient_strengths[first_idx]
         if da_bdelta is not None:
             da_bdelta[i] = grad.bdelta[first_idx]
-
+    
     da_grad = AcquisitionScheme(
         bvalues=da_bvalues,
         bvecs=da_bvecs,
@@ -90,7 +87,7 @@ def direction_average(img: torch.Tensor, grad: AcquisitionScheme) -> Tuple[torch
         TE=da_TE,
         bdelta=da_bdelta,
     )
-
+    
     return da_img, da_grad
          
 
