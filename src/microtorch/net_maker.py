@@ -52,40 +52,6 @@ class Net(nn.Module):
             dim_out = modelfunc.n_parameters + modelfunc.n_fractions
         else:
             dim_out = modelfunc.n_parameters
-        '''
-        # ----------------------------------------------------------------
-        # dev_MLP / softmax_MLP — original flat encoder (no per-layer dropout)
-        # ----------------------------------------------------------------
-        fc_layers = []
-        fc_layers.extend([nn.Linear(input_neurons, layer_dims), copy.deepcopy(activation)])
-        for _ in range(n_layers - 1):
-            fc_layers.extend([nn.Linear(layer_dims, layer_dims), copy.deepcopy(activation)])
-        self.encoder = nn.Sequential(*fc_layers, nn.Linear(layer_dims, dim_out))
-
-        # optional dropout for dev_MLP / softmax_MLP
-        if dropout_fraction > 0:
-            self.dropout = nn.Dropout(dropout_fraction)
-
-        # ----------------------------------------------------------------
-        # hidden_dropout_MLP — dropout after every hidden activation
-        # Structure per layer: Linear -> Activation -> Dropout
-        # ----------------------------------------------------------------
-        hidden_layers = []
-
-        # first layer: input -> hidden
-        hidden_layers.extend([nn.Linear(input_neurons, layer_dims), copy.deepcopy(activation)])
-        if dropout_fraction > 0:
-            hidden_layers.append(nn.Dropout(dropout_fraction))
-
-        # remaining hidden layers
-        for _ in range(n_layers - 1):
-            hidden_layers.extend([nn.Linear(layer_dims, layer_dims), copy.deepcopy(activation)])
-            if dropout_fraction > 0:
-                hidden_layers.append(nn.Dropout(dropout_fraction))
-
-        self.hidden = nn.Sequential(*hidden_layers)
-        self.head = nn.Linear(layer_dims, dim_out)  # output head, no dropout
-        '''
 
         self.encoder = build_network(
             network_type,
@@ -112,56 +78,7 @@ class Net(nn.Module):
         frac_start = modelfunc.n_parameters
         frac_end   = frac_start + modelfunc.n_fractions  # all the fractions
 
-        '''
-        #choose which network - messy for now but will clean up after testing different options
-        #network = "dev_MLP"
-        #network = "softmax_MLP"
-        network = "hidden_dropout_MLP"
-
-        if network == "dev_MLP":
-            
-            if self.dropout_fraction > 0:
-                X = self.dropout(X)
-
-            #params = self.encoder(X)              
-            params = F.softplus(self.encoder(X))
-            #params = torch.abs(self.encoder(X))
-            #get the signal model function        
-            #modelfunc = getattr(models, model)
-                                        
-            for i in range(modelfunc.n_parameters): #set min/max of non-volume fraction parameters       
-                params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
-
-                        
-        if network == "softmax_MLP":
-            params = self.encoder(X)
-
-            if self.dropout_fraction > 0:
-                # only do dropout on the non-fraction parameters 
-                params[:, :frac_start] = self.dropout(params[:, :frac_start])  # only non-fraction params       
-                                
-            for i in range(modelfunc.n_parameters): #set min/max of non-volume fraction parameters       
-                params[:,i] = Net.squash(params[:, i].clone().unsqueeze(1), clipping_method, modelfunc.parameter_ranges[i,0], modelfunc.parameter_ranges[i,1])
-
-        elif network == "hidden_dropout_MLP":
-            h = self.hidden(X)  # dropout already applied after every hidden activation
-            params = self.head(h)  # clean linear projection to output
-            for i in range(modelfunc.n_parameters):
-                params[:, i] = Net.squash(
-                    params[:, i].clone().unsqueeze(1),
-                    clipping_method,
-                    modelfunc.parameter_ranges[i, 0],
-                    modelfunc.parameter_ranges[i, 1],
-                )
-        '''
-
-        params_out = self.encoder(X)
-
-        if self.network_type == "vae":
-            params, mu, logvar = params_out
-        else:
-            params = params_out
-            mu = logvar = None
+        params = self.encoder(X)
 
         if self.network_type == "dev_mlp": # can make softmax mlp by choosing clipping method to be softmax
             params = F.softplus(params)
@@ -196,8 +113,5 @@ class Net(nn.Module):
         # compute the predicted signal using the model function with the current parameters
         X = modelfunc(self.grad, params)
                     
-        if return_latent and self.network_type == "vae":
-            return X.to(torch.float32), params, mu, logvar
-        else:
-            return X.to(torch.float32), params
+        return X.to(torch.float32), params
     

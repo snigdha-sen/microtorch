@@ -14,6 +14,8 @@ simulation_data/data/*
 src/microtorch/networks/cnn.py
 src/microtorch/networks/vae.py
 tests/integration/test_forward_pipeline.py
+src/microtorch/utils/utils_wm.py
+src/microtorch/signal_models/distributed_models.py
 
 #Everything below is from a template .gitignore file
 
