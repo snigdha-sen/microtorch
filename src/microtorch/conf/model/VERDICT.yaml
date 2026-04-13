@@ -1,0 +1,12 @@
+name: VERDICT
+
+compartments:
+  - class: Ball
+
+  - class: Sphere
+    init_kwargs:
+      fixed_D: 2.0
+      
+  - class: Astrosticks
+    init_kwargs:
+      fixed_D_par: 8.0

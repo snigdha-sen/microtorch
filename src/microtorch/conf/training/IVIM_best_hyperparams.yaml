@@ -1,0 +1,6 @@
+activation: relu
+dropout_frac: 0.1
+hidden_size: 512
+lr: 1.0e-3
+num_layers: 6
+patience: 200

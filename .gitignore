@@ -1,9 +1,21 @@
 #Results folder
-./results/*
+contributor_folders/
+results/
+outputs/
 
+generate_utils.py
 
 data/.DS_Store
 
+#simulation data folder
+simulation_data/data/*
+
+# things in development
+src/microtorch/networks/cnn.py
+src/microtorch/networks/vae.py
+tests/integration/test_forward_pipeline.py
+src/microtorch/utils/utils_wm.py
+src/microtorch/signal_models/distributed_models.py
 
 #Everything below is from a template .gitignore file
 
@@ -14,6 +26,7 @@ __pycache__/
 .DS_Store
 .DS_Store?
 *.DS_Store
+*.bat
 
 # C extensions
 *.so

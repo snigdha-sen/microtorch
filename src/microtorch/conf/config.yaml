@@ -1,0 +1,20 @@
+defaults:
+  - _self_
+  - training: default
+  - model: default
+  - acquisition: default
+  - data: default
+  - tuning: default
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+plot:
+  enabled: false
+  zslice: 0
+
+paths:
+  models_dir: src/models
+  sim_data_dir: simulation_data/data
+  grad_dir: simulation_data/grad
+  

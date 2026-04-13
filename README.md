@@ -1,165 +1,76 @@
 # microTorch: microstructure model fitting with PyTorch
 
 
-<img align="left" width="250" height="250" src="microtorch/files/logo.jpeg" > 
-The microTorch software package is designed to flexibly fit diffusion MRI microstructure models, using a self-supervised deep learning approach. 
+<img align="left" width="295" height="295" src="files/logo.jpeg" > 
+
+The ```microTorch``` software package is designed to flexibly fit diffusion MRI (dMRI) microstructure models, using a self-supervised deep learning approach. The framework is designed to work with a variety of established dMRI multicompartment models, and also allows users to combine compartment models as they wish.
+
+We designed this framework to leverage the inference time gains of deep learning, whilst removing the requirement for explicit training data. Training and inference is performed simultaneously for each dataset. Please see [1,2] for the theoretical underpinnings of this approach.
 
 This work is by members of the UCL Centre for Medical Image Computing and the Cardiff University Brain Research Imaging Centre. Please contact snigdha.sen.20@ucl.ac.uk with any questions.  
-
-&nbsp;  
-&nbsp;  
-&nbsp;  
-&nbsp;  
-&nbsp;  
-&nbsp;  
 &nbsp;  
 
-<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
+MicroTorch is actively developed software and will contain bugs and issues. If you encounter a problem you can:
 
-## Installation
+- Open an issue here: https://github.com/snigdha-sen/microtorch/issues 
+- Fork or branch the repository, implement a fix, and submit a merge request
+
+We appreciate any feedback or contributions that help improve the project.
 
 
-### Without virtual enviroment (not recommended)
+<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
-Run the following in bash
+# Installation
 
 ```bash
 git clone https://github.com/snigdha-sen/microtorch.git
-
-pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
-
+cd microtorch
+python -m venv .venv
+source .venv/bin/activate  # macOS/Linux
+.venv\Scripts\activate     # Windows
+pip install --upgrade pip
+pip install -e .
 ```
-And the code might work!
 
-### With virtual environment (recommended)
+<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
-Clone the directory
+# Quickstart
 
 ```bash
-git clone https://github.com/snigdha-sen/microtorch.git
+python -m microtorch.main \
+model.name=SANDI \
+data.image=/path/to/dwi.nii \
+acquisition.grad=/path/to/grad.scheme
 ```
 
-Create a virtual environment in the cloned directory
+For full usage instructions and examples, see the [documentation](docs/usage/cli.md).
 
-```bash
-python -m venv <MICROTORCH_DIR>/microtorch_env
-```
-where ```<MICROTORCH_DIR>``` is the location where you cloned the repo.
+<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
-Activate the virtual environment
+# Contributing
 
-```bash
-files <MICROTORCH_DIR>/microtorch_env/bin/activate
-```
+We welcome contributions! Please fork the repo, create a branch for your feature, and submit a Pull Request. 
+Ensure code is tested and documented. Full guidelines in [contributing](docs/developer/contributing.md).
 
-Then run 
+<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
-```bash
-pip install torch numpy nibabel tqdm scipy matplotlib torchmetrics
+# Acknowledgements
 
-```
-And the code should work!
+## Authors
 
-&nbsp;  
-&nbsp;  
+```microTorch``` is authored by Snigdha Sen, Rajib Ahmed, Gerrit Arends, Alvaro Planchuelo Gomez, Xiaoxiang Chen, Marta Masramon Masramon, Marco Palombo, Chris Parker, Chantal MW Tax, Eleftheria Panagiotaki and Paddy J Slator. 
 
-<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
+Snigdha Sen undertook this work whilst being funded by the EPSRC-funded UCL Center for Doctoral Training in Intelligent, Integrated Imaging in Healthcare (i4health) (EP/S021930/1) and the Department of Health's NIHR-funded Biomedical Research Centre at University College London Hospitals.
 
-## Command line examples
+## References
 
-The command line input takes in a number of parameters that allow personalisation of file paths, model type and network parameters. 
+[1] Sen S, Singh S, Pye H, et al. **ssVERDICT: Self-supervised VERDICT-MRI for enhanced prostate tumor characterization.** Magn Reson Med. 2024; 92: 2181-2192. doi: 10.1002/mrm.30186
 
-**Model type**
-```
-python3 fit.py -m <model name>
-```
+[2] Barbieri S, Gurney-Champion OJ, Klaassen R, Thoeny HC. **Deep learning how to fit an intravoxel incoherent motion model to diffusion-weighted MRI.** Magn Reson Med. 2020 Jan;83(1):312-321. doi: 10.1002/mrm.27910
 
-**Folders and paths**
+The following code repositories were helpful in development of MicroTorch:
 
-Set the right paths to the input images
-```
-python3 fit.py -f <data folder> -img <image file name> -ma <mask file name> 
-```
-Set the path to the gradient file, containing all the acquisition parameters...
-```
-python3 fit.py -grad <grad file path>
-```
-... or specify individual file paths for each acquisition parameter
-```
-python3 fit.py -bvals <bvals path> -bvecs <bvecs path> -d <Deltas path> -sd <deltas path> -TE <TEs path> -bd <bdelta path>
-```
-**Network parameters**
-```
-python3 fit.py -lr <learning rate> -se <seed> -lss <layer size> -nl <number of layers> -a <activation function> -df <dropout fraction> -ni <number of iterations>
+- **Deep Learning How to Fit an Intravoxel Incoherent Motion Model to Diffusion-Weighted MRI** Barbieri et al. [https://github.com/sebbarb/deep_ivim](https://github.com/sebbarb/deep_ivim)
+- **Dmipy: Diffusion Microstructure Imaging in Python** [https://github.com/AthenaEPI/dmipy](https://github.com/AthenaEPI/dmipy)
 
-```
-
-### Test image
-
-We have provided some test images to allow you to test if you have correctly set up all the dependencies:
-```
-python fit.py -m BallStick -img data/test_images/BallStick.nii.gz  -grad data/grad_files/grad_HCP.txt -a relu -lr 0.0001 -ni 20
-```
-
-&nbsp;  
-&nbsp;  
-
-<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
-
-## Choosing a model
-
-To create a model comprising a single compartment, set 
-```-m <compartment_name>```. There are a number of typical compartments included:
-- Ball
-- Stick
-- Sphere
-- MSDKI
-- Astrosticks (option to fix D)
-- Zeppelin
-- Standard WM
-- T1 SMDT
-- Cylinder
-
-To create a model comprising **multiple** compartments, set ```-m <compartment_name1 compartment_name2...>``` 
-- e.g. ```-m BallBallSphere``` will result in a model comprising of 2 Balls and 1 Sphere.
-- Note: Compartment names must start with an uppercase letter and be followed by lowercase. There must be no spaces between compartments. 
-
-There are also a number of predefined models to be used as ```-m <model_name>```:
-- VERDICT (Ball, Sphere, Astrosticks - fixed)
-- SANDI (Ball, Zeppelin, Astrosticks)
-- IVIM (Ball, Ball)
-
-
-&nbsp;  
-&nbsp;  
-
-<img align="left" src="microtorch/files/torch.png" alt="icon" width="45" height="45">
-
-## Adding a new compartment
-
-You can add compartments that are not included in microTorch by modifying the ```signal_models.py``` file. Compartments must adhere to the following structure:
-
-```
-class <Compartment_name>:
-    def __init__(self):
-        self.parameter_ranges   = [[min_A, max_A], ...] # Acceptable range of values for each parameter.
-        self.param_names        = ['A', ...]            # Name of each parameter.
-        self.n_params           = N                     # Total number of parameters. In this case, N=1.
-        self.spherical_mean     = True                  # Requires spherical mean (True/False).
-
-
-    def __call__(self, grad, params):    
-        
-        # Get necessary acquisition parameters
-        # Grad class includes b_values, b_vecs, Delta, delta, gradient_strength, TE and bdelta 
-        ac_param = grad.ac_param
-
-        # Get estimated parameters
-        # i is the index of the parameter as defined in __init__. In this case, i=0.
-        param_A  = params[:, i].unsqueeze(1) 
-
-        # The signal equation must be fully differentiable.
-        S = ...
-
-        return S
-```
+## Citation
