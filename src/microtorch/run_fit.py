@@ -2,9 +2,9 @@ import os
 import random
 from typing import Optional, Union
 from pathlib import Path
-from hydra.core.hydra_config import DictConfig
+from hydra.core.hydra_config import HydraConfig
 from copy import deepcopy
-
+from omegaconf import DictConfig
 
 import numpy as np
 from omegaconf import OmegaConf, open_dict

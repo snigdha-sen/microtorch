@@ -111,6 +111,6 @@ class Dot:
 
         b_values = grad.bvalues
         
-        S = torch.ones_like(b_values)
+        S = torch.ones((parameters.shape[0], b_values.shape[0]))
 
         return S

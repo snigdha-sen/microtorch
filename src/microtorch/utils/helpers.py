@@ -57,4 +57,3 @@ def most_recent_output_file(
 
 
 
-most_recent_output_file
