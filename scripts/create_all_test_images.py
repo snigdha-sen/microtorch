@@ -40,7 +40,7 @@ MODEL_GRAD = {
 def run_make_test_image(model_name: str, grad_path: str):
     cmd = [
         sys.executable,
-        "-m", "microtorch.utils.make_test_image_function",
+        "-m", "microtorch.utils.make_test_image",
         "-m", model_name,
         "-g", grad_path,
     ]
