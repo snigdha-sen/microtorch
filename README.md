@@ -35,6 +35,7 @@ pip install -e .
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
 # Quickstart
+The following terminal command fits the SANDI model to the specified dMRI image acquired with the associated acquisition grad file.
 
 ```bash
 python -m microtorch.main \
