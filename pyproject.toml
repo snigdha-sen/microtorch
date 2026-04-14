@@ -17,6 +17,7 @@ dependencies = [
   "matplotlib",
   "torchmetrics",
   "optuna",
+  "hydra-core",
   "jupyter"
 ]
 
