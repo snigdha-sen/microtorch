@@ -22,6 +22,14 @@ We appreciate any feedback or contributions that help improve the project.
 
 # Installation
 
+Quick install via pip:
+
+```bash
+pip install microtorch-mri
+```
+
+otherwise
+
 ```bash
 git clone https://github.com/snigdha-sen/microtorch.git
 cd microtorch
