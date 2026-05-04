@@ -52,7 +52,9 @@ data.image=/path/to/dwi.nii \
 acquisition.grad=/path/to/grad.scheme
 ```
 
-For full usage instructions and examples, see the [documentation](docs/usage/cli.md).
+For full usage instructions and examples, see the [documentation](docs/index.md).
+
+For general usage guidance, see [here](docs/usage/cli.md). For information on the provided tutorials, see [here](docs/tutorials/simulation_data.md), and for further information on using the command line interface see [here](docs/reference/configs.md). Finally, to learn how to contribute, please see [here](docs/developer/contributions.md).
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
