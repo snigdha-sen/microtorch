@@ -27,3 +27,5 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[project.scripts]
+microtorch-create-test-images = "microtorch.utils.create_all_test_images:main"

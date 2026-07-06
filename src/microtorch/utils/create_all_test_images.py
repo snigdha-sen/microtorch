@@ -9,33 +9,58 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from importlib.resources import files, as_file
 
 # Always run from repo root
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 DATA_ROOT = REPO_ROOT / "simulation_data" / "data"
 
-DEFAULT_GRAD = "simulation_data/grad/grad_HCP.txt"
+
+
+# DEFAULT_GRAD = "simulation_data/grad/grad_HCP.txt"
+
+# MODEL_GRAD = {
+#     "VERDICT": "simulation_data/grad/grad_verdict.txt",
+#     "SANDI": "simulation_data/grad/grad_sandi.txt",
+#     "IVIM": "simulation_data/grad/grad_ivim.txt",
+#     "BallStick": "simulation_data/grad/grad_HCP_with_deltas.txt",
+#     "ZeppelinZeppelin": "simulation_data/grad/grad_anisotropic_ivim.txt",
+#     "Ball": "simulation_data/grad/grad_HCP_with_deltas.txt",
+#     "Msdki": "simulation_data/grad/grad_HCP_with_deltas.txt",
+#     "Zeppelin": "simulation_data/grad/grad_HCP_with_deltas.txt",
+#     "Sphere": "simulation_data/grad/grad_verdict.txt",
+#     "BallDot": "simulation_data/grad/grad_sandi.txt",
+#     "Stick": "simulation_data/grad/grad_HCP_with_deltas.txt",
+#     # "Cylinder": "simulation_data/grad/grad_HCP_with_deltas.txt",
+#     "Astrosticks": "simulation_data/grad/grad_verdict.txt",
+#     "Ballt2Ballt2": "simulation_data/grad/grad_ivim_T2.txt",
+#     "Ballt2": "simulation_data/grad/grad_ivim_T2.txt",
+#     "Tensor": "simulation_data/grad/grad_HCP_with_deltas.txt",
+# }
+
+DEFAULT_GRAD = "resources/protocols/grad_HCP.txt"
 
 MODEL_GRAD = {
-    "VERDICT": "simulation_data/grad/grad_verdict.txt",
-    "SANDI": "simulation_data/grad/grad_sandi.txt",
-    "IVIM": "simulation_data/grad/grad_ivim.txt",
-    "BallStick": "simulation_data/grad/grad_HCP_with_deltas.txt",
-    "ZeppelinZeppelin": "simulation_data/grad/grad_anisotropic_ivim.txt",
-    "Ball": "simulation_data/grad/grad_HCP_with_deltas.txt",
-    "Msdki": "simulation_data/grad/grad_HCP_with_deltas.txt",
-    "Zeppelin": "simulation_data/grad/grad_HCP_with_deltas.txt",
-    "Sphere": "simulation_data/grad/grad_verdict.txt",
-    "BallDot": "simulation_data/grad/grad_sandi.txt",
-    "Stick": "simulation_data/grad/grad_HCP_with_deltas.txt",
-    # "Cylinder": "simulation_data/grad/grad_HCP_with_deltas.txt",
-    "Astrosticks": "simulation_data/grad/grad_verdict.txt",
-    "Ballt2Ballt2": "simulation_data/grad/grad_ivim_T2.txt",
-    "Ballt2": "simulation_data/grad/grad_ivim_T2.txt",
-    "Tensor": "simulation_data/grad/grad_HCP_with_deltas.txt",
+    "VERDICT": "grad_verdict.txt",
+    "SANDI": "grad_sandi.txt",
+    "IVIM": "grad_ivim.txt",
+    "BallStick": "grad_HCP_with_deltas.txt",
+    "ZeppelinZeppelin": "grad_anisotropic_ivim.txt",
+    "Ball": "grad_HCP_with_deltas.txt",
+    "Msdki": "grad_HCP_with_deltas.txt",
+    "Zeppelin": "grad_HCP_with_deltas.txt",
+    "Sphere": "grad_verdict.txt",
+    "BallDot": "grad_sandi.txt",
+    "Stick": "grad_HCP_with_deltas.txt",
+    # "Cylinder": "grad_HCP_with_deltas.txt",
+    "Astrosticks": "grad_verdict.txt",
+    "Ballt2Ballt2": "grad_ivim_T2.txt",
+    "Ballt2": "grad_ivim_T2.txt",
+    "Tensor": "grad_HCP_with_deltas.txt",
 }
 
-
+def get_protocol_resource(filename: str):
+    return files("microtorch").joinpath("resources", "protocols", filename)
 
 def run_make_test_image(model_name: str, grad_path: str):
     cmd = [
@@ -43,6 +68,7 @@ def run_make_test_image(model_name: str, grad_path: str):
         "-m", "microtorch.utils.make_test_image",
         "-m", model_name,
         "-g", grad_path,
+        "-savedir", str(DATA_ROOT),
     ]
 
     print("\n>>> Running:", " ".join(cmd))
@@ -117,14 +143,25 @@ def main():
     else:
         models_to_run = MODEL_GRAD
 
-    for model, grad in models_to_run.items():
-        grad_path = args.grad if args.grad else grad
+    for model, grad_file in models_to_run.items():
+        if args.grad:
+            grad_path = Path(args.grad).resolve()
+            run_make_test_image(model, str(grad_path))
+        else:
+          grad_resource = get_protocol_resource(grad_file)
 
-        run_make_test_image(model, grad_path)
+        with as_file(grad_resource) as grad_path:
+            run_make_test_image(model, str(grad_path))
+
         image_path, mask_path = get_image_and_mask(model)
 
         if args.fit:
-            run_fit(model, grad_path, image_path, mask_path)
+            if args.grad:
+                grad_path = Path(args.grad).resolve()
+                run_fit(model, str(grad_path), image_path, mask_path)
+            else:
+                with as_file(get_protocol_resource(grad_file)) as grad_path:
+                    run_fit(model, str(grad_path), image_path, mask_path)
 
 
 if __name__ == "__main__":

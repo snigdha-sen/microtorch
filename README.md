@@ -22,13 +22,18 @@ We appreciate any feedback or contributions that help improve the project.
 
 # Installation
 
-Quick install via pip:
+## Quick install 
+Installs the core microTorch package from PyPI:
 
 ```bash
 pip install microtorch-mri
 ```
 
-otherwise
+This installs the microTorch package and its command line tools.
+
+## Full installation
+
+Includes the package, example Jupyter notebooks, tests, and development utilities.
 
 ```bash
 git clone https://github.com/snigdha-sen/microtorch.git
