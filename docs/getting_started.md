@@ -1,17 +1,10 @@
 # Getting Started with microTorch
 
-This guide will help you **install microTorch** and set up your environment for running experiments.
+This guide will help you set up your environment, **install microTorch**, and run some simple simulation experiments to demonstrate microTorch fitting.
 
 ---
 
-## 1. Clone the repository
-
-``` bash
-git clone https://github.com/snigdha-sen/microtorch.git
-cd microtorch
-```
-
-## 2. Create and activate a virtual environment (recommended)
+## 1. Create and activate a virtual environment (recommended)
 
 Create a virtual environment:
 
@@ -33,24 +26,45 @@ source .venv/bin/activate
 .venv\Scripts\activate
 ```
 
-Upgrade pip:
+## 2 (option A) Quick install of source code
+To install the core microTorch package from PyPI run:
 
-``` bash
+```bash
 pip install --upgrade pip
+pip install microtorch-mri
 ```
 
-## 3. Install the package
+This installs the microTorch package and its command line tools. 
 
-Install MicroTorch and its dependencies (as defined in
+
+## 2 (option B) Clone the repository
+
+To install the full package including source code, notebooks, and tests in editable mode.
+
+Choose an installation location `INSTALL_DIR` and move to it.
+
+```bash
+cd INSTALL_DIR
+```
+Clone the microTorch repository
+
+``` bash
+git clone https://github.com/snigdha-sen/microtorch.git
+cd microtorch
+```
+Move to the microtorch repository
+
+```
+cd microtorch
+```
+Next, Install MicroTorch and its dependencies (as defined in
 `pyproject.toml`):
 
 ``` bash
 pip install .
 ```
 
-### Development Installation (editable mode)
-
-If you plan to modify the code:
+If you plan to modify the code run the following instead
 
 ``` bash
 pip install -e .
@@ -72,7 +86,7 @@ pip install git+https://github.com/snigdha-sen/microtorch.git
 > version of PyTorch.\
 > See: https://pytorch.org/get-started/locally/
 
-## 5. Verify Installation
+## 3. Verify Installation
 
 After installation, you can verify that microTorch is available:
 
@@ -82,7 +96,32 @@ python -c "import microtorch; print(microtorch.__version__)"
 
 If no errors appear, the installation is successful.
 
-## 6. Next Steps
+## 4. Run simulation experiments
+
+You can generate simulated test data with:
+
+```bash
+microtorch-create-test-images
+```
+
+The generated datasets will be saved in `INSTALL_DIR/simulation_data/data`.
+
+To fit models to all of the simulated datasets, run:
+
+```bash
+microtorch-create-test-images --fit
+```
+
+The fitted parameter maps will be written to `INSTALL_DIR/outputs`.
+
+You can then compare the fitted parameter values with the ground truth simulation parameters using the notebook:
+
+```
+examples/plot_test_images.ipynb
+```
+
+
+## 5. Next Steps
 
 After installing microTorch, you can run your first experiment.  
 See [Running microTorch](usage/cli.md) for instructions on using the command line and Hydra configuration system.
