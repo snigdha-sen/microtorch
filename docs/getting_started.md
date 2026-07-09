@@ -96,32 +96,9 @@ python -c "import microtorch; print(microtorch.__version__)"
 
 If no errors appear, the installation is successful.
 
-## 4. Run simulation experiments
+## 4. Next Steps
 
-You can generate simulated test data with:
-
-```bash
-microtorch-create-test-images
-```
-
-The generated datasets will be saved in `INSTALL_DIR/simulation_data/data`.
-
-To fit models to all of the simulated datasets, run:
-
-```bash
-microtorch-create-test-images --fit
-```
-
-The fitted parameter maps will be written to `INSTALL_DIR/outputs`.
-
-You can then compare the fitted parameter values with the ground truth simulation parameters using the notebook:
-
-```
-examples/plot_test_images.ipynb
-```
-
-
-## 5. Next Steps
-
-After installing microTorch, you can run your first experiment.  
-See [Running microTorch](usage/cli.md) for instructions on using the command line and Hydra configuration system.
+After installing microTorch, you can run your first experiments:
+  
+* See [Testing with Simulated Data](tutorials/simulation_data.md) to generate simulated datasets with known ground truth and learn how microTorch fitting works. 
+* See [Running microTorch](usage/cli.md) for instructions on fitting your own data using the using the command line interface and Hydra configuration system.

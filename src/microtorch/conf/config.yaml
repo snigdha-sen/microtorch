@@ -14,7 +14,7 @@ plot:
   zslice: 0
 
 paths:
-  models_dir: src/models
+  models_dir: src/microtorch/signal_models
   sim_data_dir: simulation_data/data
-  grad_dir: simulation_data/grad
+  grad_dir: src/microtorch/resources/protocols 
   

@@ -1,38 +1,47 @@
-## Testing with Synthetic Data
+## Testing with Simulated Data
 
-To verify that everything is configured correctly and to test model fitting using data with known ground truth, you can generate synthetic test images for all currently defined models and compartments:
+To verify that everything is configured correctly and to test model fitting using data with known ground truth, you can generate synthetic test images for all currently defined models and compartments, then fit models to this data.
+
+
+## A. Generate synthetic data
+
+You can generate simulated test data with:
 
 ```bash
-./scripts/create_test_images.py
-```
-
-The generated test datasets will be saved in:
-
-```
-simulation_data/data
+microtorch-create-test-images
 ```
 
 The images are created using example gradient files stored in:
 
 ```
-simulation_data/grad
+INSTALL_DIR/microtorch/src/microtorch/resources/protocols 
 ```
 
----
+The generated datasets will be saved in 
 
-To automatically run model fitting on each of the generated test datasets:
+`INSTALL_DIR/microtorch/simulation_data/data`.
+
+where `INSTALL_DIR` is your chosen installation location.
+
+## B. Fit models to synthetic data 
+
+To fit models to all of the simulated datasets, run:
 
 ```bash
-./scripts/create_test_images.py --fit
+microtorch-create-test-images --fit
 ```
 
----
+The fitted parameter maps will be written to 
+
+`INSTALL_DIR/microtorch/outputs`
+
+## C. Assess fits 
 
 
-To assess the quality of the fits, open and run:
+You can then compare the fitted parameter values with the ground truth simulation parameters using the notebook:
 
 ```
-examples/plot_test_images.ipynb
+INSTALL_DIR/microtorch/examples/plot_test_images.ipynb
 ```
 
 This notebook compares the fitted parameters against the ground truth values to assess if fits are working as expected.
