@@ -29,3 +29,18 @@ where = ["src"]
 
 [project.scripts]
 microtorch-create-test-images = "microtorch.utils.create_all_test_images:main"
+
+[project.optional-dependencies]
+lint = ["ruff"]
+test = ["pytest"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/microtorch/signal_models/__init__.py" = ["E402"]
+"examples/*.ipynb" = ["E402"]

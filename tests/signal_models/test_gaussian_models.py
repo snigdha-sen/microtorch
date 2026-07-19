@@ -1,7 +1,11 @@
-import torch
 import pytest
+import torch
 
-from microtorch.signal_models.gaussian_models import Ball, Msdki, Zeppelin  # adjust import path if needed
+from microtorch.signal_models.gaussian_models import (
+    Ball,
+    Msdki,
+    Zeppelin,
+)  # adjust import path if needed
 
 
 class DummyGrad:
@@ -21,17 +25,20 @@ def grad_ball():
 def grad_zeppelin():
     # 3 measurements with gradient directions
     bvalues = torch.tensor([0.5, 1.0, 2.0])
-    bvecs = torch.tensor([
-        [1.0, 0.0, 0.0],  # x
-        [0.0, 1.0, 0.0],  # y
-        [0.0, 0.0, 1.0],  # z
-    ])
+    bvecs = torch.tensor(
+        [
+            [1.0, 0.0, 0.0],  # x
+            [0.0, 1.0, 0.0],  # y
+            [0.0, 0.0, 1.0],  # z
+        ]
+    )
     return DummyGrad(bvalues=bvalues, bvecs=bvecs)
 
 
 # -----------------------
 # Ball
 # -----------------------
+
 
 def test_ball_attributes():
     m = Ball()
@@ -66,6 +73,7 @@ def test_ball_monotonic_in_b(grad_ball):
 # -----------------------
 # Msdki
 # -----------------------
+
 
 def test_msdki_attributes():
     m = Msdki()
@@ -102,6 +110,7 @@ def test_msdki_reduces_to_ball_when_K_zero(grad_ball):
 # -----------------------
 # Zeppelin
 # -----------------------
+
 
 def test_zeppelin_attributes():
     m = Zeppelin()

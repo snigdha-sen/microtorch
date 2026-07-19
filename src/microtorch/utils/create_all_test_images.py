@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 
 # Script to create test images for all models. Can optionally run fitting step as well.
-# Runs make_test_image.py for each model, then optionallyruns microtorch.torch to fit each image with each network.
+# Runs make_test_image.py for each model, then optionallyruns microtorch.torch to fit each
+# image with each network.
 
 import argparse
-from glob import glob
 import os
 import subprocess
 import sys
+from glob import glob
+from importlib.resources import as_file, files
 from pathlib import Path
-from importlib.resources import files, as_file
 
 # Always run from repo root
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DATA_ROOT = REPO_ROOT / "simulation_data" / "data"
-
 
 
 # DEFAULT_GRAD = "simulation_data/grad/grad_HCP.txt"
@@ -59,16 +59,22 @@ MODEL_GRAD = {
     "Tensor": "grad_HCP_with_deltas.txt",
 }
 
+
 def get_protocol_resource(filename: str):
     return files("microtorch").joinpath("resources", "protocols", filename)
+
 
 def run_make_test_image(model_name: str, grad_path: str):
     cmd = [
         sys.executable,
-        "-m", "microtorch.utils.make_test_image",
-        "-m", model_name,
-        "-g", grad_path,
-        "-savedir", str(DATA_ROOT),
+        "-m",
+        "microtorch.utils.make_test_image",
+        "-m",
+        model_name,
+        "-g",
+        grad_path,
+        "-savedir",
+        str(DATA_ROOT),
     ]
 
     print("\n>>> Running:", " ".join(cmd))
@@ -98,12 +104,13 @@ def get_image_and_mask(model_name: str):
 def run_fit(model_name: str, grad_path: str, image_path: Path, mask_path: Path):
     cmd = [
         sys.executable,
-        "-m", "microtorch.main",
+        "-m",
+        "microtorch.main",
         f"data.image={image_path}",
         f"data.mask={mask_path}",
         f"acquisition.grad={grad_path}",
         f"model.name={model_name}",
-        f"plot.enabled=false",
+        "plot.enabled=false",
     ]
 
     print("\n>>>", " ".join(cmd))
@@ -117,21 +124,12 @@ def main():
         "--model",
         type=str,
         default=None,
-        help="Run only a specific model (default: run all models)"
+        help="Run only a specific model (default: run all models)",
     )
 
-    parser.add_argument(
-        "--grad",
-        type=str,
-        default=None,
-        help="Override gradient file path"
-    )
+    parser.add_argument("--grad", type=str, default=None, help="Override gradient file path")
 
-    parser.add_argument(
-        "--fit",
-        action="store_true",
-        help="Run fitting step as well"
-    )
+    parser.add_argument("--fit", action="store_true", help="Run fitting step as well")
 
     args = parser.parse_args()
 
@@ -148,7 +146,7 @@ def main():
             grad_path = Path(args.grad).resolve()
             run_make_test_image(model, str(grad_path))
         else:
-          grad_resource = get_protocol_resource(grad_file)
+            grad_resource = get_protocol_resource(grad_file)
 
         with as_file(grad_resource) as grad_path:
             run_make_test_image(model, str(grad_path))

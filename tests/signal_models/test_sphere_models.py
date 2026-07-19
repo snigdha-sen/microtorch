@@ -1,5 +1,5 @@
-import torch
 import pytest
+import torch
 
 from microtorch.signal_models.sphere_models import Sphere  # adjust to your actual import path
 
@@ -13,9 +13,9 @@ class DummyGrad:
 
 @pytest.fixture
 def grad():
-    bvalues = torch.tensor([1.0, 2.0, 3.0])          # 3 measurements
-    delta   = torch.tensor([0.03, 0.03, 0.03])
-    Delta   = torch.tensor([0.05, 0.05, 0.05])
+    bvalues = torch.tensor([1.0, 2.0, 3.0])  # 3 measurements
+    delta = torch.tensor([0.03, 0.03, 0.03])
+    Delta = torch.tensor([0.05, 0.05, 0.05])
     return DummyGrad(bvalues, delta, Delta)
 
 
@@ -66,4 +66,3 @@ def test_invalid_radius_produces_nonfinite(grad):
     S = model(grad, bad_params)
 
     assert (~torch.isfinite(S)).any()
-

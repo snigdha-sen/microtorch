@@ -1,7 +1,7 @@
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-SIMULATION_PATH = PROJECT_ROOT.parent.parent / "simulation_data" 
+SIMULATION_PATH = PROJECT_ROOT.parent.parent / "simulation_data"
 # GRAD_PATH = PROJECT_ROOT.parent.parent / "simulation_data" / "grad"
 GRAD_PATH = PROJECT_ROOT / "resources" / "protocols"
 SIMULATION_DATA_PATH = SIMULATION_PATH / "data"

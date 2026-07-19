@@ -3,14 +3,15 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from pathlib import Path
 from multiprocessing import freeze_support
+from pathlib import Path
 
-import torch
 import numpy as np
+import torch
+
+from microtorch.model_maker import ModelMaker
 
 from .acquisition_scheme import acquisition_scheme_loader, txt_file_loader
-from microtorch.model_maker import ModelMaker
 
 
 def make_test_image(
@@ -127,6 +128,7 @@ def main():
 
 # Helper functions
 
+
 def add_rician_noise(data: torch.Tensor, snr: float = 20.0) -> torch.Tensor:
     if snr <= 0:
         return data
@@ -146,7 +148,9 @@ def generate_random_params(modelfunc, num_samples, alpha=None):
         min_vals = torch.tensor(modelfunc.parameter_ranges[:, 0], dtype=torch.float32)
         max_vals = torch.tensor(modelfunc.parameter_ranges[:, 1], dtype=torch.float32)
 
-        model_params = torch.rand(num_samples, modelfunc.n_parameters) * (max_vals - min_vals) + min_vals
+        model_params = (
+            torch.rand(num_samples, modelfunc.n_parameters) * (max_vals - min_vals) + min_vals
+        )
     else:
         model_params = torch.empty(num_samples, 1)
 

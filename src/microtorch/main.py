@@ -4,12 +4,14 @@ from omegaconf import DictConfig, OmegaConf
 from microtorch.run_fit import run_fit
 from microtorch.utils.plot_results import plot_param_maps
 
+
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg: DictConfig):
     """
     Main entry point for the microtorch fitting pipeline.
     Args:
-        cfg (DictConfig): The configuration object containing all parameters for data loading, model setup, training, and plotting. 
+        cfg (DictConfig): The configuration object containing all parameters for data
+            loading, model setup, training, and plotting.
     """
 
     # Enforce required args
@@ -27,4 +29,3 @@ def main(cfg: DictConfig):
 
 if __name__ == "__main__":
     main()
-

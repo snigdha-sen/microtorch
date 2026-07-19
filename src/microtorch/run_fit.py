@@ -1,33 +1,32 @@
 import os
 import random
-from typing import Optional, Union
-from pathlib import Path
-from hydra.core.hydra_config import HydraConfig
 from copy import deepcopy
-from omegaconf import DictConfig
+from pathlib import Path
+from typing import Optional, Union
 
+import nibabel as nib
 import numpy as np
-from omegaconf import OmegaConf, open_dict
 import torch
 import torch.nn as nn
-import nibabel as nib
-from microtorch.utils.optuna_search import get_model_hyperparams
-from microtorch.train import train
+from omegaconf import DictConfig, OmegaConf, open_dict
+
 from microtorch.model_maker import ModelMaker
 from microtorch.net_maker import Net
+from microtorch.train import train
 from microtorch.utils import (
-    txt_file_loader,
     acquisition_scheme_loader,
     direction_average,
     img2voxel,
-    voxel2img,
     normalise,
     strip_filename,
+    txt_file_loader,
+    voxel2img,
 )
+from microtorch.utils.optuna_search import get_model_hyperparams
+
 
 def run_fit(
-    cfg: "DictConfig",
-    output_folder: Optional[Union[str, Path]] = None
+    cfg: "DictConfig", output_folder: Optional[Union[str, Path]] = None
 ) -> tuple[np.ndarray, "ModelMaker", Path]:
     """
     Runs full model fitting pipeline, called via main.py.
@@ -44,10 +43,10 @@ def run_fit(
     """
 
     mlp_activation = {
-        'relu': torch.nn.ReLU(),
-        'prelu': torch.nn.PReLU(),
-        'tanh': torch.nn.Tanh(),
-        'elu': torch.nn.ELU(),
+        "relu": torch.nn.ReLU(),
+        "prelu": torch.nn.PReLU(),
+        "tanh": torch.nn.Tanh(),
+        "elu": torch.nn.ELU(),
     }
 
     # -----------------------
@@ -78,7 +77,7 @@ def run_fit(
             cfg.acquisition.TE,
             cfg.acquisition.bdelta,
         )
-        print(f"Loaded acquisition scheme from separate bvals, bvecs, etc files.")
+        print("Loaded acquisition scheme from separate bvals, bvecs, etc files.")
     elif cfg.acquisition.grad is not None:
         grad = acquisition_scheme_loader(cfg.acquisition.grad)
         print(f"Loaded acquisition scheme from {cfg.acquisition.grad}")
@@ -89,25 +88,22 @@ def run_fit(
         raise ValueError(
             f"No acquisition scheme found for model '{cfg.model.name}'. "
             "Provide acquisition.bvals/bvecs, acquisition.grad, "
-            "or add a default gradient file for this model to src/microtorch/conf/acquisition/default.yaml."
+            "or add a default gradient file for this model to "
+            "src/microtorch/conf/acquisition/default.yaml."
         )
 
     # -----------------------
     # Load image & mask
     # -----------------------
     img = torch.from_numpy(
-        nib.load(os.path.join(cfg.data.folder, cfg.data.image))
-        .get_fdata()
-        .astype(np.float32)
+        nib.load(os.path.join(cfg.data.folder, cfg.data.image)).get_fdata().astype(np.float32)
     )
 
     if cfg.data.mask is None:
         mask = torch.ones(img.shape[:3], dtype=torch.float32)
     else:
         mask = torch.from_numpy(
-            nib.load(os.path.join(cfg.data.folder, cfg.data.mask))
-            .get_fdata()
-            .astype(np.float32)
+            nib.load(os.path.join(cfg.data.folder, cfg.data.mask)).get_fdata().astype(np.float32)
         )
 
     # -----------------------
@@ -128,14 +124,10 @@ def run_fit(
     # -----------------------
     lossfunc = nn.MSELoss()
 
-
     hyperparams = get_model_hyperparams(
-        grad=grad,
-        modelfunc=modelfunc,
-        mlp_activation=mlp_activation,
-        X_train=X_train,
-        cfg=cfg)
-    
+        grad=grad, modelfunc=modelfunc, mlp_activation=mlp_activation, X_train=X_train, cfg=cfg
+    )
+
     net = Net(
         grad,
         modelfunc,
@@ -165,20 +157,17 @@ def run_fit(
     # -----------------------
     # Reconstruct parameter maps
     # -----------------------
-    param_map = np.zeros(
-        (*mask.shape, modelfunc.n_parameters + modelfunc.n_fractions)
-    )
+    param_map = np.zeros((*mask.shape, modelfunc.n_parameters + modelfunc.n_fractions))
 
     for i in range(param_map.shape[-1]):
-        param_map[..., i] = voxel2img(
-            params[:, i], maskvox, mask.shape
-        )
+        param_map[..., i] = voxel2img(params[:, i], maskvox, mask.shape)
 
     # -----------------------
     # Save output
     # -----------------------
     if output_folder is None:
         from hydra.core.hydra_config import HydraConfig
+
         output_folder = Path(HydraConfig.get().run.dir)
     output_folder = Path(output_folder)
     output_folder.mkdir(parents=True, exist_ok=True)
@@ -192,11 +181,11 @@ def run_fit(
     nib.save(new_img, out_file)
 
     # -----------------------
-    # Save the used config.yaml 
+    # Save the used config.yaml
     # -----------------------
-    
+
     # if tuning wasn't done, remove the tuning section to avoid confusion
-    cfg_to_save = deepcopy(cfg) 
+    cfg_to_save = deepcopy(cfg)
     if not cfg.training.tune == "optuna_tuner" and "tuning" in cfg_to_save:
         with open_dict(cfg_to_save):
             del cfg_to_save["tuning"]

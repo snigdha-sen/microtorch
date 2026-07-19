@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
-from glob import glob
 import os
 import subprocess
 import sys
+from glob import glob
 from pathlib import Path
 
 from microtorch.networks import NETWORK_REGISTRY
@@ -38,9 +38,12 @@ DATA_ROOT = REPO_ROOT / "simulation_data" / "data"
 def run_make_test_image(model_name: str, grad_path: str):
     cmd = [
         sys.executable,
-        "-m", "microtorch.utils.make_test_image",
-        "-m", model_name,
-        "-g", grad_path,
+        "-m",
+        "microtorch.utils.make_test_image",
+        "-m",
+        model_name,
+        "-g",
+        grad_path,
     ]
 
     print("\n>>> Running:", " ".join(cmd))
@@ -70,12 +73,13 @@ def get_image_and_mask(model_name: str):
 def run_fit(model_name: str, grad_path: str, image_path: Path, mask_path: Path, network_type: str):
     cmd = [
         sys.executable,
-        "-m", "microtorch.main",
+        "-m",
+        "microtorch.main",
         f"data.image={image_path}",
         f"model.name={model_name}",
         f"training.network_type={network_type}",
         "plot.enabled=false",
-        ]
+    ]
 
     if grad_path is not None:
         cmd.append(f"acquisition.grad={grad_path}")
@@ -90,36 +94,22 @@ def main():
     parser = argparse.ArgumentParser(description="Run simulation + fitting pipeline.")
 
     parser.add_argument(
-        "--model",
-        type=str,
-        default=None,
-        help="Choose the model to run (default: None)"
+        "--model", type=str, default=None, help="Choose the model to run (default: None)"
     )
 
-    parser.add_argument(
-        "--grad",
-        type=str,
-        default=None,
-        help="Override gradient file path"
-    )
+    parser.add_argument("--grad", type=str, default=None, help="Override gradient file path")
 
-    parser.add_argument(
-        "--fit",
-        action="store_true",
-        help="Run fitting step as well"
-    )
+    parser.add_argument("--fit", action="store_true", help="Run fitting step as well")
 
     args = parser.parse_args()
 
     # Determine which models to run
-    if args.model is None:        
+    if args.model is None:
         raise ValueError("Please specify a model to run with --model")
     else:
         model_name = args.model
         print(f"Selected model: {model_name}")
 
-
-    from microtorch.networks import NETWORK_REGISTRY
     networks_to_run = NETWORK_REGISTRY.keys()
 
     for network in networks_to_run:
@@ -130,9 +120,6 @@ def main():
         image_path, mask_path = get_image_and_mask(args.model)
 
         run_fit(args.model, grad_path, image_path, mask_path, network)
-
-
-
 
 
 if __name__ == "__main__":

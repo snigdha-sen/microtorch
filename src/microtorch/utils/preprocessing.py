@@ -1,19 +1,22 @@
-from typing import Tuple, Optional
-import numpy as np 
+import numpy as np
 import torch
+
 from .acquisition_scheme import AcquisitionScheme
 
 
-def direction_average(img: torch.Tensor, grad: AcquisitionScheme) -> Tuple[torch.Tensor, AcquisitionScheme]:
+def direction_average(
+    img: torch.Tensor, grad: AcquisitionScheme
+) -> tuple[torch.Tensor, AcquisitionScheme]:
     """
-    Averages the signal across all directions within each shell, 
+    Averages the signal across all directions within each shell,
     returning a direction-averaged image and corresponding gradient table.
 
     Args:
-        img (torch.Tensor): The input image with shape (X, Y, Z, N), where N is the number of gradient directions.
+        img (torch.Tensor): The input image with shape (X, Y, Z, N), where N is the number
+            of gradient directions.
         grad (AcquisitionScheme): The acquisition scheme containing the gradient information.
     Returns:
-        da_img (torch.Tensor): The direction-averaged image with shape (X, Y, Z, M), 
+        da_img (torch.Tensor): The direction-averaged image with shape (X, Y, Z, M),
         where M is the number of unique shells.
     """
 
@@ -37,34 +40,56 @@ def direction_average(img: torch.Tensor, grad: AcquisitionScheme) -> Tuple[torch
     if len(shell_columns) == 0:
         raise ValueError("No gradient information available to define shells!")
 
-    shell_table = torch.stack(shell_columns, dim=1) 
-        
+    shell_table = torch.stack(shell_columns, dim=1)
+
     # Find unique shells - all parameters except gradient directions are the same
     unique_shells, inverse = torch.unique(shell_table, dim=0, return_inverse=True)
 
     # Preallocate
-    da_img  = torch.zeros(img.shape[0:3] + (unique_shells.shape[0],), dtype=img.dtype)
+    da_img = torch.zeros(img.shape[0:3] + (unique_shells.shape[0],), dtype=img.dtype)
 
     da_bvecs = torch.zeros((unique_shells.shape[0], grad.bvecs.shape[1]), dtype=grad.bvecs.dtype)
-    da_bvalues = torch.zeros(unique_shells.shape[0], dtype=grad.bvalues.dtype) if grad.bvalues is not None else None
-    da_delta = torch.zeros(unique_shells.shape[0], dtype=grad.delta.dtype) if grad.delta is not None else None
-    da_Delta = torch.zeros(unique_shells.shape[0], dtype=grad.Delta.dtype) if grad.Delta is not None else None
-    da_TE = torch.zeros(unique_shells.shape[0], dtype=grad.TE.dtype) if grad.TE is not None else None
-    da_bdelta = torch.zeros(unique_shells.shape[0], dtype=grad.bdelta.dtype) if grad.bdelta is not None else None
-    da_gradient_strengths = torch.zeros(unique_shells.shape[0], dtype=grad.gradient_strengths.dtype) if grad.gradient_strengths is not None else None
+    da_bvalues = (
+        torch.zeros(unique_shells.shape[0], dtype=grad.bvalues.dtype)
+        if grad.bvalues is not None
+        else None
+    )
+    da_delta = (
+        torch.zeros(unique_shells.shape[0], dtype=grad.delta.dtype)
+        if grad.delta is not None
+        else None
+    )
+    da_Delta = (
+        torch.zeros(unique_shells.shape[0], dtype=grad.Delta.dtype)
+        if grad.Delta is not None
+        else None
+    )
+    da_TE = (
+        torch.zeros(unique_shells.shape[0], dtype=grad.TE.dtype) if grad.TE is not None else None
+    )
+    da_bdelta = (
+        torch.zeros(unique_shells.shape[0], dtype=grad.bdelta.dtype)
+        if grad.bdelta is not None
+        else None
+    )
+    da_gradient_strengths = (
+        torch.zeros(unique_shells.shape[0], dtype=grad.gradient_strengths.dtype)
+        if grad.gradient_strengths is not None
+        else None
+    )
 
     for i, shell in enumerate(unique_shells):
-        # Indices of grad file for this shell          
-        shell_index = (inverse == i)       
+        # Indices of grad file for this shell
+        shell_index = inverse == i
         first_idx = torch.where(shell_index)[0][0]
-         
-        # Calculate the spherical mean of this shell - average along final axis   
+
+        # Calculate the spherical mean of this shell - average along final axis
         da_img[..., i] = img[..., shell_index].mean(dim=-1)
-        
-        #set direction to zero after averaging
-        da_bvecs[i] = 0.0 # Set the gradient directions to zero for this shell      
-        da_bvalues[i] = grad.bvalues[first_idx] # Set the bvalues to the unique shell value
-        
+
+        # set direction to zero after averaging
+        da_bvecs[i] = 0.0  # Set the gradient directions to zero for this shell
+        da_bvalues[i] = grad.bvalues[first_idx]  # Set the bvalues to the unique shell value
+
         if da_TE is not None:
             da_TE[i] = grad.TE[first_idx]
         if da_delta is not None:
@@ -77,7 +102,7 @@ def direction_average(img: torch.Tensor, grad: AcquisitionScheme) -> Tuple[torch
             da_gradient_strengths[i] = grad.gradient_strengths[first_idx]
         if da_bdelta is not None:
             da_bdelta[i] = grad.bdelta[first_idx]
-    
+
     da_grad = AcquisitionScheme(
         bvalues=da_bvalues,
         bvecs=da_bvecs,
@@ -87,30 +112,35 @@ def direction_average(img: torch.Tensor, grad: AcquisitionScheme) -> Tuple[torch
         TE=da_TE,
         bdelta=da_bdelta,
     )
-    
-    return da_img, da_grad
-         
 
-def img2voxel(img: torch.Tensor, mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    return da_img, da_grad
+
+
+def img2voxel(img: torch.Tensor, mask: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """
-    Converts the image and mask from voxel format to a 2D array of voxels in the mask and a 1D array of the mask in voxel format.
-    
+    Converts the image and mask from voxel format to a 2D array of voxels in the mask and
+    a 1D array of the mask in voxel format.
+
     Args:
-        img (torch.Tensor): The input image with shape (X, Y, Z, N), where N is the number of gradient directions.
-        mask (torch.Tensor): The binary mask with shape (X, Y, Z), where 1 indicates voxels to include in the training set and 0 indicates voxels to exclude.
+        img (torch.Tensor): The input image with shape (X, Y, Z, N), where N is the number
+            of gradient directions.
+        mask (torch.Tensor): The binary mask with shape (X, Y, Z), where 1 indicates
+            voxels to include in the training set and 0 indicates voxels to exclude.
     Returns:
-        X_train (torch.Tensor): A 2D tensor of shape (M, N), where M is the number of voxels in the mask and N is the number of gradient directions, containing the signal values for the voxels in the mask.
-        maskvox (torch.Tensor): A 1D tensor of shape (X*Y*Z,) containing the binary mask in voxel format.
+        X_train (torch.Tensor): A 2D tensor of shape (M, N), where M is the number of
+            voxels in the mask and N is the number of gradient directions, containing the
+            signal values for the voxels in the mask.
+        maskvox (torch.Tensor): A 1D tensor of shape (X*Y*Z,) containing the binary mask
+            in voxel format.
     """
-    
+
     # Calculate the total number of voxels and the number of volumes
     nvoxtotal = torch.prod(torch.tensor(img.shape[0:3]))
-    nvol      = img.shape[3]
+    nvol = img.shape[3]
 
     # Image & mask in voxel format
-    imgvox  = img.reshape(nvoxtotal, nvol)
+    imgvox = img.reshape(nvoxtotal, nvol)
     maskvox = mask.reshape(nvoxtotal)
-
 
     # Extract the voxels in the mask
     X_train = imgvox[maskvox == 1]
@@ -118,19 +148,21 @@ def img2voxel(img: torch.Tensor, mask: torch.Tensor) -> Tuple[torch.Tensor, torc
     return X_train, maskvox
 
 
-def voxel2img(params: np.ndarray, maskvox: np.ndarray, shape: Tuple[int, int, int]) -> np.ndarray:
+def voxel2img(params: np.ndarray, maskvox: np.ndarray, shape: tuple[int, int, int]) -> np.ndarray:
     """
-    Converts the predicted parameters from voxel format back to image format, 
+    Converts the predicted parameters from voxel format back to image format,
     filling in the voxels in the mask and leaving the rest as zeros.
 
     Args:
-        params (numpy.ndarray): A 1D array of shape (M,) containing the predicted parameter values for the voxels in the mask.
-        maskvox (numpy.ndarray): A 1D array of shape (X*Y*Z,) containing the binary mask in voxel format, 
+        params (numpy.ndarray): A 1D array of shape (M,) containing the predicted
+            parameter values for the voxels in the mask.
+        maskvox (numpy.ndarray): A 1D array of shape (X*Y*Z,) containing the binary mask
+            in voxel format,
         where 1 indicates voxels in the mask and 0 indicates voxels outside the mask.
         shape (tuple): The original shape of the image (X, Y, Z).
 
     Returns:
-        img (numpy.ndarray): A 3D array of shape (X, Y, Z) containing the predicted parameter values 
+        img (numpy.ndarray): A 3D array of shape (X, Y, Z) containing the predicted parameter values
         for the voxels in the mask and zeros for the voxels outside the mask.
     """
     # Create an empty image
@@ -147,27 +179,31 @@ def voxel2img(params: np.ndarray, maskvox: np.ndarray, shape: Tuple[int, int, in
 
 def normalise(X_train: torch.Tensor, grad: AcquisitionScheme) -> torch.Tensor:
     """
-    Normalises the training data by the mean of the b0 volumes (or the single b0 volume if only one is present).
+    Normalises the training data by the mean of the b0 volumes (or the single b0 volume if
+    only one is present).
     Args:
-        X_train (torch.Tensor): A 2D tensor of shape (M, N) containing the signal values for the voxels in the mask, 
+        X_train (torch.Tensor): A 2D tensor of shape (M, N) containing the signal values
+        for the voxels in the mask,
         where M is the number of voxels and N is the number of gradient directions.
-        grad (AcquisitionScheme): The acquisition scheme containing the gradient information, including b-values.
+        grad (AcquisitionScheme): The acquisition scheme containing the gradient
+            information, including b-values.
     Returns:
-        X_train (torch.Tensor): The normalised training data, where each voxel's signal is divided by the mean of the b0 volumes for that voxel.
+        X_train (torch.Tensor): The normalised training data, where each voxel's signal is
+            divided by the mean of the b0 volumes for that voxel.
     """
-    
+
     nvol = grad.number_of_measurements
 
     # find lowest b-value
     min_b = torch.min(grad.bvalues)
-    ref_mask = (grad.bvalues == min_b)
+    ref_mask = grad.bvalues == min_b
 
     # among those, find lowest TE if TE exists
     if hasattr(grad, "TE") and grad.TE is not None:
         min_te = torch.min(grad.TE[ref_mask])
         ref_mask = ref_mask & (grad.TE == min_te)
 
-    #lowest b-value and lowest TE is the reference for normalisation.
+    # lowest b-value and lowest TE is the reference for normalisation.
     ref_idx = torch.where(ref_mask)[0]
 
     if ref_idx.numel() == 0:
@@ -182,7 +218,3 @@ def normalise(X_train: torch.Tensor, grad: AcquisitionScheme) -> torch.Tensor:
     X_train = X_train / ref_signal.repeat(1, nvol)
 
     return X_train
-
-
-
-

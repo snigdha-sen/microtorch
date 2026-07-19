@@ -1,22 +1,23 @@
-import os
-import sys
 import logging
-import yaml
+import sys
 from pathlib import Path
+from typing import Any
+
 import optuna
-from typing import Any, Dict
-from optuna.trial import Trial, TrialState
-from omegaconf import DictConfig
 import torch
+import torch.nn as nn
+import yaml
 from hydra.core.hydra_config import HydraConfig
+from omegaconf import DictConfig
+from optuna.trial import Trial, TrialState
+
+from microtorch.model_maker import ModelMaker
 from microtorch.net_maker import Net
 from microtorch.train import train
-import torch.nn as nn
-
 from microtorch.utils.acquisition_scheme import AcquisitionScheme
-from microtorch.model_maker import ModelMaker
 
-def sample_hyperparams(trial: Trial, tuning_cfg: DictConfig) -> Dict[str, Any]:
+
+def sample_hyperparams(trial: Trial, tuning_cfg: DictConfig) -> dict[str, Any]:
     """Dynamically sample hyperparams from tuning config."""
     params = {}
     for name, spec in tuning_cfg.items():
@@ -30,13 +31,14 @@ def sample_hyperparams(trial: Trial, tuning_cfg: DictConfig) -> Dict[str, Any]:
             params[name] = trial.suggest_categorical(name, list(spec.choices))
     return params
 
+
 def run_hyperparams_tuning(
     grad: AcquisitionScheme,
     modelfunc: ModelMaker,
-    mlp_activation: Dict[str, nn.Module],
+    mlp_activation: dict[str, nn.Module],
     X_train: torch.Tensor,
     cfg: DictConfig,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Hyperparameter tuning routine using Optuna.
 
@@ -58,19 +60,22 @@ def run_hyperparams_tuning(
         # ---- Sample hyperparameters ----
         hp = sample_hyperparams(trial, cfg.tuning)
 
-        print(f"\nTrial {trial.number}: layers={hp['num_layers']},patience={hp['patience']}, dropout={hp['dropout_frac']:.3f}, "
-              f"lr={hp['lr']:.2e}, activation={hp['activation']}, hidden_size={hp['hidden_size']}")
+        print(
+            f"\nTrial {trial.number}: layers={hp['num_layers']},patience={hp['patience']}, "
+            f"dropout={hp['dropout_frac']:.3f}, "
+            f"lr={hp['lr']:.2e}, activation={hp['activation']}, hidden_size={hp['hidden_size']}"
+        )
 
         # ---- Build network with sampled hyperparams ----
         net = Net(
             grad,
             modelfunc,
             input_neurons=grad.number_of_measurements,
-            layer_dims=hp['hidden_size'],
-            n_layers=hp['num_layers'],
-            dropout_fraction=hp['dropout_frac'],
+            layer_dims=hp["hidden_size"],
+            n_layers=hp["num_layers"],
+            dropout_fraction=hp["dropout_frac"],
             clipping_method=cfg.training.clip,
-            activation=mlp_activation[hp['activation']],
+            activation=mlp_activation[hp["activation"]],
         )
 
         # ---- Train and get validation loss ----
@@ -78,15 +83,14 @@ def run_hyperparams_tuning(
             net,
             X_train,
             lossfunc,
-            lr=hp['lr'],
+            lr=hp["lr"],
             batch_size=256,
             num_iters=cfg.training.num_iters,
-            patience=hp['patience'],
-            trial=trial,           # passed through so train() can call trial.report / trial.should_prune
+            patience=hp["patience"],
+            trial=trial,  # passed through so train() can call trial.report / trial.should_prune
         )
 
         return float(best_loss)
-
 
     sampler = optuna.samplers.TPESampler()
 
@@ -94,9 +98,9 @@ def run_hyperparams_tuning(
     optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 
     output_folder = Path(HydraConfig.get().run.dir)
-    db_path       = output_folder / "db.sqlite3"
-    storage_name  = f"sqlite:///{db_path}"
-    study_name    = f"{cfg.model.name}"
+    db_path = output_folder / "db.sqlite3"
+    storage_name = f"sqlite:///{db_path}"
+    study_name = f"{cfg.model.name}"
 
     study = optuna.create_study(
         direction="minimize",
@@ -128,10 +132,10 @@ def run_hyperparams_tuning(
 def get_model_hyperparams(
     grad: AcquisitionScheme,
     modelfunc: ModelMaker,
-    mlp_activation: Dict[str, nn.Module],
+    mlp_activation: dict[str, nn.Module],
     X_train: torch.Tensor,
     cfg: DictConfig,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Entry point for hyperparameter resolution.
 
@@ -152,26 +156,24 @@ def get_model_hyperparams(
 
     method = cfg.training.tune
 
-    #if loading tuned hyperparams but file doesn't exist, fall back to default (prevents crashes if user forgets to run tuner first)
+    # if loading tuned hyperparams but file doesn't exist, fall back to default (prevents
+    # crashes if user forgets to run tuner first)
     if method == "load_tuned" and not hyperparams_path.exists():
         method = "default"
         print("-" * 45)
-        print(f"Warning: No tuned hyperparameters found at {hyperparams_path}.")    
-        print("Falling back to default hyperparameters from config. "    \
-              "To run hyperparameter tuning and save results, set cfg.training.tune=optuna_tuner")
+        print(f"Warning: No tuned hyperparameters found at {hyperparams_path}.")
+        print(
+            "Falling back to default hyperparameters from config. "
+            "To run hyperparameter tuning and save results, set cfg.training.tune=optuna_tuner"
+        )
         print("-" * 45)
-
 
     if method == "optuna_tuner":
         print("-" * 45)
         print("Starting Optuna hyperparameter search …")
         print("-" * 45)
         best_hyperparams = run_hyperparams_tuning(
-            grad=grad,
-            modelfunc=modelfunc,
-            mlp_activation=mlp_activation,
-            X_train=X_train,
-            cfg=cfg
+            grad=grad, modelfunc=modelfunc, mlp_activation=mlp_activation, X_train=X_train, cfg=cfg
         )
         with open(hyperparams_path, "w") as f:
             yaml.safe_dump(best_hyperparams, f)
@@ -190,18 +192,24 @@ def get_model_hyperparams(
     elif method == "default":
         # Fall back to config values — no tuning
         print("-" * 45)
-        print("Warning: Using default hyperparameters from config (no tuning). " \
-        "These hyperparamters have not been optimized for the " 
-        + cfg.model.name + " model and may lead to suboptimal results.")
+        print(
+            "Warning: Using default hyperparameters from config (no tuning). "
+            "These hyperparamters have not been optimized for the "
+            + cfg.model.name
+            + " model and may lead to suboptimal results."
+        )
         print("To run hyperparameter tuning and save results, set cfg.training.tune=optuna_tuner")
         print("-" * 45)
         return {
-            "num_layers":   cfg.training.num_layers,
+            "num_layers": cfg.training.num_layers,
             "hidden_size": cfg.training.layer_size,
             "dropout_frac": cfg.training.dropout_frac,
             "patience": cfg.training.patience,
-            "lr":           cfg.training.learning_rate,
-            "activation":   cfg.training.activation,
+            "lr": cfg.training.learning_rate,
+            "activation": cfg.training.activation,
         }
     else:
-        raise ValueError(f"Invalid tuning method: {method}. Must be one of 'optuna_tuner', 'load_tuned', or 'default'.")
+        raise ValueError(
+            f"Invalid tuning method: {method}. Must be one of 'optuna_tuner', 'load_tuned', "
+            "or 'default'."
+        )
