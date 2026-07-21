@@ -4,7 +4,6 @@ import numpy as np
 import torch
 import yaml
 
-import microtorch.signal_models as signal_models_module
 from microtorch.utils.paths import MODELS_CONF_PATH
 
 
@@ -118,15 +117,10 @@ class ModelMaker:
         if len(self.compartments) == 1:
             return self.compartments[0](grad, parameters)
 
-        if self.n_compartments > 1:  # Extract volume fractions for multicompartment models
-            frac_start = self.n_parameters
-            frac_end = frac_start + self.n_fractions
-            f = parameters[:, frac_start:frac_end]  # shape [num_samples, n_fractions]
-            # last_fraction = 1 - fractions.sum(dim=1, keepdim=True)  # shape [num_samples, 1]
-        elif self.n_compartments == 1:  # Set f to 1 single compartment models
-            f = torch.ones(
-                parameters.size(0), 1, device=parameters.device
-            )  # shape [num_samples, 1]
+        # Extract volume fractions for multicompartment models
+        frac_start = self.n_parameters
+        frac_end = frac_start + self.n_fractions
+        f = parameters[:, frac_start:frac_end]  # shape [num_samples, n_fractions]
 
         # Initialize signal to zeros
         S = torch.zeros(
@@ -200,6 +194,8 @@ class ModelMaker:
             ValueError: If the YAML configuration for the model is invalid (e.g., incorrect
                 number of parameter ranges).
         """
+        import microtorch.signal_models as signal_models_module
+
         comps_classes = []
 
         model_file = MODELS_CONF_PATH / f"{modelname}.yaml"

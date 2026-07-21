@@ -79,6 +79,7 @@ def fraction_squash(
         if modelfunc.n_fractions == 1:
             # Two compartments: clip the single free fraction to [0,1]
             fractions = squash(logits_all[:, 0].clone().unsqueeze(1), method, 0, 1)
+            fractions = fractions.unsqueeze(1)  # restore feature dim for concatenation
             fractions = torch.cat([fractions, 1 - fractions], dim=1)  # implicit second fraction
         else:
             # More than two compartments

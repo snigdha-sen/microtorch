@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from microtorch.signal_models.sphere_models import Sphere  # adjust to your actual import path
+from microtorch.signal_models.sphere_models import Dot, Sphere  # adjust to your actual import path
 
 
 class DummyGrad:
@@ -66,3 +66,36 @@ def test_invalid_radius_produces_nonfinite(grad):
     S = model(grad, bad_params)
 
     assert (~torch.isfinite(S)).any()
+
+
+def test_sphere_default_diffusivity_when_fixed_D_not_set(grad):
+    model = Sphere()
+    assert model.fixed_D is None
+
+    params = torch.tensor([[5.0]])
+    S = model(grad, params)
+
+    assert torch.isfinite(S).all()
+    assert S.shape == (1, grad.bvalues.numel())
+
+
+# -----------------------
+# Dot
+# -----------------------
+
+
+def test_dot_attributes():
+    model = Dot()
+    assert model.n_parameters == 0
+    assert model.parameter_names == []
+    assert model.spherical_mean is None
+
+
+def test_dot_signal_is_always_one(grad):
+    model = Dot()
+    params = torch.empty(2, 0)
+
+    S = model(grad, params)
+
+    assert S.shape == (2, grad.bvalues.numel())
+    assert torch.equal(S, torch.ones_like(S))

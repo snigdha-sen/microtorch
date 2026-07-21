@@ -44,7 +44,7 @@ cd microtorch
 python -m venv .venv
 source .venv/bin/activate  # macOS/Linux
 pip install --upgrade pip
-pip install -e .
+pip install -e ".[dev]"
 ```
 
 ### Windows
@@ -53,6 +53,20 @@ Replace ```source .venv/bin/activate``` with
 ```bash
 .venv\Scripts\activate 
 ```    
+
+### Running the tests
+
+```bash
+pytest tests
+```
+
+With a coverage report:
+
+```bash
+pytest tests --cov --cov-report=term-missing
+```
+
+See [docs/developer/testing.md](docs/developer/testing.md) for more, including what the integration test covers and which modules are excluded from the coverage target (and why).
 
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">

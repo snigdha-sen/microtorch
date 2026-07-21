@@ -4,6 +4,7 @@ import torch
 
 from microtorch.utils.acquisition_scheme import (
     AcquisitionScheme,
+    _process_TE,
     acquisition_scheme_loader,
     check_acquisition_scheme,
     load_grad,
@@ -66,6 +67,55 @@ def test_check_acquisition_scheme_length_mismatch():
 
     with pytest.raises(ValueError):
         check_acquisition_scheme(bvals, bvecs)
+
+
+def test_check_acquisition_scheme_bvalues_not_1d():
+    bvals = np.array([[0.0, 1.0], [1.0, 2.0]])
+    bvecs = np.array([[1, 0, 0], [0, 1, 0]])
+
+    with pytest.raises(ValueError):
+        check_acquisition_scheme(bvals, bvecs)
+
+
+def test_check_acquisition_scheme_bvecs_wrong_shape():
+    bvals = np.array([0.0, 1.0])
+    bvecs = np.array([[1, 0], [0, 1]])
+
+    with pytest.raises(ValueError):
+        check_acquisition_scheme(bvals, bvecs)
+
+
+def test_check_acquisition_scheme_delta_length_mismatch():
+    bvals = np.array([0.0, 1.0])
+    bvecs = np.array([[1, 0, 0], [0, 1, 0]])
+    delta = np.array([1.0, 2.0, 3.0])
+
+    with pytest.raises(ValueError, match="delta must match bvalues length"):
+        check_acquisition_scheme(bvals, bvecs, delta=delta)
+
+
+def test_check_acquisition_scheme_negative_delta():
+    bvals = np.array([0.0, 1.0])
+    bvecs = np.array([[1, 0, 0], [0, 1, 0]])
+    delta = np.array([-1.0, 2.0])
+
+    with pytest.raises(ValueError, match="delta must be non-negative"):
+        check_acquisition_scheme(bvals, bvecs, delta=delta)
+
+
+def test_process_te_negative_raises():
+    with pytest.raises(ValueError):
+        _process_TE(np.array([10.0, -5.0]))
+
+
+def test_process_te_converts_ms_to_seconds():
+    TE = _process_TE(np.array([80.0, 100.0]))
+    assert np.allclose(TE, np.array([0.08, 0.1]))
+
+
+def test_process_te_leaves_seconds_unchanged():
+    TE = _process_TE(np.array([0.08, 0.1]))
+    assert np.allclose(TE, np.array([0.08, 0.1]))
 
 
 def test_acquisition_scheme_loader(tmp_path):

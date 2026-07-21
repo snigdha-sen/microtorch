@@ -32,7 +32,23 @@ microtorch-create-test-images = "microtorch.utils.create_all_test_images:main"
 
 [project.optional-dependencies]
 lint = ["ruff"]
-test = ["pytest"]
+test = ["pytest", "pytest-cov"]
+dev = ["microtorch[lint,test]"]
+
+[tool.coverage.run]
+source = ["microtorch"]
+# These modules are deliberately excluded from coverage targets - see
+# "What isn't covered, and why" in docs/developer/testing.md for the rationale.
+omit = [
+    "*/microtorch/main.py",
+    "*/microtorch/utils/plot_results.py",
+    "*/microtorch/utils/optuna_search.py",
+    "*/microtorch/utils/create_all_test_images.py",
+]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
 
 [tool.ruff]
 line-length = 100

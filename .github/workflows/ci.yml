@@ -35,5 +35,5 @@ jobs:
           cache: pip
       - name: Install package and test dependencies
         run: pip install -e ".[test]"
-      - name: Run tests
-        run: pytest tests -v
+      - name: Run tests with coverage
+        run: pytest tests -v --cov --cov-report=term-missing
