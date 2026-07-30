@@ -72,17 +72,14 @@ See [docs/developer/testing.md](docs/developer/testing.md) for more, including w
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
 # Quickstart
-After installation, navigate to `INSTALL_DIR`. 
+After installation, make sure you're in the `microtorch` repository directory (`INSTALL_DIR/microtorch`, where you ran `pip install -e .`).
 
-```bash
-cd INSTALL_DIR
-```    
 Next, make some simulated test data
 
 ```bash
 microtorch-create-test-images
 ```    
-This will create test datasets in ```INSTALL_DIR/simulation_data/data```.
+This will create test datasets in ```INSTALL_DIR/microtorch/simulation_data/data```.
 
 You can then fit a model (SANDI in this example) to one of the simulated datasets.
 
@@ -108,7 +105,7 @@ Useful starting points include:
 
 - **General usage:** [here](docs/usage/cli.md)
 - **Tutorials:** [here](docs/tutorials/simulation_data.md) 
-- **Command line interface and configuration:** [here](docs/reference/configs.md)
+- **Command line interface and configuration:** [here](docs/usage/configs.md)
 - **Contributing:** [here](docs/developer/contributions.md)
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
@@ -116,7 +113,7 @@ Useful starting points include:
 # Contributing
 
 We welcome contributions! Please fork the repo, create a branch for your feature, and submit a Pull Request. 
-Ensure code is tested and documented. Full guidelines in [contributing](docs/developer/contributing.md).
+Ensure code is tested and documented. Full guidelines in [contributing](docs/developer/contributions.md).
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 

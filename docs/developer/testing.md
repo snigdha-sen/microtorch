@@ -20,8 +20,7 @@ pytest tests --cov --cov-report=term-missing
 
 Coverage settings live in `pyproject.toml` under `[tool.coverage.run]` and
 `[tool.coverage.report]`. Current coverage of the in-scope modules (see
-below) is around 94%, above the `fail_under = 85` threshold enforced there
-and in CI.
+below) is around 94%.
 
 Tests are organized to mirror the package layout:
 
@@ -39,11 +38,10 @@ tests/integration/
 `tests/integration/test_fit_pipeline.py` is an end-to-end test: it simulates
 a known ground truth with `make_test_image`, fits it with `run_fit` (the
 same function `microtorch.main` calls), and checks the fitted parameters
-recover the simulated ground truth. It trains a small network for real, so
-it's slower than the unit tests, but needs no external data.
+recover the simulated ground truth. 
 
 Installing `pip install -e ".[dev]"` gets you pytest, pytest-cov, and ruff
-together - this is what CI runs.
+together - this is what the CI pipeline runs.
 
 ## Adding Tests
 
@@ -61,7 +59,7 @@ should verify:
 -   Expected output shape
 -   Basic sanity checks of signal behaviour
 
-## What Isn't Covered, and Why
+## What Isn't Covered
 
 Coverage targets the scientific and training logic: signal models,
 `ModelMaker`, the network/training pipeline (`net_maker.py`, `train.py`,
@@ -69,29 +67,22 @@ Coverage targets the scientific and training logic: signal models,
 and the end-to-end fitting pipeline (`run_fit.py`).
 
 A few modules are excluded from the coverage target (`[tool.coverage.run]
-omit` in `pyproject.toml`) because they're thin orchestration/IO layers
-around logic that's already tested elsewhere, rather than algorithmic code
-in their own right:
+omit` in `pyproject.toml`):
 
 -   `main.py` - the Hydra CLI entry point. Its only logic is argument
     validation plus calls to `run_fit` and `plot_param_maps`, both tested
-    directly; testing it further would mostly test Hydra's own
-    decorator/argument-parsing machinery.
+    directly.
 -   `utils/plot_results.py` - matplotlib plotting functions that produce
-    figures for visual inspection (see the example notebooks). Correctness
-    here is about the figure being informative, which visual review covers
-    better than an automated test would.
+    figures for visual inspection (see the example notebooks). .
 -   `utils/optuna_search.py` - the Optuna hyperparameter search loop. The
     hyperparameter-resolution logic it's called through
     (`get_model_hyperparams`, `tune="default"`) is exercised by the
     integration test; the search loop itself (`tune="optuna_tuner"`) mostly
     orchestrates Optuna's own optimization machinery, and running real
-    trials in CI would be slow without adding much confidence in
-    microtorch-specific logic.
+    trials in CI would be slow.
 -   `utils/create_all_test_images.py` - the batch-generation script behind
     the `microtorch-create-test-images` command. It loops `make_test_image`
-    (which does have direct tests) over every model/config combination; it's
-    I/O and looping around an already-tested function.
+    (which does have direct tests) over every model/config combination.
 
 If you add non-trivial logic to any of these files, please add tests for it
 and remove it from the `omit` list.

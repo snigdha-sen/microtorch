@@ -1,12 +1,11 @@
 ## Adding a New Compartment
 
-New microstructure compartments can be added by adding a new class to one of the following files in `src/signal_models`:
+New microstructure compartments can be added by adding a new class to one of the following files in `src/microtorch/signal_models`:
 
 ```
-src/signal_models/gaussian_models.py
-src/signal_models/sphere_models.py
-src/signal_models/cylinder_models.py
-src/signal_models/distributed_models.py
+src/microtorch/signal_models/gaussian_models.py
+src/microtorch/signal_models/sphere_models.py
+src/microtorch/signal_models/cylinder_models.py
 ```
 Since multi-compartment models are identified by MicroTorch using PascalCase, **each compartment name must begin with a capital letter and be followed only by lowercase letters and numbers.**
 
@@ -57,6 +56,6 @@ class Compartmentname:
 In addition, when adding a new compartment you should:
 
 - Add the compartment name **in both required locations** in `src/microtorch/signal_models/__init__.py`.
-- Add an example gradient file suitable for estimating the compartment’s parameters to `simulation_data/grad/` (if one does not already exist).
-- Register the model and its example gradient file in `scripts/create_all_test_images.py`.
+- Add an example gradient file suitable for estimating the compartment’s parameters to `src/microtorch/resources/protocols/` (if one does not already exist).
+- Register the model and its example gradient filename in the `MODEL_GRAD` dict in `src/microtorch/utils/create_all_test_images.py`.
 - Optionally, add appropriate parameter ranges or fixed parameters via a yaml file (see [adding_models.md](docs/developer/adding_models.md)).

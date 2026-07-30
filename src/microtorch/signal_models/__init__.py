@@ -8,6 +8,6 @@ from .sphere_models import Dot, Sphere
 __all__ += ["Sphere", "Dot"]
 # from .distributed_models import Standard_wm, t1_smdt
 # __all__ += ["Standard_WM", "t1_smdt"]
-from .cylinder_models import Astrosticks, Stick  # cylinder
+from .cylinder_models import Astrosticks, Cylinder, Stick  # cylinder
 
-__all__ += ["Stick", "Astrosticks"]
+__all__ += ["Stick", "Astrosticks", "Cylinder"]
