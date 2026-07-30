@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "microtorch"
-version = "0.1.0"
+name = "microtorch-mri"
+version = "0.1.1"
 description = "Diffusion MRI Model Fitting with PyTorch"
 requires-python = ">=3.9"
 
@@ -23,9 +23,13 @@ dependencies = [
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+microtorch = ["conf/**/*.yaml", "resources/protocols/*"]
 
 [project.scripts]
 microtorch-create-test-images = "microtorch.utils.create_all_test_images:main"
