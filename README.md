@@ -89,6 +89,8 @@ model.name=SANDI \
 data.image=simulation_data/data/SANDI/SANDI_BallSphereAstrosticks_data.nii.gz \
 acquisition.grad=src/microtorch/resources/protocols/grad_sandi.txt
 ```
+
+When the model fit has finished you can compare the fitted and ground truth parameters using [this notebook](examples/plot_test_images.ipynb).
   
 To fit any supported model to your own diffusion MRI data, specify the model name together with the image and acquisition protocol:
 
