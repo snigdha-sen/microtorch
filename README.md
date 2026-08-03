@@ -57,13 +57,13 @@ Replace ```source .venv/bin/activate``` with
 ### Running the tests
 
 ```bash
-pytest tests
+python -m pytest tests
 ```
 
 With a coverage report:
 
 ```bash
-pytest tests --cov --cov-report=term-missing
+python -m pytest tests --cov --cov-report=term-missing
 ```
 
 See [docs/developer/testing.md](docs/developer/testing.md) for more, including what the integration test covers and which modules are excluded from the coverage target (and why).
