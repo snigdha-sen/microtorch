@@ -108,7 +108,7 @@ Useful starting points include:
 - **General usage:** [here](docs/usage/cli.md)
 - **Tutorials:** [here](docs/tutorials/simulation_data.md) 
 - **Command line interface and configuration:** [here](docs/usage/configs.md)
-- **Contributing:** [here](docs/developer/contributions.md)
+- **Contributing:** [here](docs/developer/contributing.md)
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
