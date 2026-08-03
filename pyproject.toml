@@ -37,7 +37,11 @@ microtorch-create-test-images = "microtorch.utils.create_all_test_images:main"
 [project.optional-dependencies]
 lint = ["ruff"]
 test = ["pytest", "pytest-cov"]
-dev = ["microtorch[lint,test]"]
+dev = [
+    "ruff",
+    "pytest",
+    "pytest-cov",
+]
 
 [tool.coverage.run]
 source = ["microtorch"]
