@@ -1,6 +1,6 @@
 # Training Parameters
 
-microTorch also allows configuration of network training parameters, as well as hyperparameter tuning via optuna ADD
+microTorch also allows configuration of network training parameters, as well as hyperparameter tuning via Optuna.
 
 ## Common Parameters
 
@@ -12,8 +12,7 @@ training.seed=42
 training.dropout_frac=0.1
 training.layer_size=128
 training.num_layers=4
-training.clip=1.0
-training.operation=fit
+training.clip=clamp
 ```
 
 # Optuna Tuning
@@ -28,7 +27,7 @@ Optuna is an automatic hyperparameter optimization framework. By selecting the o
 In the conf/training/default.yaml file, the tune option determines how the tuning process works:
 
 - optuna_tuner: This option launches the Optuna tuner.
-- load_tuned: Loads the best hyperparameters from the tuning process for final model fitting. These values will be stored in the training/*model_name*_best_hyperparameters.yaml file.
+- load_tuned: Loads the best hyperparameters from the tuning process for final model fitting. These values are stored in a `training/*model_name*_best_hyperparams.yaml` file.
 - default: If selected, all hyperparameters will be taken from the training/default.yaml file without any tuning.
 
 The hyperparameters that are optimized by Optuna include:
@@ -56,56 +55,62 @@ The hyperparameter search space is defined in the tuning/default.yaml file. Each
 
 #### Continuous Hyperparameters
 
-For continuous values, you can specify a lower and upper bound. For example:
+For continuous values, you specify a lower and upper bound. For example:
 
-##### learning_rate:
+```yaml
+lr:
+  type: float
+  low: 1.0e-4
+  high: 5.0e-3
+  log: true
+```
 
-- type: float
-- low: 1e-6
-- high: 1e-2
-  
 #### Discrete Hyperparameters
 
-For discrete values, such as the number of hidden layers or the size of hidden layers, you can define possible values using the choices option. For example:
+For discrete values, such as the size of hidden layers, you define possible values using the choices option. For example:
 
-##### hidden_size:
-
-- type: categorical
-- choices: [64, 128, 256, 512]
-
-Example Configuration
-
-Here is an example of a tuning/default.yaml file configuration:
-
-### Hyperparameter search space
-
-#### learning_rate:
-  type: float
-  
-  low: 1e-6
-  
-  high: 1e-2
-
-#### dropout_fraction:
-  type: float
-  
-  low: 0.1
-  
-  high: 0.5
-
-#### hidden_size:
+```yaml
+hidden_size:
   type: categorical
-  
-  choices: [64, 128, 256]
+  choices: [32, 64, 128, 256, 512]
+```
 
-#### activation_function:
+### Example Configuration
+
+Here is the full `tuning/default.yaml` file shipped with microTorch:
+
+```yaml
+num_layers:
+  type: int
+  low: 1
+  high: 6
+
+hidden_size:
   type: categorical
-  
-  choices: ['relu', 'tanh', 'sigmoid']
+  choices: [32, 64, 128, 256, 512]
 
+patience:
+  type: categorical
+  choices: [50, 100, 200]
+
+dropout_frac:
+  type: float
+  low: 0.0
+  high: 0.2
+
+lr:
+  type: float
+  low: 1.0e-4
+  high: 5.0e-3
+  log: true
+
+activation:
+  type: categorical
+  choices: ["relu", "prelu", "tanh", "elu"]
+```
 
 ## Summary
 To enable Optuna tuning, set tune: optuna_tuner in the conf/training/default.yaml file.
-The best hyperparameters will be stored in a *_best_hyperparameters.yaml file.
+The best hyperparameters will be stored in a `*_best_hyperparams.yaml` file.
 Use at least 40-50 trials to ensure efficient exploration of the search space.
 Define the hyperparameter search space in tuning/default.yaml with appropriate types (float, integer, or categorical).

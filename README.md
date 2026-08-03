@@ -22,46 +22,98 @@ We appreciate any feedback or contributions that help improve the project.
 
 # Installation
 
-Quick install via pip:
+## Quick install (source code)
+Installs the core microTorch package from PyPI:
 
 ```bash
 pip install microtorch-mri
 ```
 
-otherwise
+This installs the microTorch package and its command line tools.
+
+## Full installation (source code, notebooks, and tests)
+
+Includes the package, example Jupyter notebooks, tests, and development utilities. All files will be cloned into a user-chosen `INSTALL_DIR`.
+
+### macOS/Linux
 
 ```bash
+cd INSTALL_DIR
 git clone https://github.com/snigdha-sen/microtorch.git
 cd microtorch
 python -m venv .venv
 source .venv/bin/activate  # macOS/Linux
-.venv\Scripts\activate     # Windows
 pip install --upgrade pip
-pip install -e .
+pip install -e ".[dev]"
 ```
+
+### Windows
+Replace ```source .venv/bin/activate``` with
+
+```bash
+.venv\Scripts\activate 
+```    
+
+### Running the tests
+
+```bash
+pytest tests
+```
+
+With a coverage report:
+
+```bash
+pytest tests --cov --cov-report=term-missing
+```
+
+See [docs/developer/testing.md](docs/developer/testing.md) for more, including what the integration test covers and which modules are excluded from the coverage target (and why).
+
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
 # Quickstart
-The following terminal command fits the SANDI model to the specified dMRI image acquired with the associated acquisition grad file.
+After installation, make sure you're in the `microtorch` repository directory (`INSTALL_DIR/microtorch`, where you ran `pip install -e .`).
+
+Next, make some simulated test data
+
+```bash
+microtorch-create-test-images
+```    
+This will create test datasets in ```INSTALL_DIR/microtorch/simulation_data/data```.
+
+You can then fit a model (SANDI in this example) to one of the simulated datasets.
 
 ```bash
 python -m microtorch.main \
 model.name=SANDI \
-data.image=/path/to/dwi.nii \
-acquisition.grad=/path/to/grad.scheme
+data.image=simulation_data/data/SANDI/SANDI_BallSphereAstrosticks_data.nii.gz \
+acquisition.grad=src/microtorch/resources/protocols/grad_sandi.txt
+```
+  
+To fit any supported model to your own diffusion MRI data, specify the model name together with the image and acquisition protocol:
+
+```bash
+python -m microtorch.main \
+model.name=CHOSEN_MODEL \
+data.image=/path/to/dwi.nii.gz \
+acquisition.grad=/path/to/grad.txt
 ```
 
 For full usage instructions and examples, see the [documentation](docs/index.md).
 
-For general usage guidance, see [here](docs/usage/cli.md). For information on the provided tutorials, see [here](docs/tutorials/simulation_data.md), and for further information on using the command line interface see [here](docs/reference/configs.md). Finally, to learn how to contribute, please see [here](docs/developer/contributions.md).
+Useful starting points include:
+
+- **General usage:** [here](docs/usage/cli.md)
+- **Tutorials:** [here](docs/tutorials/simulation_data.md) 
+- **Command line interface and configuration:** [here](docs/usage/configs.md)
+- **Contributing:** [here](docs/developer/contributions.md)
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
 # Contributing
 
 We welcome contributions! Please fork the repo, create a branch for your feature, and submit a Pull Request. 
-Ensure code is tested and documented. Full guidelines in [contributing](docs/developer/contributing.md).
+Ensure code is tested and documented. Full guidelines in [contributing](docs/developer/contributions.md).
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 

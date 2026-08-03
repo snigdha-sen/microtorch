@@ -8,6 +8,7 @@ Developed by members of the UCL Centre for Medical Image Computing and Cardiff U
 
 - [Installation](getting_started.md) – Set up your environment and install microTorch.
 - [Running microTorch](usage/cli.md) – Learn how to run experiments with Hydra and override configuration parameters.
+- [Configuration Files](usage/configs.md) – How microTorch's Hydra configuration files fit together, with a documented example.
 - [Models & Compartments](usage/models.md) – Detailed reference for predefined and custom microstructure models.
 - [Data Formats](usage/data.md) – How to provide input data, gradient schemes, and acquisition parameters.
 - [Training Parameters](usage/training.md) – Customise training, network, and optimisation settings.

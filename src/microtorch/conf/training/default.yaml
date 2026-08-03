@@ -1,4 +1,4 @@
-num_iters: 10         # -ni / --num_iters
+num_iters: 50         # -ni / --num_iters
 learning_rate: 3e-4    # -lr / --learning_rate
 seed: null             # -se / --seed (None → auto-generate)
 clip: sigmoid   # -cl / --clip (choices: 'clamp', 'sigmoid')

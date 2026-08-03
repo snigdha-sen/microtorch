@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 
+# Script to create test images for all models. Can optionally run fitting step as well.
+# Runs make_test_image.py for each model, then optionallyruns microtorch.torch to fit each
+# image with each network.
+
 import argparse
 import os
 import subprocess
 import sys
 from glob import glob
+from importlib.resources import as_file, files
 from pathlib import Path
 
-from microtorch.networks import NETWORK_REGISTRY
-
 # Always run from repo root
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 DATA_ROOT = REPO_ROOT / "simulation_data" / "data"
+
 
 # DEFAULT_GRAD = "simulation_data/grad/grad_HCP.txt"
 
@@ -30,9 +34,34 @@ DATA_ROOT = REPO_ROOT / "simulation_data" / "data"
 #     # "Cylinder": "simulation_data/grad/grad_HCP_with_deltas.txt",
 #     "Astrosticks": "simulation_data/grad/grad_verdict.txt",
 #     "Ballt2Ballt2": "simulation_data/grad/grad_ivim_T2.txt",
-#     "Ballt2": "simulation_data/grad/grad_ivim_T2_small.txt",
+#     "Ballt2": "simulation_data/grad/grad_ivim_T2.txt",
 #     "Tensor": "simulation_data/grad/grad_HCP_with_deltas.txt",
 # }
+
+DEFAULT_GRAD = "resources/protocols/grad_HCP.txt"
+
+MODEL_GRAD = {
+    "VERDICT": "grad_verdict.txt",
+    "SANDI": "grad_sandi.txt",
+    "IVIM": "grad_ivim.txt",
+    "BallStick": "grad_HCP_with_deltas.txt",
+    "ZeppelinZeppelin": "grad_anisotropic_ivim.txt",
+    "Ball": "grad_HCP_with_deltas.txt",
+    "Msdki": "grad_HCP_with_deltas.txt",
+    "Zeppelin": "grad_HCP_with_deltas.txt",
+    "Sphere": "grad_verdict.txt",
+    "BallDot": "grad_sandi.txt",
+    "Stick": "grad_HCP_with_deltas.txt",
+    # "Cylinder": "grad_HCP_with_deltas.txt",
+    "Astrosticks": "grad_verdict.txt",
+    "Ballt2Ballt2": "grad_ivim_T2.txt",
+    "Ballt2": "grad_ivim_T2.txt",
+    "Tensor": "grad_HCP_with_deltas.txt",
+}
+
+
+def get_protocol_resource(filename: str):
+    return files("microtorch").joinpath("resources", "protocols", filename)
 
 
 def run_make_test_image(model_name: str, grad_path: str):
@@ -44,6 +73,8 @@ def run_make_test_image(model_name: str, grad_path: str):
         model_name,
         "-g",
         grad_path,
+        "-savedir",
+        str(DATA_ROOT),
     ]
 
     print("\n>>> Running:", " ".join(cmd))
@@ -53,13 +84,13 @@ def run_make_test_image(model_name: str, grad_path: str):
 def get_image_and_mask(model_name: str):
     model_dir = os.path.join(DATA_ROOT, model_name)
 
-    print(model_dir)
+    print(f"Looking for images in: {model_dir}")
 
     data_files = list(glob(os.path.join(model_dir, model_name + "*_data.nii.gz")))
     mask_files = list(glob(os.path.join(model_dir, model_name + "*_mask.nii.gz")))
 
-    print(data_files)
-    print(mask_files)
+    print(f"Found data files: {data_files}")
+    print(f"Found mask files: {mask_files}")
 
     if len(data_files) != 1:
         raise RuntimeError(f"Expected 1 data file in {model_dir}, found {len(data_files)}")
@@ -70,21 +101,17 @@ def get_image_and_mask(model_name: str):
     return data_files[0], mask_files[0]
 
 
-def run_fit(model_name: str, grad_path: str, image_path: Path, mask_path: Path, network_type: str):
+def run_fit(model_name: str, grad_path: str, image_path: Path, mask_path: Path):
     cmd = [
         sys.executable,
         "-m",
         "microtorch.main",
         f"data.image={image_path}",
+        f"data.mask={mask_path}",
+        f"acquisition.grad={grad_path}",
         f"model.name={model_name}",
-        f"training.network_type={network_type}",
         "plot.enabled=false",
     ]
-
-    if grad_path is not None:
-        cmd.append(f"acquisition.grad={grad_path}")
-    if mask_path is not None:
-        cmd.append(f"data.mask={mask_path}")
 
     print("\n>>>", " ".join(cmd))
     subprocess.run(cmd, cwd=REPO_ROOT, check=True)
@@ -94,7 +121,10 @@ def main():
     parser = argparse.ArgumentParser(description="Run simulation + fitting pipeline.")
 
     parser.add_argument(
-        "--model", type=str, default=None, help="Choose the model to run (default: None)"
+        "--model",
+        type=str,
+        default=None,
+        help="Run only a specific model (default: run all models)",
     )
 
     parser.add_argument("--grad", type=str, default=None, help="Override gradient file path")
@@ -104,22 +134,32 @@ def main():
     args = parser.parse_args()
 
     # Determine which models to run
-    if args.model is None:
-        raise ValueError("Please specify a model to run with --model")
+    if args.model:
+        if args.model not in MODEL_GRAD:
+            raise ValueError(f"Unknown model {args.model}")
+        models_to_run = {args.model: MODEL_GRAD[args.model]}
     else:
-        model_name = args.model
-        print(f"Selected model: {model_name}")
+        models_to_run = MODEL_GRAD
 
-    networks_to_run = NETWORK_REGISTRY.keys()
+    for model, grad_file in models_to_run.items():
+        if args.grad:
+            grad_path = Path(args.grad).resolve()
+            run_make_test_image(model, str(grad_path))
+        else:
+            grad_resource = get_protocol_resource(grad_file)
 
-    for network in networks_to_run:
-        print("Running " + network)
+        with as_file(grad_resource) as grad_path:
+            run_make_test_image(model, str(grad_path))
 
-        grad_path = args.grad if args.grad else None
+        image_path, mask_path = get_image_and_mask(model)
 
-        image_path, mask_path = get_image_and_mask(args.model)
-
-        run_fit(args.model, grad_path, image_path, mask_path, network)
+        if args.fit:
+            if args.grad:
+                grad_path = Path(args.grad).resolve()
+                run_fit(model, str(grad_path), image_path, mask_path)
+            else:
+                with as_file(get_protocol_resource(grad_file)) as grad_path:
+                    run_fit(model, str(grad_path), image_path, mask_path)
 
 
 if __name__ == "__main__":

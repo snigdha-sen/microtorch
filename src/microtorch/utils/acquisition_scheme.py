@@ -1,25 +1,28 @@
-from typing import Optional, Union
 from pathlib import Path
+from typing import Optional, Union
+
 import numpy as np
 import torch
 
+
 class AcquisitionScheme:
     def __init__(
-    self,
-    bvalues: Union[np.ndarray, list],
-    bvecs: Union[np.ndarray, list],
-    gradient_strengths: Optional[Union[np.ndarray, list]] = None,
-    delta: Optional[Union[np.ndarray, list]] = None,
-    Delta: Optional[Union[np.ndarray, list]] = None,
-    TE: Optional[Union[np.ndarray, list]] = None,
-    bdelta: Optional[Union[np.ndarray, list]] = None,
-) -> None:
+        self,
+        bvalues: Union[np.ndarray, list],
+        bvecs: Union[np.ndarray, list],
+        gradient_strengths: Optional[Union[np.ndarray, list]] = None,
+        delta: Optional[Union[np.ndarray, list]] = None,
+        Delta: Optional[Union[np.ndarray, list]] = None,
+        TE: Optional[Union[np.ndarray, list]] = None,
+        bdelta: Optional[Union[np.ndarray, list]] = None,
+    ) -> None:
         """
         Container for acquisition scheme details.
 
         Args:
             bvalues (array-like): 1D array of b-values
-            bvecs (array-like): 2D array of shape (N, 3) containing the gradient directions as unit vectors
+            bvecs (array-like): 2D array of shape (N, 3) containing the gradient directions
+                as unit vectors
             gradient_strengths (array-like, optional): 1D array of gradient strengths in T/m
             delta (array-like, optional): 1D array of gradient pulse durations in seconds
             Delta (array-like, optional): 1D array of diffusion times in seconds
@@ -27,9 +30,11 @@ class AcquisitionScheme:
             bdelta (array-like, optional): 1D array of bdelta values (for advanced models)
         """
 
-        self.bvalues = torch.as_tensor(bvalues, dtype=torch.float32)  
-        
-        if any(self.bvalues == 0): #prevent issues with zero b-values in log space or as denominators  
+        self.bvalues = torch.as_tensor(bvalues, dtype=torch.float32)
+
+        if any(
+            self.bvalues == 0
+        ):  # prevent issues with zero b-values in log space or as denominators
             self.bvalues[self.bvalues == 0] = 1e-6
 
         self.bvecs = torch.as_tensor(bvecs, dtype=torch.float32)
@@ -60,7 +65,8 @@ def _process_bvalues(bvals: Union[np.ndarray, list]) -> np.ndarray:
     """
     Process b-values to ensure they are in the correct format and units.
     Args:
-        bvals (array-like): The input b-values, which may be in various formats (e.g., 1D array, list) and units (e.g., s/mm^2 or s/m^2).
+        bvals (array-like): The input b-values, which may be in various formats (e.g., 1D
+            array, list) and units (e.g., s/mm^2 or s/m^2).
     Returns:
         bvals (numpy.ndarray): The processed b-values as a 1D array in s/mm^2.
     """
@@ -72,9 +78,14 @@ def _process_bvalues(bvals: Union[np.ndarray, list]) -> np.ndarray:
 
     if np.max(bvals) > 100:
         bvals = bvals / 1000.0
-        print("Assumed b-values are given in s/mm^2 and converted to ms/μm^2 for internal use. If this is not correct, please check your b-values and ensure they are in the correct units.")
+        print(
+            "Assumed b-values are given in s/mm^2 and converted to ms/μm^2 for internal use. "
+            "If this is not correct, please check your b-values and ensure they are in the "
+            "correct units."
+        )
 
     return bvals
+
 
 def _process_TE(TE: Union[np.ndarray, list]) -> np.ndarray:
     TE = np.asarray(TE, dtype=np.float32)
@@ -84,7 +95,11 @@ def _process_TE(TE: Union[np.ndarray, list]) -> np.ndarray:
 
     if np.max(TE) > 10:
         TE = TE / 1000.0
-        print("Assumed TE values are given in ms and converted to seconds for internal use. If this is not correct, please check your TE values and ensure they are in the correct units.")
+        print(
+            "Assumed TE values are given in ms and converted to seconds for internal use. "
+            "If this is not correct, please check your TE values and ensure they are in "
+            "the correct units."
+        )
 
     return TE
 
@@ -100,7 +115,8 @@ def check_acquisition_scheme(
     Validates the acquisition scheme parameters.
     Args:
         bvalues (array-like): 1D array of b-values
-        bvecs (array-like): 2D array of shape (N, 3) containing the gradient directions as unit vectors
+        bvecs (array-like): 2D array of shape (N, 3) containing the gradient directions as
+            unit vectors
         delta (array-like, optional): 1D array of gradient pulse durations in seconds
         Delta (array-like, optional): 1D array of diffusion times in seconds
         TE (array-like, optional): 1D array of echo times in seconds
@@ -132,6 +148,7 @@ def check_acquisition_scheme(
             if np.any(arr < 0):
                 raise ValueError(f"{name} must be non-negative")
 
+
 def acquisition_scheme_loader(filepath: Union[str, Path]) -> AcquisitionScheme:
     """
     Load acquisition scheme from a single text file.
@@ -143,7 +160,8 @@ def acquisition_scheme_loader(filepath: Union[str, Path]) -> AcquisitionScheme:
     Args:
         filepath (str): Path to the text file containing the acquisition scheme.
     Returns:
-        AcquisitionScheme: An instance of the AcquisitionScheme class containing the loaded acquisition parameters.
+        AcquisitionScheme: An instance of the AcquisitionScheme class containing the loaded
+            acquisition parameters.
     """
     data = np.loadtxt(filepath)
 
@@ -152,18 +170,21 @@ def acquisition_scheme_loader(filepath: Union[str, Path]) -> AcquisitionScheme:
 
     Delta = data[:, 4] if data.shape[1] > 4 else None
     delta = data[:, 5] if data.shape[1] > 5 else None
-    #gradient_strengths = data[:, 6] if data.shape[1] > 6 else None
+    # gradient_strengths = data[:, 6] if data.shape[1] > 6 else None
     TE = _process_TE(data[:, 6]) if data.shape[1] > 6 else None
     bdelta = data[:, 7] if data.shape[1] > 7 else None
 
     # compute gradient strengths if possible
     gradient_strengths = None
     if Delta is not None and delta is not None:
-        gamma = 2.675987e2 # units are rad/ms/mT to stay consistent with b-values in ms/μm^2 and delta/Delta in ms
+        gamma = 2.675987e2  # units are rad/ms/mT to stay consistent with b-values in
+        # ms/μm^2 and delta/Delta in ms
         gradient_strengths = np.sqrt(bvalues) / (gamma * delta * np.sqrt(Delta - delta / 3))
         print("Calculated gradient strengths from b-values and timing parameters.")
-        print("Assuming b-values are in ms/μm^2, delta and Delta are in ms. Gradient strengths will be in mT/μm.")
-
+        print(
+            "Assuming b-values are in ms/μm^2, delta and Delta are in ms. Gradient "
+            "strengths will be in mT/μm."
+        )
 
     check_acquisition_scheme(bvalues, bvecs, delta, Delta, TE)
 
@@ -193,11 +214,13 @@ def txt_file_loader(
         bvals (str): Path to the text file containing b-values.
         bvecs (str): Path to the text file containing b-vectors.
         Delta (str, optional): Path to the text file containing diffusion times. Default is None.
-        delta (str, optional): Path to the text file containing gradient pulse durations. Default is None.
+        delta (str, optional): Path to the text file containing gradient pulse durations.
+            Default is None.
         TE (str, optional): Path to the text file containing echo times. Default is None.
         bdelta (str, optional): Path to the text file containing bdelta values.
     Returns:
-        AcquisitionScheme: An instance of the AcquisitionScheme class containing the loaded acquisition parameters.
+        AcquisitionScheme: An instance of the AcquisitionScheme class containing the loaded
+            acquisition parameters.
     """
     bvals = _process_bvalues(load_grad(bvals).T.squeeze())
     bvecs = load_grad(bvecs).T
@@ -222,14 +245,16 @@ def txt_file_loader(
 
 def load_grad(grad_filename: Union[str, Path]) -> Optional[np.ndarray]:
     """
-    Load gradient information from a text file containing either b-values, b-vectors, or timing parameters.
+    Load gradient information from a text file containing either b-values, b-vectors, or
+    timing parameters.
     Args:
         grad_filename (str): Path to the text file containing the gradient information.
-    Returns:        
-        np.ndarray or None: The loaded gradient information as a NumPy array, or None if the file is missing. 
+    Returns:
+        np.ndarray or None: The loaded gradient information as a NumPy array, or None if
+            the file is missing.
     """
-    #TO DO: replace with something that finds the file e.g. pkg_resources.resource_filename
-    #grad_files_path = '/Users/paddyslator/python/self-qmri/data'
+    # TO DO: replace with something that finds the file e.g. pkg_resources.resource_filename
+    # grad_files_path = '/Users/paddyslator/python/self-qmri/data'
     try:
         grad = np.loadtxt(grad_filename)
         if grad.ndim < 2:

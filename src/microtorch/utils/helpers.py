@@ -1,5 +1,6 @@
-from typing import Union, Optional
 from pathlib import Path
+from typing import Optional, Union
+
 
 def strip_filename(path: Union[str, Path]) -> str:
     """
@@ -11,7 +12,7 @@ def strip_filename(path: Union[str, Path]) -> str:
     Returns:
         str: Filename without path and extension.
     """
-    
+
     path = Path(path)
     name = path.name
     if name.endswith(".nii.gz"):
@@ -20,14 +21,10 @@ def strip_filename(path: Union[str, Path]) -> str:
         return name[:-4]
     else:
         return path.stem
-    
 
 
-    
 def most_recent_output_file(
-    output_root: Union[str, Path],
-    model_name: str,
-    network_type: str = "hidden_dropout_mlp"
+    output_root: Union[str, Path], model_name: str, network_type: str = "hidden_dropout_mlp"
 ) -> Optional[Path]:
     """
     Find the most recent output file for a given model and network.
@@ -53,7 +50,3 @@ def most_recent_output_file(
     # Sort by modification time (most recent first)
     files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
     return files[0]
-
-
-
-

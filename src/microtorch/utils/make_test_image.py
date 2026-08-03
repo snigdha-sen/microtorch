@@ -3,14 +3,15 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from pathlib import Path
 from multiprocessing import freeze_support
+from pathlib import Path
 
-import torch
 import numpy as np
+import torch
+
+from microtorch.model_maker import ModelMaker
 
 from .acquisition_scheme import acquisition_scheme_loader, txt_file_loader
-from microtorch.model_maker import ModelMaker
 
 
 def make_test_image(
@@ -93,7 +94,7 @@ def main():
     parser.add_argument("-m", "--model", default="BallStick")
     parser.add_argument("-bvals", "--bvals", default=None)
     parser.add_argument("-bvecs", "--bvecs", default=None)
-    parser.add_argument("-g", "--grad", default="simulation_data/grad/grad_HCP.txt")
+    parser.add_argument("-g", "--grad", default="resources/protocols/grad_HCP.txt")
     parser.add_argument("-d", "--delta", type=float, default=24)
     parser.add_argument("-sd", "--smalldelta", type=float, default=8)
     parser.add_argument("-TE", "--TE", default="")
@@ -102,7 +103,7 @@ def main():
     parser.add_argument("-nx", "--nx", type=int, default=128)
     parser.add_argument("-ny", "--ny", type=int, default=128)
     parser.add_argument("-nz", "--nz", type=int, default=2)
-    parser.add_argument("-savedir", "--savedir", default="simulation_data/data")
+    parser.add_argument("-savedir", "--savedir", default=Path.cwd() / "simulation_data" / "data")
     parser.add_argument("-bd", "--bdelta", type=float, default=1)
 
     args = parser.parse_args()
@@ -127,6 +128,7 @@ def main():
 
 # Helper functions
 
+
 def add_rician_noise(data: torch.Tensor, snr: float = 20.0) -> torch.Tensor:
     if snr <= 0:
         return data
@@ -146,7 +148,9 @@ def generate_random_params(modelfunc, num_samples, alpha=None):
         min_vals = torch.tensor(modelfunc.parameter_ranges[:, 0], dtype=torch.float32)
         max_vals = torch.tensor(modelfunc.parameter_ranges[:, 1], dtype=torch.float32)
 
-        model_params = torch.rand(num_samples, modelfunc.n_parameters) * (max_vals - min_vals) + min_vals
+        model_params = (
+            torch.rand(num_samples, modelfunc.n_parameters) * (max_vals - min_vals) + min_vals
+        )
     else:
         model_params = torch.empty(num_samples, 1)
 

@@ -1,10 +1,23 @@
+# Example, annotated model configuration file.
+#
+# This defines the "IVIM" model as two Ball compartments with different
+# diffusivity ranges: a low-diffusivity tissue compartment and a
+# high-diffusivity pseudo-diffusion (perfusion) compartment. At fit time,
+# microTorch estimates a volume fraction for each compartment and combines
+# them into the predicted signal (see docs/usage/configs.md for a walkthrough
+# of this file, and docs/developer/adding_models.md for the general format).
 name: IVIM
 
 compartments:
+  # Tissue diffusion compartment (D).
   - class: Ball
+    # Overrides this compartment's default parameter range(s). Must be a
+    # list of [min, max] pairs, one per parameter, in the same order as the
+    # `Ball` class's `parameter_names` (here just one: D).
     parameter_ranges:
       - [1.0e-03, 3.0]
-      
+
+  # Pseudo-diffusion / perfusion compartment (D*).
   - class: Ball
     parameter_ranges:
       - [3.0, 30.0]

@@ -1,7 +1,7 @@
-from typing import Optional, Union, Sequence, Callable
+import copy
+
 import torch
 import torch.nn as nn
-import copy
 
 
 class DevMLP(nn.Module):
@@ -15,14 +15,15 @@ class DevMLP(nn.Module):
         activation (nn.Module): Activation function to use after each hidden layer.
         dropout (float): Dropout fraction to apply to the input layer (0 for no dropout).
     """
+
     def __init__(
-        self, 
-        input_neurons: int, 
-        layer_dims: int, 
-        n_layers: int, 
-        dim_out: int, 
-        activation: nn.Module, 
-        dropout: float
+        self,
+        input_neurons: int,
+        layer_dims: int,
+        n_layers: int,
+        dim_out: int,
+        activation: nn.Module,
+        dropout: float,
     ) -> None:
         super().__init__()
 
@@ -52,14 +53,15 @@ class HiddenDropoutMLP(nn.Module):
         activation (nn.Module): Activation function to use after each hidden layer.
         dropout (float): Dropout fraction to apply after each hidden layer (0 for no dropout
     """
+
     def __init__(
-        self, 
-        input_neurons: int, 
-        layer_dims: int, 
-        n_layers: int, 
-        dim_out: int, 
-        activation: nn.Module, 
-        dropout: float
+        self,
+        input_neurons: int,
+        layer_dims: int,
+        n_layers: int,
+        dim_out: int,
+        activation: nn.Module,
+        dropout: float,
     ) -> None:
         super().__init__()
 

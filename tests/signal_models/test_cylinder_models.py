@@ -1,7 +1,11 @@
-import torch
 import pytest
+import torch
 
-from microtorch.signal_models.cylinder_models import Stick, Cylinder, Astrosticks  # adjust if your import path differs
+from microtorch.signal_models.cylinder_models import (
+    Astrosticks,
+    Cylinder,
+    Stick,
+)  # adjust if your import path differs
 
 
 class DummyGrad:
@@ -17,13 +21,15 @@ class DummyGrad:
 def grad_stick():
     # Nonzero b for all measurements
     bvalues = torch.tensor([1.0, 1.0, 1.0], dtype=torch.float32)
-    bvecs = torch.tensor([
-        [1.0, 0.0, 0.0],  # x
-        [0.0, 1.0, 0.0],  # y
-        [0.0, 0.0, 1.0],  # z
-    ], dtype=torch.float32)
+    bvecs = torch.tensor(
+        [
+            [1.0, 0.0, 0.0],  # x
+            [0.0, 1.0, 0.0],  # y
+            [0.0, 0.0, 1.0],  # z
+        ],
+        dtype=torch.float32,
+    )
     return DummyGrad(bvalues=bvalues, bvecs=bvecs)
-
 
 
 @pytest.fixture
@@ -40,11 +46,14 @@ def grad_cylinder():
     # - positive delta, Delta (Delta > delta/3 is typical, but not enforced)
     # - small gradient strengths (in T/m)
     bvalues = torch.tensor([0.5, 1.0, 2.0], dtype=torch.float32)
-    bvecs = torch.tensor([
-        [1.0, 0.0, 0.0],  # x
-        [0.0, 1.0, 0.0],  # y
-        [0.0, 0.0, 1.0],  # z
-    ], dtype=torch.float32)
+    bvecs = torch.tensor(
+        [
+            [1.0, 0.0, 0.0],  # x
+            [0.0, 1.0, 0.0],  # y
+            [0.0, 0.0, 1.0],  # z
+        ],
+        dtype=torch.float32,
+    )
 
     delta = torch.tensor([0.03, 0.03, 0.03], dtype=torch.float32)
     Delta = torch.tensor([0.05, 0.05, 0.05], dtype=torch.float32)
@@ -56,6 +65,7 @@ def grad_cylinder():
 # -----------------------
 # Stick
 # -----------------------
+
 
 def test_stick_attributes():
     m = Stick()
@@ -100,11 +110,10 @@ def test_stick_orientation_effect(grad_stick):
     assert (Sy[1] < Sy[2]).item()
 
 
-
-
 # -----------------------
 # Astrosticks
 # -----------------------
+
 
 def test_astrosticks_shape_and_b0(grad_astro):
     m = Astrosticks()
@@ -135,6 +144,7 @@ def test_astrosticks_fixed_matches_free(grad_astro):
 # Cylinder
 # -----------------------
 
+
 def test_cylinder_attributes():
     m = Cylinder(n_roots=10)
     assert m.n_parameters == 4
@@ -145,7 +155,7 @@ def test_cylinder_attributes():
 def test_cylinder_forward_shape_and_finite(grad_cylinder):
     m = Cylinder(n_roots=10)
     # theta=pi/2, phi=0 -> axis along x
-    params = torch.tensor([[torch.pi/2, 0.0, 1.0, 5.0]], dtype=torch.float32)
+    params = torch.tensor([[torch.pi / 2, 0.0, 1.0, 5.0]], dtype=torch.float32)
 
     S = m(grad_cylinder, params)
 
@@ -156,7 +166,7 @@ def test_cylinder_forward_shape_and_finite(grad_cylinder):
 
 def test_cylinder_radius_must_be_positive(grad_cylinder):
     m = Cylinder(n_roots=10)
-    params = torch.tensor([[torch.pi/2, 0.0, 1.0, 0.0]], dtype=torch.float32)
+    params = torch.tensor([[torch.pi / 2, 0.0, 1.0, 0.0]], dtype=torch.float32)
 
     with pytest.raises(ValueError):
         m(grad_cylinder, params)

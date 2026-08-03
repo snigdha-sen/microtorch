@@ -1,31 +1,35 @@
 # Import packages
-from typing import Optional
 import torch
 import torch.nn as nn
+
 
 # Rician Loss Function
 class RicianLoss(nn.Module):
     """
     Rician Loss Function for diffusion MRI signal fitting.
-    This loss function is designed to handle the Rician noise distribution commonly encountered in diffusion MRI data
-    
+    This loss function is designed to handle the Rician noise distribution commonly
+    encountered in diffusion MRI data
+
     Attributes:
         sigma (float): The standard deviation of the Rician noise. Default is 0.05.
 
     Methods:
         __init__(sigma): Initializes the RicianLoss with the specified noise standard deviation.
-        forward(predictions, inputs): Computes the Rician loss between the predicted and input signals."""
+        forward(predictions, inputs): Computes the Rician loss between the predicted and
+            input signals."""
+
     def __init__(self, sigma: float = 0.05) -> None:
-        super(RicianLoss, self).__init__()
+        super().__init__()
         self.sigma = sigma
+
     #
     def forward(self, predictions: torch.Tensor, inputs: torch.Tensor) -> torch.Tensor:
 
         # Rician loss
-        term1 = torch.log(inputs / (self.sigma ** 2))
-        term2 = -(inputs ** 2 + predictions ** 2) / (2 * (self.sigma ** 2))
+        term1 = torch.log(inputs / (self.sigma**2))
+        term2 = -(inputs**2 + predictions**2) / (2 * (self.sigma**2))
         #
-        z = (inputs * predictions) / (self.sigma ** 2)
+        z = (inputs * predictions) / (self.sigma**2)
         I0e = torch.special.i0e(z)
         lI0e = torch.log(I0e)
         term3 = lI0e + z
@@ -37,24 +41,29 @@ class RicianLoss(nn.Module):
         return loss
 
 
-class RicianLossStable(nn.Module):  #New Rician Loss with added stability
+class RicianLossStable(nn.Module):  # New Rician Loss with added stability
     """
     Rician Loss Function with numerical stability enhancements for diffusion MRI signal fitting.
-    This loss function is designed to handle the Rician noise distribution commonly encountered in diffusion MRI data
-    
+    This loss function is designed to handle the Rician noise distribution commonly
+    encountered in diffusion MRI data
+
     Attributes:
         sigma (float): The standard deviation of the Rician noise. Default is 0.05.
-        eps (float): A small constant added for numerical stability to prevent log(0) and division by zero. Default is 1e-8.    
-        
+        eps (float): A small constant added for numerical stability to prevent log(0) and
+            division by zero. Default is 1e-8.
+
     Methods:
-        __init__(sigma, eps): Initializes the RicianLossStable with the specified noise standard deviation and stability constant.
-        forward(predictions, inputs): Computes the Rician loss between the predicted and input signals with enhanced numerical stability.
-    
-    """    
+        __init__(sigma, eps): Initializes the RicianLossStable with the specified noise
+            standard deviation and stability constant.
+        forward(predictions, inputs): Computes the Rician loss between the predicted and
+            input signals with enhanced numerical stability.
+
+    """
+
     def __init__(self, sigma: float = 0.05, eps: float = 1e-8) -> None:
-        super(RicianLossStable, self).__init__()
+        super().__init__()
         self.sigma = sigma
-        self.eps = eps  #Epsilon Param for avoiding 0/NaN
+        self.eps = eps  # Epsilon Param for avoiding 0/NaN
 
     def forward(self, predictions: torch.Tensor, inputs: torch.Tensor) -> torch.Tensor:
         # Ensure inputs and predictions are positive and non-zero
@@ -62,13 +71,13 @@ class RicianLossStable(nn.Module):  #New Rician Loss with added stability
         predictions = torch.clamp(predictions, min=self.eps)
 
         # Compute terms with numerical stability
-        sigma_squared = self.sigma ** 2
+        sigma_squared = self.sigma**2
 
         # Add eps to prevent log(0)
         term1 = torch.log(inputs / sigma_squared + self.eps)
 
         # Compute squared terms
-        term2 = -(inputs ** 2 + predictions ** 2) / (2 * sigma_squared)
+        term2 = -(inputs**2 + predictions**2) / (2 * sigma_squared)
 
         # Compute z with clipping to prevent overflow
         z = torch.clamp((inputs * predictions) / sigma_squared, max=100)
@@ -89,6 +98,7 @@ class RicianLossStable(nn.Module):  #New Rician Loss with added stability
         loss = -torch.sum(log_pdf) / n_batch
 
         return loss
+
 
 #
 # # Example Usage

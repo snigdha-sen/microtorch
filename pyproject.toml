@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "microtorch"
-version = "0.1.0"
+name = "microtorch-mri"
+version = "0.1.1"
 description = "Diffusion MRI Model Fitting with PyTorch"
 requires-python = ">=3.9"
 
@@ -23,7 +23,44 @@ dependencies = [
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+microtorch = ["conf/**/*.yaml", "resources/protocols/*"]
+
+[project.scripts]
+microtorch-create-test-images = "microtorch.utils.create_all_test_images:main"
+
+[project.optional-dependencies]
+lint = ["ruff"]
+test = ["pytest", "pytest-cov"]
+dev = ["microtorch[lint,test]"]
+
+[tool.coverage.run]
+source = ["microtorch"]
+# These modules are deliberately excluded from coverage targets - see
+# "What isn't covered, and why" in docs/developer/testing.md for the rationale.
+omit = [
+    "*/microtorch/main.py",
+    "*/microtorch/utils/plot_results.py",
+    "*/microtorch/utils/optuna_search.py",
+    "*/microtorch/utils/create_all_test_images.py",
+]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/microtorch/signal_models/__init__.py" = ["E402"]
+"examples/*.ipynb" = ["E402"]

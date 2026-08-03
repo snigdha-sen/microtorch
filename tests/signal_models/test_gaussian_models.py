@@ -1,13 +1,20 @@
-import torch
 import pytest
+import torch
 
-from microtorch.signal_models.gaussian_models import Ball, Msdki, Zeppelin  # adjust import path if needed
+from microtorch.signal_models.gaussian_models import (
+    Ball,
+    Ballt2,
+    Msdki,
+    Tensor,
+    Zeppelin,
+)  # adjust import path if needed
 
 
 class DummyGrad:
-    def __init__(self, bvalues, bvecs=None):
+    def __init__(self, bvalues, bvecs=None, TE=None):
         self.bvalues = bvalues
         self.bvecs = bvecs
+        self.TE = TE
 
 
 @pytest.fixture
@@ -21,17 +28,20 @@ def grad_ball():
 def grad_zeppelin():
     # 3 measurements with gradient directions
     bvalues = torch.tensor([0.5, 1.0, 2.0])
-    bvecs = torch.tensor([
-        [1.0, 0.0, 0.0],  # x
-        [0.0, 1.0, 0.0],  # y
-        [0.0, 0.0, 1.0],  # z
-    ])
+    bvecs = torch.tensor(
+        [
+            [1.0, 0.0, 0.0],  # x
+            [0.0, 1.0, 0.0],  # y
+            [0.0, 0.0, 1.0],  # z
+        ]
+    )
     return DummyGrad(bvalues=bvalues, bvecs=bvecs)
 
 
 # -----------------------
 # Ball
 # -----------------------
+
 
 def test_ball_attributes():
     m = Ball()
@@ -66,6 +76,7 @@ def test_ball_monotonic_in_b(grad_ball):
 # -----------------------
 # Msdki
 # -----------------------
+
 
 def test_msdki_attributes():
     m = Msdki()
@@ -102,6 +113,7 @@ def test_msdki_reduces_to_ball_when_K_zero(grad_ball):
 # -----------------------
 # Zeppelin
 # -----------------------
+
 
 def test_zeppelin_attributes():
     m = Zeppelin()
@@ -142,3 +154,89 @@ def test_zeppelin_isotropic_limit_matches_ball(grad_zeppelin):
     S_ball = ball(DummyGrad(bvalues=grad_zeppelin.bvalues), params_ball)
 
     assert torch.allclose(S_zepp, S_ball, rtol=1e-4, atol=1e-6)
+
+
+# -----------------------
+# Ballt2
+# -----------------------
+
+
+@pytest.fixture
+def grad_ballt2():
+    bvalues = torch.tensor([0.0, 0.5, 1.0, 2.0])
+    TE = torch.tensor([30.0, 30.0, 60.0, 60.0])
+    return DummyGrad(bvalues=bvalues, TE=TE)
+
+
+def test_ballt2_attributes():
+    m = Ballt2()
+    assert m.n_parameters == 2
+    assert m.parameter_names == ["D", "T2"]
+    assert m.spherical_mean is None
+
+
+def test_ballt2_forward_shape_and_finite(grad_ballt2):
+    m = Ballt2()
+    params = torch.tensor([[1.0, 0.3]])  # D=1, T2=0.3
+
+    S = m(grad_ballt2, params)
+
+    assert S.shape == (1, grad_ballt2.bvalues.numel())
+    assert torch.isfinite(S).all()
+    assert (S >= 0).all()
+
+
+def test_ballt2_reduces_to_ball_when_t2_large(grad_ballt2):
+    ball = Ball()
+    ballt2 = Ballt2()
+
+    D = 1.2
+    params_ball = torch.tensor([[D]])
+    params_ballt2 = torch.tensor([[D, 1e6]])  # T2 -> large means negligible T2 decay
+
+    S_ball = ball(DummyGrad(bvalues=grad_ballt2.bvalues), params_ball)
+    S_ballt2 = ballt2(grad_ballt2, params_ballt2)
+
+    assert torch.allclose(S_ball, S_ballt2, rtol=1e-4, atol=1e-6)
+
+
+# -----------------------
+# Tensor
+# -----------------------
+
+
+def test_tensor_attributes():
+    m = Tensor()
+    assert m.n_parameters == 6
+    assert m.parameter_names == ["Dpar", "k1", "k2", "theta", "phi", "psi"]
+    assert m.spherical_mean is False
+
+
+def test_tensor_forward_shape_and_finite(grad_zeppelin):
+    m = Tensor()
+    # Dpar=1, k1=0.5, k2=0.5, theta=pi/2, phi=0, psi=0
+    params = torch.tensor([[1.0, 0.5, 0.5, torch.pi / 2, 0.0, 0.0]])
+
+    S = m(grad_zeppelin, params)
+
+    assert S.shape == (1, grad_zeppelin.bvalues.numel())
+    assert torch.isfinite(S).all()
+    assert ((S > 0) & (S <= 1)).all()
+
+
+def test_tensor_isotropic_limit_matches_ball(grad_zeppelin):
+    """If k1=k2=1, all three eigenvalues equal Dpar, so the tensor is isotropic
+    and the signal should reduce to S = exp(-b * Dpar) regardless of orientation."""
+    tensor = Tensor()
+    ball = Ball()
+
+    Dpar = 0.9
+    theta, phi, psi = torch.pi / 5, 0.4, 1.1
+
+    params_tensor = torch.tensor([[Dpar, 1.0, 1.0, theta, phi, psi]])
+    params_ball = torch.tensor([[Dpar]])
+
+    S_tensor = tensor(grad_zeppelin, params_tensor)
+    S_ball = ball(DummyGrad(bvalues=grad_zeppelin.bvalues), params_ball)
+
+    assert torch.allclose(S_tensor, S_ball, rtol=1e-4, atol=1e-6)

@@ -5,7 +5,7 @@
 To use a single compartment:
 
 ``` bash
-python -m src.main model.name=Ball
+python -m microtorch.main model.name=Ball
 ```
 
 Available compartments include:
@@ -15,7 +15,6 @@ Available compartments include:
 -   `Sphere`
 -   `Astrosticks` (option to fix diffusivity)
 -   `Zeppelin`
--   `StandardWM`
 -   `Cylinder`
 
 ### 2. Multi-Compartment Models
@@ -24,7 +23,7 @@ You can combine compartments by concatenating their names in
 **PascalCase**, with no spaces:
 
 ``` bash
-python -m src.main model.name=BallBallSphere
+python -m microtorch.main model.name=BallBallSphere
 ```
 
 This example creates a model with: 
@@ -42,11 +41,11 @@ This example creates a model with:
 microTorch also includes commonly used multicompartment models:
 
 ``` bash
-python -m src.main model.name=VERDICT
+python -m microtorch.main model.name=VERDICT
 ```
 
 Available predefined models:
 
 -   `VERDICT` → Ball + Sphere + fixed Astrosticks
--   `SANDI` → Ball + Zeppelin + Astrosticks
+-   `SANDI` → Ball + Sphere + Astrosticks
 -   `IVIM` → Ball + Ball

@@ -1,9 +1,11 @@
 from typing import Optional
+
+import optuna
+import torch
 import torch.optim as optim
 import torch.utils.data as utils
 from tqdm import tqdm
-import torch
-import optuna
+
 
 def train(
     net: torch.nn.Module,
@@ -14,7 +16,7 @@ def train(
     num_iters: int = 10,
     patience: int = 10,
     trial: Optional["optuna.Trial"] = None,
-    beta: float = 1.0
+    beta: float = 1.0,
 ) -> tuple[torch.Tensor, torch.Tensor, float]:
     """
     Train a network (MLP, CNN, or VAE) on input data with a given loss function.
@@ -37,11 +39,7 @@ def train(
     """
 
     trainloader = utils.DataLoader(
-        img,
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=2,
-        drop_last=True
+        img, batch_size=batch_size, shuffle=True, num_workers=2, drop_last=True
     )
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
