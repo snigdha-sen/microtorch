@@ -115,7 +115,7 @@ Useful starting points include:
 # Contributing
 
 We welcome contributions! Please fork the repo, create a branch for your feature, and submit a Pull Request. 
-Ensure code is tested and documented. Full guidelines in [contributing](docs/developer/contributions.md).
+Ensure code is tested and documented. Full guidelines in [contributing](docs/developer/contributing.md).
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
