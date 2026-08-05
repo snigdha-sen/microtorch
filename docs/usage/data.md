@@ -30,7 +30,19 @@ where gradient scheme files use an extended MRtrix-style format.
 - Column 6: Diffusion gradient duration, δ (“small delta”) [ms]
 - Column 7: Echo time (TE) [ms]
 
-**OR** specify acquisition parameters individually:
+For example, the package includes an example Human Connectome Project grad file 
+`src/microtorch/resources/protocols/grad_HCP_with_deltas.txt`:
+
+```text
+# gx         gy         gz         b      Δ      δ
+0.906387   0.281846   0.314683   1000   43.1   10.6
+-0.395044  0.826284   0.401490   1995   43.1   10.6
+0.149635   0.488142  -0.859841   3005   43.1   10.6
+0.177856  -0.927837   0.327849    995   43.1   10.6
+...
+```
+
+**OR** specify acquisition parameters individually using FSL-style files:
 
 ``` bash
 acquisition.bvals=/path/to/bvals
@@ -43,4 +55,4 @@ acquisition.TI=/path/to/TI
 acquisition.bdelta=/path/to/bdelta
 ```
 
-You only need to provide the parameters required by your selected model.
+Only the acquisition parameters required by the selected signal model need to be provided. For example, many diffusion MRI models require only a four-column MRtrix-style gradient file (gradient directions and b-values) or, equivalently, FSL-style bvecs and bvals files.
