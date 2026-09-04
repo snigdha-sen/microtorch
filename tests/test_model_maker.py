@@ -121,3 +121,24 @@ def test_invalid_yaml_parameter_range_shape_raises(tmp_path, monkeypatch):
 
     with pytest.raises(ValueError, match="Invalid parameter range"):
         ModelMaker("BadModel2")
+
+
+def test_modelmaker_parses_ball_t2():
+    model = ModelMaker("Ballt2")
+
+    assert model.compartment_names == ["Ballt2"]
+
+
+def test_modelmaker_parses_ball_t1_t2():
+    model = ModelMaker("Ballt1t2")
+
+    assert model.compartment_names == ["Ballt1t2"]
+
+
+def test_modelmaker_parses_multicompartment_relaxation():
+    model = ModelMaker("Ballt2Ballt2")
+
+    assert model.compartment_names == [
+        "Ballt2",
+        "Ballt2",
+    ]

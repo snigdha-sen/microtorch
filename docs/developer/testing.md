@@ -9,13 +9,13 @@ pip install -e ".[test]"
 Run the full test suite from the repository root:
 
 ```bash
-pytest tests
+python -m pytest tests
 ```
 
 To see a coverage report:
 
 ```bash
-pytest tests --cov --cov-report=term-missing
+python -m pytest tests --cov --cov-report=term-missing
 ```
 
 Coverage settings live in `pyproject.toml` under `[tool.coverage.run]` and

@@ -20,8 +20,8 @@ class T2Relaxation:
             base_compartment.__class__.__name__
         )
 
-        #make new model compartment name by adding T2 to the base compartment name
-        self.name = f"{base_name}T2"
+        #make new model compartment name by adding t2 to the base compartment name - use lower case t2 to keep compartment Pascal case convention
+        self.name = f"{base_name}t2"
 
         self.parameter_ranges = (
             base_compartment.parameter_ranges
@@ -82,7 +82,7 @@ class T1InversionRecovery:
             base_model.__class__.__name__
         )
 
-        self.name = f"{base_name}T1"
+        self.name = f"{base_name}t1"
 
         self.parameter_ranges = (
             base_model.parameter_ranges
