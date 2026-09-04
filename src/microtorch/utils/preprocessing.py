@@ -203,7 +203,17 @@ def normalise(X_train: torch.Tensor, grad: AcquisitionScheme) -> torch.Tensor:
         min_te = torch.min(grad.TE[ref_mask])
         ref_mask = ref_mask & (grad.TE == min_te)
 
-    # lowest b-value and lowest TE is the reference for normalisation.
+    # among those, find highest TR if TR exists
+    if hasattr(grad, "TR") and grad.TR is not None:
+        max_tr = torch.max(grad.TR[ref_mask])
+        ref_mask = ref_mask & (grad.TR == max_tr)
+
+    # among those, find highest TI if TI exists
+    if hasattr(grad, "TI") and grad.TI is not None:
+        max_ti = torch.max(grad.TI[ref_mask])
+        ref_mask = ref_mask & (grad.TI == max_ti)
+
+    # lowest b-value and lowest TE (and highest TR and highest TI) is the reference for normalisation.
     ref_idx = torch.where(ref_mask)[0]
 
     if ref_idx.numel() == 0:

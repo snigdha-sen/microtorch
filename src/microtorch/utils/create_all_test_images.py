@@ -57,6 +57,7 @@ MODEL_GRAD = {
     "Ballt2Ballt2": "grad_ivim_T2.txt",
     "Ballt2": "grad_ivim_T2.txt",
     "Tensor": "grad_HCP_with_deltas.txt",
+    "Ballt1t2": "grad_zebra.txt",
 }
 
 
@@ -132,6 +133,10 @@ def main():
     parser.add_argument("--fit", action="store_true", help="Run fitting step as well")
 
     args = parser.parse_args()
+
+    # Normalise relaxation suffixes
+    if args.model:
+        args.model = args.model.replace("T1", "t1").replace("T2", "t2")
 
     # Determine which models to run
     if args.model:

@@ -11,3 +11,7 @@ __all__ += ["Sphere", "Dot"]
 from .cylinder_models import Astrosticks, Cylinder, Stick  # cylinder
 
 __all__ += ["Stick", "Astrosticks", "Cylinder"]
+
+from .relaxation import T2Relaxation, T1InversionRecovery
+
+__all__ += ["T2Relaxation", "T1InversionRecovery"]

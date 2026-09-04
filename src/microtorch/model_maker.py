@@ -4,8 +4,40 @@ import numpy as np
 import torch
 import yaml
 
+from microtorch.signal_models import relaxation
 from microtorch.utils.paths import MODELS_CONF_PATH
 
+ 
+def parse_compartment_name(name):
+    """
+    Parse a compartment name with optional relaxation suffixes.
+
+    Examples
+    --------
+    Ball        -> ("Ball", [])
+    Ballt2      -> ("Ball", ["T2"])
+    Ballt1      -> ("Ball", ["T1"])
+    Ballt1t2    -> ("Ball", ["T1", "T2"])
+    """
+
+    relaxation = []
+
+    if name.endswith("t1t2"):
+        base_name = name[:-4]
+        relaxation = ["T1", "T2"]
+
+    elif name.endswith("t2"):
+        base_name = name[:-2]
+        relaxation = ["T2"]
+
+    elif name.endswith("t1"):
+        base_name = name[:-2]
+        relaxation = ["T1"]
+
+    else:
+        base_name = name
+
+    return base_name, relaxation
 
 class ModelMaker:
     """
@@ -80,7 +112,9 @@ class ModelMaker:
         for comp in self.compartments:
             self.parameter_ranges.extend(comp.parameter_ranges)
             self.parameter_names.extend(comp.parameter_names)
-            self.compartment_names.append(comp.__class__.__name__)
+            self.compartment_names.append(
+                getattr(comp, "name", comp.__class__.__name__)
+            )
             self.n_parameters += comp.n_parameters
 
         self.parameter_ranges = np.array(self.parameter_ranges)  # Convert to numpy array
@@ -180,6 +214,9 @@ class ModelMaker:
         compartment_indices.extend(range(self.n_fractions))
         return compartment_indices
 
+
+    
+
     @staticmethod
     def model_compartments(modelname: str) -> tuple:
         """
@@ -211,28 +248,52 @@ class ModelMaker:
                 "range overrides."
             )
         else:
-            # fallback to parsing modelname if no yaml exists
-            compartment_list = re.findall(r"([A-Z][a-z]*\d*)", modelname)
-            compartment_specs = [{"class": comp} for comp in compartment_list]
+            # Normalise relaxation suffixes
+            modelname = modelname.replace("T1", "t1").replace("T2", "t2")
+
+            # Match base compartment + optional relaxation suffix
+            compartment_list = re.findall(
+                r"([A-Z][a-z]*\d*(?:t1t2|t1|t2)?)",
+                modelname,
+            )
+
+            compartment_specs = []
+
+            for comp in compartment_list:
+                class_name, relaxation = parse_compartment_name(comp)
+
+                compartment_specs.append(
+                    {
+                        "class": class_name,
+                        "relaxation": relaxation,
+                    }
+                )
 
             print(f"No YAML configuration found for {modelname} model.")
-            print(f"Falling back to parsing model name for compartments: {compartment_list}.")
-            print("Parameter ranges will be the default compartment values.")
+            print(
+                f"Falling back to parsing model name for compartments: "
+                f"{compartment_list}."
+            )
+
 
         for spec in compartment_specs:
             class_name = spec["class"]
             init_kwargs = spec.get("init_kwargs", {})
             parameter_ranges = spec.get("parameter_ranges", None)
+            relaxation = spec.get("relaxation", [])
 
             cls = getattr(signal_models_module, class_name)
             obj = cls(**init_kwargs)
 
+            if "T1" in relaxation:
+                obj = signal_models_module.T1InversionRecovery(obj)
+
+            if "T2" in relaxation:
+                obj = signal_models_module.T2Relaxation(obj)
+
             # Only override parameter ranges if they are explicitly given in YAML
             if parameter_ranges is not None:
                 default_parameter_ranges = obj.parameter_ranges
-
-                print(parameter_ranges)
-                print(default_parameter_ranges)
 
                 if len(parameter_ranges) != len(default_parameter_ranges):
                     raise ValueError(
@@ -254,7 +315,10 @@ class ModelMaker:
 
         print("-----------")
         print("########### Making model: ", modelname)
-        print("########### Compartments:", [comp.__class__.__name__ for comp in comps_classes])
+        print(
+            "########### Compartments:",
+            [getattr(comp, "name", comp.__class__.__name__) for comp in comps_classes]
+        )
         print("########### Parameter names:", [comp.parameter_names for comp in comps_classes])
         print("########### Parameter ranges:", [comp.parameter_ranges for comp in comps_classes])
         print("-----------")

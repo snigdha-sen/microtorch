@@ -14,6 +14,8 @@ class AcquisitionScheme:
         delta: Optional[Union[np.ndarray, list]] = None,
         Delta: Optional[Union[np.ndarray, list]] = None,
         TE: Optional[Union[np.ndarray, list]] = None,
+        TR: Optional[Union[np.ndarray, list]] = None,
+        TI: Optional[Union[np.ndarray, list]] = None,
         bdelta: Optional[Union[np.ndarray, list]] = None,
     ) -> None:
         """
@@ -28,6 +30,8 @@ class AcquisitionScheme:
             Delta (array-like, optional): 1D array of diffusion times in seconds
             TE (array-like, optional): 1D array of echo times in seconds
             bdelta (array-like, optional): 1D array of bdelta values (for advanced models)
+            TR (array-like, optional): 1D array of repetition times in seconds
+            TI (array-like, optional): 1D array of inversion times in seconds
         """
 
         self.bvalues = torch.as_tensor(bvalues, dtype=torch.float32)
@@ -46,7 +50,8 @@ class AcquisitionScheme:
         self.Delta = _to_tensor_or_none(Delta)
         self.TE = _to_tensor_or_none(TE)
         self.bdelta = _to_tensor_or_none(bdelta)
-
+        self.TR = _to_tensor_or_none(TR)
+        self.TI = _to_tensor_or_none(TI)
 
 def _to_tensor_or_none(x: Optional[Union[np.ndarray, list]]) -> Optional[torch.Tensor]:
     """
@@ -103,6 +108,39 @@ def _process_TE(TE: Union[np.ndarray, list]) -> np.ndarray:
 
     return TE
 
+def _process_TR(TR: Union[np.ndarray, list]) -> np.ndarray:
+    TR = np.asarray(TR, dtype=np.float32)
+
+    if np.any(TR < 0):
+        raise ValueError("TR contains negative values")
+
+    if np.max(TR) > 20:
+        TR = TR / 1000.0
+        print(
+            "Assumed TR values are given in ms and converted to seconds for internal use. "
+            "If this is not correct, please check your TR values and ensure they are in "
+            "the correct units."
+        )
+
+    return TR
+
+
+def _process_TI(TI: Union[np.ndarray, list]) -> np.ndarray:
+    TI = np.asarray(TI, dtype=np.float32)
+
+    if np.any(TI < 0):
+        raise ValueError("TI contains negative values")
+
+    if np.max(TI) > 10:
+        TI = TI / 1000.0
+        print(
+            "Assumed TI values are given in ms and converted to seconds for internal use. "
+            "If this is not correct, please check your TI values and ensure they are in "
+            "the correct units."
+        )
+
+    return TI
+
 
 def check_acquisition_scheme(
     bvalues: np.ndarray,
@@ -110,6 +148,8 @@ def check_acquisition_scheme(
     delta: Optional[np.ndarray] = None,
     Delta: Optional[np.ndarray] = None,
     TE: Optional[np.ndarray] = None,
+    TR: Optional[np.ndarray] = None,
+    TI: Optional[np.ndarray] = None,
 ) -> None:
     """
     Validates the acquisition scheme parameters.
@@ -120,6 +160,8 @@ def check_acquisition_scheme(
         delta (array-like, optional): 1D array of gradient pulse durations in seconds
         Delta (array-like, optional): 1D array of diffusion times in seconds
         TE (array-like, optional): 1D array of echo times in seconds
+        TR (array-like, optional): 1D array of repetition times in seconds
+        TI (array-like, optional): 1D array of inversion times in seconds
     Raises:
         ValueError: If any of the validation checks fail."""
     if bvalues.ndim != 1:
@@ -139,7 +181,7 @@ def check_acquisition_scheme(
     if not np.allclose(norms[nonzero], 1.0, atol=1e-3):
         raise ValueError("bvecs must be unit vectors")
 
-    for name, arr in [("delta", delta), ("Delta", Delta), ("TE", TE)]:
+    for name, arr in [("delta", delta), ("Delta", Delta), ("TE", TE), ("TR", TR), ("TI", TI)]:
         if arr is not None:
             if arr.ndim != 1:
                 raise ValueError(f"{name} must be one-dimensional")
@@ -155,7 +197,7 @@ def acquisition_scheme_loader(filepath: Union[str, Path]) -> AcquisitionScheme:
     Expected columns:
         0-2: bvecs
         3:   bvalues
-        4+:  optional timing parameters
+        4+:  optional timing parameters (delta, Delta, TE, TR, TI)
 
     Args:
         filepath (str): Path to the text file containing the acquisition scheme.
@@ -172,7 +214,10 @@ def acquisition_scheme_loader(filepath: Union[str, Path]) -> AcquisitionScheme:
     delta = data[:, 5] if data.shape[1] > 5 else None
     # gradient_strengths = data[:, 6] if data.shape[1] > 6 else None
     TE = _process_TE(data[:, 6]) if data.shape[1] > 6 else None
-    bdelta = data[:, 7] if data.shape[1] > 7 else None
+    TR = _process_TR(data[:, 7]) if data.shape[1] > 7 else None
+    TI = _process_TI(data[:, 8]) if data.shape[1] > 8 else None
+
+    bdelta = data[:, 9] if data.shape[1] > 9 else None
 
     # compute gradient strengths if possible
     gradient_strengths = None
@@ -186,7 +231,7 @@ def acquisition_scheme_loader(filepath: Union[str, Path]) -> AcquisitionScheme:
             "strengths will be in mT/μm."
         )
 
-    check_acquisition_scheme(bvalues, bvecs, delta, Delta, TE)
+    check_acquisition_scheme(bvalues, bvecs, delta, Delta, TE, TR, TI)
 
     return AcquisitionScheme(
         bvalues=bvalues,
@@ -195,6 +240,8 @@ def acquisition_scheme_loader(filepath: Union[str, Path]) -> AcquisitionScheme:
         delta=delta,
         Delta=Delta,
         TE=TE,
+        TR=TR,
+        TI=TI,
         bdelta=bdelta,
     )
 
@@ -205,6 +252,8 @@ def txt_file_loader(
     Delta: Optional[Union[str, Path]] = None,
     delta: Optional[Union[str, Path]] = None,
     TE: Optional[Union[str, Path]] = None,
+    TR: Optional[Union[str, Path]] = None,
+    TI: Optional[Union[str, Path]] = None,
     bdelta: Optional[Union[str, Path]] = None,
 ) -> AcquisitionScheme:
     """
@@ -217,6 +266,8 @@ def txt_file_loader(
         delta (str, optional): Path to the text file containing gradient pulse durations.
             Default is None.
         TE (str, optional): Path to the text file containing echo times. Default is None.
+        TR (str, optional): Path to the text file containing repetition times. Default is None.
+        TI (str, optional): Path to the text file containing inversion times. Default is None.
         bdelta (str, optional): Path to the text file containing bdelta values.
     Returns:
         AcquisitionScheme: An instance of the AcquisitionScheme class containing the loaded
@@ -229,8 +280,10 @@ def txt_file_loader(
     delta = load_grad(delta).T.squeeze() if delta else None
     TE = _process_TE(load_grad(TE).T.squeeze()) if TE else None
     bdelta = load_grad(bdelta).T.squeeze() if bdelta else None
+    TR = _process_TR(load_grad(TR).T.squeeze()) if TR else None
+    TI = _process_TI(load_grad(TI).T.squeeze()) if TI else None
 
-    check_acquisition_scheme(bvals, bvecs, delta, Delta, TE)
+    check_acquisition_scheme(bvals, bvecs, delta, Delta, TE, TR, TI)
 
     return AcquisitionScheme(
         bvalues=bvals,
@@ -239,6 +292,8 @@ def txt_file_loader(
         delta=delta,
         Delta=Delta,
         TE=TE,
+        TR=TR,
+        TI=TI,
         bdelta=bdelta,
     )
 
