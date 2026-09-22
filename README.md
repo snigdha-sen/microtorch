@@ -3,9 +3,9 @@
 
 <img align="left" width="295" height="295" src="files/logo.jpeg" > 
 
-The ```microTorch``` software package is designed to flexibly fit diffusion MRI (dMRI) microstructure models, using a self-supervised deep learning approach. The framework is designed to work with a variety of established dMRI multicompartment models, and also allows users to combine compartment models as they wish.
+The ```microTorch``` software package[1] is designed to flexibly fit diffusion MRI (dMRI) microstructure models, using a self-supervised deep learning approach. The framework is designed to work with a variety of established dMRI multicompartment models, and also allows users to combine compartment models as they wish.
 
-We designed this framework to leverage the inference time gains of deep learning, whilst removing the requirement for explicit training data. Training and inference is performed simultaneously for each dataset. Please see [1,2] for the theoretical underpinnings of this approach.
+We designed this framework to leverage the inference time gains of deep learning, whilst removing the requirement for explicit training data. Training and inference is performed simultaneously for each dataset. Please see [2,3] for the theoretical underpinnings of this approach.
 
 This work is by members of the UCL Centre for Medical Image Computing and the Cardiff University Brain Research Imaging Centre. Please contact snigdha.sen.20@ucl.ac.uk with any questions.  
 &nbsp;  
@@ -119,23 +119,31 @@ Ensure code is tested and documented. Full guidelines in [contributing](docs/dev
 
 <img align="left" src="files/torch.png" alt="icon" width="45" height="45">
 
+# References
+If you use ```microTorch``` in your work please cite the accompanying overview paper:
+
+[1] Sen S, Ahmed R, Arends GC, et al. **microTorch: A Software Package for Fast and Flexible Self-Supervised Diffusion MRI Model Fitting.** Journal of Open Research Software, 2026; 14: 59. DOI: https://doi.org/10.5334/jors.736
+
+If you use a specific method, please also cite the relevant paper. For example, for the VERDICT model cite:
+
+[2] Sen S, Singh S, Pye H, et al. **ssVERDICT: Self-supervised VERDICT-MRI for enhanced prostate tumor characterization.** Magn Reson Med. 2024; 92: 2181-2192. doi: https://doi.org/10.1002/mrm.30186
+
+and for the IVIM model cite:
+
+[3] Barbieri S, Gurney-Champion OJ, Klaassen R, Thoeny HC. **Deep learning how to fit an intravoxel incoherent motion model to diffusion-weighted MRI.** Magn Reson Med. 2020 Jan;83(1):312-321. doi: https://doi.org/10.1002/mrm.27910
+
 # Acknowledgements
 
 ## Authors
 
 ```microTorch``` is authored by Snigdha Sen, Rajib Ahmed, Gerrit Arends, Alvaro Planchuelo Gomez, Xiaoxiang Chen, Marta Masramon Masramon, Marco Palombo, Chris Parker, Chantal MW Tax, Eleftheria Panagiotaki and Paddy J Slator. 
 
+## Funding
 Snigdha Sen undertook this work whilst being funded by the EPSRC-funded UCL Center for Doctoral Training in Intelligent, Integrated Imaging in Healthcare (i4health) (EP/S021930/1) and the Department of Health's NIHR-funded Biomedical Research Centre at University College London Hospitals.
 
-## References
-
-[1] Sen S, Singh S, Pye H, et al. **ssVERDICT: Self-supervised VERDICT-MRI for enhanced prostate tumor characterization.** Magn Reson Med. 2024; 92: 2181-2192. doi: 10.1002/mrm.30186
-
-[2] Barbieri S, Gurney-Champion OJ, Klaassen R, Thoeny HC. **Deep learning how to fit an intravoxel incoherent motion model to diffusion-weighted MRI.** Magn Reson Med. 2020 Jan;83(1):312-321. doi: 10.1002/mrm.27910
-
-The following code repositories were helpful in development of MicroTorch:
+## Other
+The following code repositories were helpful in development of ```microTorch```:
 
 - **Deep Learning How to Fit an Intravoxel Incoherent Motion Model to Diffusion-Weighted MRI** Barbieri et al. [https://github.com/sebbarb/deep_ivim](https://github.com/sebbarb/deep_ivim)
 - **Dmipy: Diffusion Microstructure Imaging in Python** [https://github.com/AthenaEPI/dmipy](https://github.com/AthenaEPI/dmipy)
 
-## Citation
