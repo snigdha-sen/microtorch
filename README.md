@@ -132,6 +132,8 @@ and for the IVIM model cite:
 
 [3] Barbieri S, Gurney-Champion OJ, Klaassen R, Thoeny HC. **Deep learning how to fit an intravoxel incoherent motion model to diffusion-weighted MRI.** Magn Reson Med. 2020 Jan;83(1):312-321. doi: https://doi.org/10.1002/mrm.27910
 
+<img align="left" src="files/torch.png" alt="icon" width="45" height="45">
+
 # Acknowledgements
 
 ## Authors
